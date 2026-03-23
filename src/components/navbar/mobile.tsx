@@ -1,0 +1,74 @@
+import { Box, Text, Center } from "@chakra-ui/react";
+import React from "react";
+import close from "@/assets/close.png";
+import Image from "next/image";
+import Link from "next/link";
+import { FaFacebook } from "react-icons/fa";
+import { FaTwitter } from "react-icons/fa";
+import { FaYoutube } from "react-icons/fa";
+import { FaLinkedin } from "react-icons/fa6";
+
+const Mobile = ({ onClose, routes, pathname }: any) => {
+  return (
+    <Box py="22px" px="16px">
+      <Box display={"flex"} justifyContent={"flex-end"}>
+        <Box onClick={onClose}>
+          <Image src={close} alt="close icon" />
+        </Box>
+      </Box>
+
+      <Box display={"flex"} flexDir={"column"} gap="24px" h="80vh">
+        {routes.map((data: any, idx: number) => (
+          <Link
+            key={idx}
+            href={data.path}
+            style={{
+              color:
+                pathname === data.path
+                  ? "#F56630"
+                  : pathname.includes("blog") && data.path.includes("blog")
+                  ? "#F56630"
+                  : pathname.includes("solutions") &&
+                    data.path.includes("solutions")
+                  ? "#F56630"
+                  : "#fff",
+              fontSize: "18px",
+              fontWeight: "600",
+            }}
+          >
+            {data.name}
+          </Link>
+        ))}
+
+        <a
+          href="https://forms.gle/kNV9xmjn97QmqD9o8"
+          target="_blank"
+          style={{ fontSize: "18px", fontWeight: 600, color: "white" }}
+        >
+          Join our waitlist
+        </a>
+      </Box>
+
+      <Box>
+        <Text
+          color="#fff"
+          fontSize={"18px"}
+          fontWeight={600}
+          textAlign={"center"}
+        >
+          Follow us at
+        </Text>
+        <Center>
+          <Box display={"flex"} alignContent={"center"} gap="24px" mt="10px">
+            <FaFacebook color={"#fff"} size={20} />
+            <FaTwitter color={"#fff"} size={20} />
+            <FaYoutube color={"#fff"} size={20} />
+            <FaLinkedin color={"#fff"} size={20} />
+          </Box>
+        </Center>
+      </Box>
+    </Box>
+  );
+};
+
+export default Mobile;

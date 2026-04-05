@@ -1,0 +1,19 @@
+replicaCount: 1
+
+ingress:
+  hosts:
+    - host: staging.vaxai.health
+      paths:
+        - path: /
+          pathType: Prefix
+
+autoscaling:
+  enabled: false
+
+celery:
+  ingestionReplicas: 1
+  mlTrainingReplicas: 1
+
+env:
+  ENV: staging
+  DEBUG: "false"

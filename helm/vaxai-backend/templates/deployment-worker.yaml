@@ -1,0 +1,98 @@
+---
+# Ingestion worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vaxai-backend.fullname" . }}-ingestion-worker
+  labels:
+    {{- include "vaxai-backend.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingestion-worker
+spec:
+  replicas: {{ .Values.celery.ingestionReplicas }}
+  selector:
+    matchLabels:
+      {{- include "vaxai-backend.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ingestion-worker
+  template:
+    metadata:
+      labels:
+        {{- include "vaxai-backend.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ingestion-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: ingestion-worker
+          image: "{{ .Values.image.registry }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - celery
+            - -A
+            - app.workers.celery_app
+            - worker
+            - -Q
+            - ingestion
+            - -c
+            - "4"
+            - --loglevel=info
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secretName }}
+          env:
+            - name: ENV
+              value: {{ .Values.env.ENV }}
+          resources:
+            {{- toYaml .Values.resources.worker | nindent 12 }}
+          livenessProbe:
+            exec:
+              command: [celery, -A, app.workers.celery_app, inspect, ping, -d, celery@$HOSTNAME]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+---
+# ML training worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vaxai-backend.fullname" . }}-ml-worker
+  labels:
+    {{- include "vaxai-backend.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ml-worker
+spec:
+  replicas: {{ .Values.celery.mlTrainingReplicas }}
+  selector:
+    matchLabels:
+      {{- include "vaxai-backend.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ml-worker
+  template:
+    metadata:
+      labels:
+        {{- include "vaxai-backend.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ml-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: ml-worker
+          image: "{{ .Values.image.registry }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - celery
+            - -A
+            - app.workers.celery_app
+            - worker
+            - -Q
+            - ml_training
+            - -c
+            - "2"
+            - --loglevel=info
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secretName }}
+          env:
+            - name: ENV
+              value: {{ .Values.env.ENV }}
+          resources:
+            {{- toYaml .Values.resources.mlWorker | nindent 12 }}

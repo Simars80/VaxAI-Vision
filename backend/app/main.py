@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.health import router as health_router
 from app.api.v1.router import router as v1_router
 from app.config import get_settings
+from app.core.hipaa_middleware import HttpsEnforcementMiddleware, PhiAuditMiddleware
 from app.redis_client import close_redis, get_redis_pool
 
 settings = get_settings()
@@ -35,6 +36,14 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+# ── HIPAA Safeguards ───────────────────────────────────────────────────────────
+# HTTPS enforcement is active in staging/production; skipped locally.
+app.add_middleware(
+    HttpsEnforcementMiddleware,
+    enforce=settings.ENV in ("staging", "production"),
+)
+app.add_middleware(PhiAuditMiddleware)
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
 app.add_middleware(

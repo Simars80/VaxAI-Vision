@@ -1,4 +1,5 @@
 from app.models.ingestion import IngestionAuditLog, IngestionJob, IngestionSource, IngestionStatus
+from app.models.phi_audit import PhiAccessLog
 from app.models.supply import PatientCensus, SupplyCategory, SupplyItem, SupplyTransaction
 from app.models.user import User, UserRole
 
@@ -13,4 +14,5 @@ __all__ = [
     "SupplyCategory",
     "SupplyTransaction",
     "PatientCensus",
+    "PhiAccessLog",
 ]

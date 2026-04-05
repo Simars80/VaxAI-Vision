@@ -1,3 +1,4 @@
+from app.models.forecasting import ForecastPrediction, ModelRun, ModelRunStatus
 from app.models.ingestion import IngestionAuditLog, IngestionJob, IngestionSource, IngestionStatus
 from app.models.phi_audit import PhiAccessLog
 from app.models.supply import PatientCensus, SupplyCategory, SupplyItem, SupplyTransaction
@@ -15,4 +16,7 @@ __all__ = [
     "SupplyTransaction",
     "PatientCensus",
     "PhiAccessLog",
+    "ModelRun",
+    "ModelRunStatus",
+    "ForecastPrediction",
 ]

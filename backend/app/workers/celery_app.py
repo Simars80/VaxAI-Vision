@@ -9,7 +9,7 @@ celery_app = Celery(
     "vaxai_vision",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["app.workers.ingestion_tasks"],
+    include=["app.workers.ingestion_tasks", "app.workers.forecast_tasks"],
 )
 
 celery_app.conf.update(
@@ -26,5 +26,6 @@ celery_app.conf.update(
     # Routing
     task_routes={
         "app.workers.ingestion_tasks.*": {"queue": "ingestion"},
+        "app.workers.forecast_tasks.*": {"queue": "ml_training"},
     },
 )

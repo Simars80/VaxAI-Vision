@@ -1,3 +1,16 @@
+from app.models.ingestion import IngestionAuditLog, IngestionJob, IngestionSource, IngestionStatus
+from app.models.supply import PatientCensus, SupplyCategory, SupplyItem, SupplyTransaction
 from app.models.user import User, UserRole
 
-__all__ = ["User", "UserRole"]
+__all__ = [
+    "User",
+    "UserRole",
+    "IngestionJob",
+    "IngestionAuditLog",
+    "IngestionSource",
+    "IngestionStatus",
+    "SupplyItem",
+    "SupplyCategory",
+    "SupplyTransaction",
+    "PatientCensus",
+]

@@ -7,6 +7,7 @@ import OverviewPage from "@/pages/OverviewPage";
 import ForecastPage from "@/pages/ForecastPage";
 import IngestionPage from "@/pages/IngestionPage";
 import InventoryPage from "@/pages/InventoryPage";
+import ColdChainPage from "@/pages/ColdChainPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -53,6 +54,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <InventoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cold-chain"
+        element={
+          <ProtectedRoute>
+            <ColdChainPage />
           </ProtectedRoute>
         }
       />

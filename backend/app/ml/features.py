@@ -3,10 +3,11 @@
 Transforms raw SupplyTransaction records (pulled from the DB) into a
 time-series feature matrix suitable for Prophet and LightGBM.
 """
+
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import date
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-_DATE_COL = "ds"         # Prophet convention
-_TARGET_COL = "y"        # Prophet convention
+_DATE_COL = "ds"  # Prophet convention
+_TARGET_COL = "y"  # Prophet convention
 _ISSUE_TYPES = {"issue", "dispense", "distribution"}
 
 # ── Data loading ───────────────────────────────────────────────────────────────
@@ -72,8 +73,12 @@ async def load_transactions(
     result = await session.execute(sql, params)
     rows = result.fetchall()
     if not rows:
-        return pd.DataFrame(columns=["supply_item_id", "facility_id", "txn_date", "total_qty"])
-    return pd.DataFrame(rows, columns=["supply_item_id", "facility_id", "txn_date", "total_qty"])
+        return pd.DataFrame(
+            columns=["supply_item_id", "facility_id", "txn_date", "total_qty"]
+        )
+    return pd.DataFrame(
+        rows, columns=["supply_item_id", "facility_id", "txn_date", "total_qty"]
+    )
 
 
 # ── Feature engineering ────────────────────────────────────────────────────────
@@ -123,12 +128,18 @@ def _add_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
     df["year"] = df[_DATE_COL].dt.year
     # Seasonal sine/cosine encoding (annual cycle)
     day_of_year = df[_DATE_COL].dt.dayofyear
-    df["sin_annual"] = (2 * 3.14159 * day_of_year / 365).apply(lambda x: __import__("math").sin(x))
-    df["cos_annual"] = (2 * 3.14159 * day_of_year / 365).apply(lambda x: __import__("math").cos(x))
+    df["sin_annual"] = (2 * 3.14159 * day_of_year / 365).apply(
+        lambda x: __import__("math").sin(x)
+    )
+    df["cos_annual"] = (2 * 3.14159 * day_of_year / 365).apply(
+        lambda x: __import__("math").cos(x)
+    )
     return df
 
 
-def _add_lag_features(df: pd.DataFrame, target_col: str, lags: list[int] | None = None) -> pd.DataFrame:
+def _add_lag_features(
+    df: pd.DataFrame, target_col: str, lags: list[int] | None = None
+) -> pd.DataFrame:
     if lags is None:
         lags = [1, 2, 4, 8, 13, 26]  # 1-2 weeks, 1-2 months, 3-6 months (weekly freq)
     df = df.copy()

@@ -1,8 +1,8 @@
 """Data ingestion API endpoints — CSV/Excel upload and FHIR R4 connector."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
@@ -10,7 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_active_user
-from app.models.ingestion import IngestionAuditLog, IngestionJob, IngestionSource, IngestionStatus
+from app.models.ingestion import (
+    IngestionAuditLog,
+    IngestionJob,
+    IngestionSource,
+    IngestionStatus,
+)
 from app.models.user import User, UserRole
 from app.schemas.ingestion import (
     AuditLogEntry,
@@ -74,7 +79,10 @@ async def upload_csv(
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     }
-    if file.content_type and file.content_type.split(";")[0].strip() not in allowed_types:
+    if (
+        file.content_type
+        and file.content_type.split(";")[0].strip() not in allowed_types
+    ):
         if not (file.filename or "").lower().endswith((".csv", ".xlsx", ".xls")):
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -85,7 +93,7 @@ async def upload_csv(
     if len(raw_bytes) > _MAX_CSV_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File exceeds 50 MB limit.",
+            detail="File exceeds 50 MB limit.",
         )
 
     # Decode — try UTF-8, fall back to latin-1

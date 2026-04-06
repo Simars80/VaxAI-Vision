@@ -23,7 +23,9 @@ class Settings(BaseSettings):
     REDIS_URL: str = Field(default="redis://:vaxai_redis_dev@localhost:6379/0")
 
     # JWT
-    JWT_SECRET_KEY: str = Field(default="change-me-in-production-use-strong-secret-32chars")
+    JWT_SECRET_KEY: str = Field(
+        default="change-me-in-production-use-strong-secret-32chars"
+    )
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7

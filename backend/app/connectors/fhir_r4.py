@@ -4,6 +4,7 @@ Fetches Patient and SupplyDelivery resources from a SMART-on-FHIR / plain FHIR R
 server.  Only read operations are performed — this connector never writes back to
 the EHR.
 """
+
 from __future__ import annotations
 
 import logging
@@ -114,7 +115,7 @@ class FHIRr4Connector:
                     next_url = link.get("url", "")
                     # Strip base URL prefix so httpx uses relative path
                     if next_url.startswith(self.base_url):
-                        url = next_url[len(self.base_url):]
+                        url = next_url[len(self.base_url) :]
                     else:
                         url = next_url
                     params = {}  # params are already in the next URL
@@ -197,7 +198,9 @@ class FHIRr4Connector:
         # Item code from CodeableConcept
         item_code: str | None = None
         item_name: str | None = None
-        item_ref = supplied.get("itemCodeableConcept") or supplied.get("itemReference", {})
+        item_ref = supplied.get("itemCodeableConcept") or supplied.get(
+            "itemReference", {}
+        )
         if isinstance(item_ref, dict):
             for coding in item_ref.get("coding", []):
                 item_code = coding.get("code")
@@ -223,7 +226,9 @@ class FHIRr4Connector:
 
         # Transaction date
         tx_date: datetime | None = None
-        if occ := resource.get("occurrenceDateTime") or resource.get("occurrencePeriod", {}).get("start"):
+        if occ := resource.get("occurrenceDateTime") or resource.get(
+            "occurrencePeriod", {}
+        ).get("start"):
             try:
                 tx_date = datetime.fromisoformat(occ.replace("Z", "+00:00"))
             except ValueError:

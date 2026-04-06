@@ -8,13 +8,12 @@ Workflow:
   5. Log params, metrics, and model artifact to MLflow
   6. Persist forecaster to local filesystem / S3 artifact store
 """
+
 from __future__ import annotations
 
 import logging
 import os
 import tempfile
-import uuid
-from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 _MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 _MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT_NAME", "vaxai-supply-demand-forecast")
-_TEST_FRACTION = 0.2   # last 20% of data used as test set
+_TEST_FRACTION = 0.2  # last 20% of data used as test set
 
 
 # ── Walk-forward backtesting ───────────────────────────────────────────────────
@@ -43,7 +42,9 @@ def walk_forward_backtest(
     Returns a list of metric dicts, one per fold.
     """
     if len(df) < 16:
-        logger.warning("Not enough data for walk-forward CV (%d rows), skipping", len(df))
+        logger.warning(
+            "Not enough data for walk-forward CV (%d rows), skipping", len(df)
+        )
         return []
 
     results = []
@@ -55,7 +56,7 @@ def walk_forward_backtest(
         if cutoff_idx < 8:
             continue
         train = df.iloc[:cutoff_idx].copy()
-        test = df.iloc[cutoff_idx: cutoff_idx + test_size].copy()
+        test = df.iloc[cutoff_idx : cutoff_idx + test_size].copy()
 
         try:
             forecaster = VaxAIForecaster(config)
@@ -63,7 +64,13 @@ def walk_forward_backtest(
             metrics = forecaster.evaluate(test)
             metrics["fold"] = i
             results.append(metrics)
-            logger.info("Fold %d — MAE=%.2f RMSE=%.2f MAPE=%.1f%%", i, metrics["mae"], metrics["rmse"], metrics["mape"])
+            logger.info(
+                "Fold %d — MAE=%.2f RMSE=%.2f MAPE=%.1f%%",
+                i,
+                metrics["mae"],
+                metrics["rmse"],
+                metrics["mape"],
+            )
         except Exception as exc:
             logger.warning("Fold %d failed: %s", i, exc)
 
@@ -84,7 +91,9 @@ async def train_model(
     Returns a dict with the MLflow run_id, final metrics, and model path.
     """
     config = config or ForecastConfig()
-    run_label = f"item={supply_item_id[:8]}" + (f" fac={facility_id[:8]}" if facility_id else "")
+    run_label = f"item={supply_item_id[:8]}" + (
+        f" fac={facility_id[:8]}" if facility_id else ""
+    )
 
     # ── 1. Load data from DB ───────────────────────────────────────────────────
     from app.database import AsyncSessionLocal
@@ -99,7 +108,9 @@ async def train_model(
     if raw_df.empty:
         return {"error": "No transactions found for the given item/facility"}
 
-    ts_df = build_time_series(raw_df, supply_item_id=supply_item_id, facility_id=facility_id, freq=config.freq)
+    ts_df = build_time_series(
+        raw_df, supply_item_id=supply_item_id, facility_id=facility_id, freq=config.freq
+    )
     if ts_df.empty or len(ts_df) < 8:
         return {"error": f"Insufficient time-series data ({len(ts_df)} rows)"}
 
@@ -114,7 +125,9 @@ async def train_model(
     if cv_results:
         for key in ("mae", "rmse", "mape", "coverage"):
             vals = [r[key] for r in cv_results if key in r and not pd.isna(r[key])]
-            avg_metrics[f"cv_{key}"] = float(sum(vals) / len(vals)) if vals else float("nan")
+            avg_metrics[f"cv_{key}"] = (
+                float(sum(vals) / len(vals)) if vals else float("nan")
+            )
 
     # ── 4. Final model fit on full training data ───────────────────────────────
     forecaster = VaxAIForecaster(config)
@@ -134,16 +147,18 @@ async def train_model(
             mlflow_run_id = run.info.run_id
 
             # Log hyper-parameters
-            mlflow.log_params({
-                "supply_item_id": supply_item_id,
-                "facility_id": facility_id or "all",
-                "freq": config.freq,
-                "horizon": config.horizon,
-                "prophet_weight": config.prophet_weight,
-                "lgbm_n_estimators": config.lgbm_n_estimators,
-                "train_rows": len(train_df),
-                "test_rows": len(test_df),
-            })
+            mlflow.log_params(
+                {
+                    "supply_item_id": supply_item_id,
+                    "facility_id": facility_id or "all",
+                    "freq": config.freq,
+                    "horizon": config.horizon,
+                    "prophet_weight": config.prophet_weight,
+                    "lgbm_n_estimators": config.lgbm_n_estimators,
+                    "train_rows": len(train_df),
+                    "test_rows": len(test_df),
+                }
+            )
 
             # Log metrics
             for k, v in all_metrics.items():
@@ -154,7 +169,9 @@ async def train_model(
             with tempfile.TemporaryDirectory() as tmpdir:
                 model_dir = Path(tmpdir) / "model"
                 forecaster.save(model_dir)
-                mlflow.log_artifact(str(model_dir / "forecaster.pkl"), artifact_path="model")
+                mlflow.log_artifact(
+                    str(model_dir / "forecaster.pkl"), artifact_path="model"
+                )
 
             logger.info("MLflow run %s logged for %s", mlflow_run_id, run_label)
 
@@ -162,7 +179,9 @@ async def train_model(
         logger.warning("MLflow logging failed (non-fatal): %s", exc)
 
     # ── 6. Persist model locally for serving ──────────────────────────────────
-    local_path = Path("/tmp/vaxai_models") / supply_item_id[:8] / (facility_id or "global")
+    local_path = (
+        Path("/tmp/vaxai_models") / supply_item_id[:8] / (facility_id or "global")
+    )
     forecaster.save(local_path)
 
     return {

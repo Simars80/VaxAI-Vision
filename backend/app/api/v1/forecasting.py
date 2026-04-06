@@ -1,10 +1,10 @@
 """Forecasting REST API — model training triggers and prediction serving."""
+
 from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -16,7 +16,6 @@ from app.database import get_db
 from app.dependencies import get_current_active_user
 from app.models.forecasting import ForecastPrediction, ModelRun, ModelRunStatus
 from app.models.user import User
-from app.workers.celery_app import celery_app
 
 router = APIRouter(prefix="/forecasting", tags=["forecasting"])
 
@@ -120,7 +119,10 @@ async def list_runs(
     _: User = Depends(get_current_active_user),
 ) -> list[ModelRunResponse]:
     result = await db.execute(
-        select(ModelRun).order_by(ModelRun.created_at.desc()).offset(offset).limit(limit)
+        select(ModelRun)
+        .order_by(ModelRun.created_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     return [ModelRunResponse.model_validate(r) for r in result.scalars()]
 

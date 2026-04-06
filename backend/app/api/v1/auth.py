@@ -1,5 +1,6 @@
 """Authentication endpoints: register, login, refresh, logout, me."""
-from datetime import UTC, datetime, timedelta
+
+from datetime import UTC, datetime
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -32,7 +33,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
-@router.post("/register", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=MeResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> User:
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
@@ -100,6 +103,7 @@ async def refresh(
         raise credentials_exc
 
     import uuid as _uuid
+
     result = await db.execute(select(User).where(User.id == _uuid.UUID(user_id)))
     user = result.scalar_one_or_none()
     if not user or not user.is_active:

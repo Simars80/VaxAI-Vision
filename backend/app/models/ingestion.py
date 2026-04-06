@@ -1,4 +1,5 @@
 """Models for ingestion jobs and audit logs."""
+
 import enum
 import uuid
 
@@ -71,7 +72,9 @@ class IngestionAuditLog(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, index=True
+    )
     row_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # "inserted", "updated", "skipped", "error"
     action: Mapped[str] = mapped_column(String(32), nullable=False)

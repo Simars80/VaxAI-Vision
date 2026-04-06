@@ -7,6 +7,7 @@ from app.models.user import UserRole
 
 # ── Request schemas ────────────────────────────────────────────────────────────
 
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
@@ -25,6 +26,7 @@ class RefreshRequest(BaseModel):
 
 
 # ── Response schemas ───────────────────────────────────────────────────────────
+
 
 class TokenResponse(BaseModel):
     access_token: str

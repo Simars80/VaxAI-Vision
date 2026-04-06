@@ -6,11 +6,12 @@ Ensemble approach:
 
 Final prediction = weighted average of both models (configurable alpha).
 """
+
 from __future__ import annotations
 
 import logging
 import pickle
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -175,13 +176,23 @@ class VaxAIForecaster:
         raise RuntimeError("No model available for prediction.")
 
     def _predict_prophet(self, periods: int) -> pd.DataFrame:
-        future = self._prophet_model.make_future_dataframe(periods=periods, freq=self.config.freq)
+        future = self._prophet_model.make_future_dataframe(
+            periods=periods, freq=self.config.freq
+        )
         forecast = self._prophet_model.predict(future)
-        return forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(periods).reset_index(drop=True)
+        return (
+            forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
+            .tail(periods)
+            .reset_index(drop=True)
+        )
 
     def _predict_lgbm(self, periods: int) -> pd.DataFrame:
         """Recursive multi-step LightGBM forecast."""
-        from app.ml.features import _add_calendar_features, _add_lag_features, _add_rolling_features
+        from app.ml.features import (
+            _add_calendar_features,
+            _add_lag_features,
+            _add_rolling_features,
+        )
 
         assert self._train_df is not None
         history = self._train_df[[_DATE_COL, _TARGET_COL]].copy()
@@ -209,21 +220,27 @@ class VaxAIForecaster:
                 ignore_index=True,
             )
 
-        return pd.DataFrame({
-            "ds": future_dates,
-            "yhat": preds,
-            "yhat_lower": [p * 0.85 for p in preds],  # ±15% uncertainty band
-            "yhat_upper": [p * 1.15 for p in preds],
-        })
+        return pd.DataFrame(
+            {
+                "ds": future_dates,
+                "yhat": preds,
+                "yhat_lower": [p * 0.85 for p in preds],  # ±15% uncertainty band
+                "yhat_upper": [p * 1.15 for p in preds],
+            }
+        )
 
     def _blend(self, prophet_df: pd.DataFrame, lgbm_df: pd.DataFrame) -> pd.DataFrame:
         w_p = self.config.prophet_weight
         w_l = 1.0 - w_p
         result = prophet_df.copy()
-        result["yhat"]       = w_p * prophet_df["yhat"]       + w_l * lgbm_df["yhat"]
-        result["yhat_lower"] = w_p * prophet_df["yhat_lower"] + w_l * lgbm_df["yhat_lower"]
-        result["yhat_upper"] = w_p * prophet_df["yhat_upper"] + w_l * lgbm_df["yhat_upper"]
-        result["source"]     = "ensemble"
+        result["yhat"] = w_p * prophet_df["yhat"] + w_l * lgbm_df["yhat"]
+        result["yhat_lower"] = (
+            w_p * prophet_df["yhat_lower"] + w_l * lgbm_df["yhat_lower"]
+        )
+        result["yhat_upper"] = (
+            w_p * prophet_df["yhat_upper"] + w_l * lgbm_df["yhat_upper"]
+        )
+        result["source"] = "ensemble"
         return result
 
     # ── Evaluate ──────────────────────────────────────────────────────────────
@@ -248,7 +265,16 @@ class VaxAIForecaster:
         mae = float(np.mean(np.abs(actual - predicted)))
         rmse = float(np.sqrt(np.mean((actual - predicted) ** 2)))
         nonzero = actual != 0
-        mape = float(np.mean(np.abs((actual[nonzero] - predicted[nonzero]) / actual[nonzero])) * 100) if nonzero.any() else float("nan")
+        mape = (
+            float(
+                np.mean(
+                    np.abs((actual[nonzero] - predicted[nonzero]) / actual[nonzero])
+                )
+                * 100
+            )
+            if nonzero.any()
+            else float("nan")
+        )
         coverage = float(np.mean((actual >= lower) & (actual <= upper)))
 
         return {"mae": mae, "rmse": rmse, "mape": mape, "coverage": coverage}

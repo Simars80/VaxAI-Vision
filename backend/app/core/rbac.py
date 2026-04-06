@@ -9,6 +9,7 @@ Usage in route handlers:
     async def multi(user: User = Depends(require_roles(UserRole.admin, UserRole.clinician))):
         ...
 """
+
 from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
@@ -34,4 +35,6 @@ def require_roles(*roles: UserRole) -> Callable:
 # Convenience aliases
 require_admin = require_roles(UserRole.admin)
 require_clinician_or_above = require_roles(UserRole.admin, UserRole.clinician)
-require_analyst_or_above = require_roles(UserRole.admin, UserRole.clinician, UserRole.analyst)
+require_analyst_or_above = require_roles(
+    UserRole.admin, UserRole.clinician, UserRole.analyst
+)

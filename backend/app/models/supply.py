@@ -1,4 +1,5 @@
 """Normalized supply chain domain models."""
+
 import enum
 import uuid
 
@@ -26,7 +27,9 @@ class SupplyItem(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     # External/EHR reference code (e.g. NDC, GTIN, internal code)
-    external_code: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    external_code: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[SupplyCategory] = mapped_column(
@@ -39,13 +42,18 @@ class SupplyItem(Base):
     min_temp_celsius: Mapped[float | None] = mapped_column(Float, nullable=True)
     max_temp_celsius: Mapped[float | None] = mapped_column(Float, nullable=True)
     # Source metadata
-    source_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
     extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
 
@@ -65,14 +73,20 @@ class SupplyTransaction(Base):
     )  # receipt | issue | adjustment | wastage
     quantity: Mapped[float] = mapped_column(Float, nullable=False)
     unit_of_measure: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    facility_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    facility_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
     facility_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
     transaction_date: Mapped[DateTime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     lot_number: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    expiry_date: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    source_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    expiry_date: Mapped[DateTime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
     # Raw FHIR resource ID when populated from EHR
     fhir_resource_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -89,14 +103,22 @@ class PatientCensus(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    fhir_patient_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    facility_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    fhir_patient_id: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True
+    )
+    facility_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
     age_years: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gender: Mapped[str | None] = mapped_column(String(16), nullable=True)
     # ISO 3166-1 alpha-2 country code
     country_code: Mapped[str | None] = mapped_column(String(2), nullable=True)
-    census_date: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    source_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    census_date: Mapped[DateTime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
     extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

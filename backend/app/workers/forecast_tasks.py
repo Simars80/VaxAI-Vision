@@ -1,4 +1,5 @@
 """Celery tasks for model training and batch forecasting."""
+
 from __future__ import annotations
 
 import logging
@@ -63,19 +64,23 @@ async def _async_train(
                 run_obj.model_path = result.get("model_path")
                 run_obj.metrics = result.get("metrics")
                 from datetime import datetime, timezone
+
                 run_obj.completed_at = datetime.now(timezone.utc)
                 await session.commit()
 
         return result
 
     except Exception as exc:
-        logger.error("Model training failed for item=%s: %s", supply_item_id, exc, exc_info=True)
+        logger.error(
+            "Model training failed for item=%s: %s", supply_item_id, exc, exc_info=True
+        )
         async with AsyncSessionLocal() as session:
             run_obj = await session.get(ModelRun, model_run_id)
             if run_obj:
                 run_obj.status = ModelRunStatus.failed
                 run_obj.error_message = str(exc)[:2000]
                 from datetime import datetime, timezone
+
                 run_obj.completed_at = datetime.now(timezone.utc)
                 await session.commit()
         raise
@@ -83,10 +88,12 @@ async def _async_train(
 
 def _run_sync(coro):
     import asyncio
+
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 return pool.submit(asyncio.run, coro).result()
         return loop.run_until_complete(coro)

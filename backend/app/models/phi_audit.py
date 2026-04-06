@@ -1,8 +1,9 @@
 """HIPAA PHI access audit log — immutable record of every PHI read/write."""
+
 import uuid
 
 from sqlalchemy import DateTime, Index, String, Text, func
-from sqlalchemy.dialects.postgresql import INET, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -43,7 +44,9 @@ class PhiAccessLog(Base):
     endpoint: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # Network context
-    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)  # IPv4 or IPv6
+    ip_address: Mapped[str | None] = mapped_column(
+        String(45), nullable=True
+    )  # IPv4 or IPv6
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Outcome: "success" | "denied" | "error"

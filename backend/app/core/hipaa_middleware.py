@@ -5,6 +5,7 @@ Implements:
   2. PHI access logging — emit PhiAccessLog for routes touching PHI
      (§ 164.312(b) Audit Controls)
 """
+
 from __future__ import annotations
 
 import logging
@@ -13,11 +14,9 @@ from typing import Any
 
 from fastapi import Request, Response
 from fastapi.responses import RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
-from app.core.phi_classification import PHI_RESOURCE_TYPES
 from app.database import AsyncSessionLocal
 from app.models.phi_audit import PhiAccessLog
 
@@ -62,7 +61,9 @@ class HttpsEnforcementMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._enforce = enforce
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         if not self._enforce:
             return await call_next(request)
 
@@ -86,7 +87,9 @@ class PhiAuditMiddleware(BaseHTTPMiddleware):
     re-raised — HIPAA requires audit logs to be reliable.
     """
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         resource_type = _route_touches_phi(request.url.path, request.method)
 
         if resource_type is None:
@@ -94,8 +97,10 @@ class PhiAuditMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         response = await call_next(request)
-        outcome = "success" if response.status_code < 400 else (
-            "denied" if response.status_code in (401, 403) else "error"
+        outcome = (
+            "success"
+            if response.status_code < 400
+            else ("denied" if response.status_code in (401, 403) else "error")
         )
 
         # Extract user context injected by the auth dependency (if available)
@@ -106,7 +111,9 @@ class PhiAuditMiddleware(BaseHTTPMiddleware):
         if user_role is not None:
             user_role = str(user_role)
 
-        ip = request.headers.get("x-forwarded-for", request.client.host if request.client else None)
+        ip = request.headers.get(
+            "x-forwarded-for", request.client.host if request.client else None
+        )
         if ip:
             ip = ip.split(",")[0].strip()[:45]
 

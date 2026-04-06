@@ -1,4 +1,5 @@
 """VaxAI Vision — FastAPI application entry point."""
+
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 
@@ -55,5 +56,5 @@ app.add_middleware(
 )
 
 # ── Routers ────────────────────────────────────────────────────────────────────
-app.include_router(health_router)           # /health, /health/ready, /version
+app.include_router(health_router)  # /health, /health/ready, /version
 app.include_router(v1_router, prefix="/api")  # /api/v1/...

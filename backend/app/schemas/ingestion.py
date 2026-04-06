@@ -1,13 +1,15 @@
 """Pydantic schemas for the ingestion pipeline."""
+
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 
 from app.models.ingestion import IngestionSource, IngestionStatus
 
 
 # ── Ingestion Job ──────────────────────────────────────────────────────────────
+
 
 class IngestionJobResponse(BaseModel):
     id: uuid.UUID
@@ -27,6 +29,7 @@ class IngestionJobResponse(BaseModel):
 
 
 # ── CSV / Excel Upload ─────────────────────────────────────────────────────────
+
 
 class CSVColumnMapping(BaseModel):
     """Optional column-name overrides so clients can map non-standard CSV headers."""
@@ -52,6 +55,7 @@ class CSVUploadRequest(BaseModel):
 
 # ── FHIR Connector ─────────────────────────────────────────────────────────────
 
+
 class FHIRConnectorRequest(BaseModel):
     """Parameters for triggering a FHIR R4 pull job."""
 
@@ -73,6 +77,7 @@ class FHIRConnectorRequest(BaseModel):
 
 
 # ── Audit Log ─────────────────────────────────────────────────────────────────
+
 
 class AuditLogEntry(BaseModel):
     id: uuid.UUID

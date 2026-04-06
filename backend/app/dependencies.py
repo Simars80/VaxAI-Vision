@@ -1,4 +1,5 @@
 """Common FastAPI dependency functions."""
+
 import uuid
 
 import redis.asyncio as aioredis

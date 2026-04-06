@@ -1,4 +1,5 @@
 """Celery tasks for the data ingestion pipeline."""
+
 from __future__ import annotations
 
 import csv
@@ -75,7 +76,9 @@ def ingest_csv(
     return _run_sync(_async_ingest_csv(job_id, csv_content, column_mapping))
 
 
-async def _async_ingest_csv(job_id: str, csv_content: str, column_mapping: dict) -> dict:
+async def _async_ingest_csv(
+    job_id: str, csv_content: str, column_mapping: dict
+) -> dict:
     mapping = CSVColumnMapping(**column_mapping)
     job_uuid = uuid.UUID(job_id)
 
@@ -107,7 +110,8 @@ async def _async_ingest_csv(job_id: str, csv_content: str, column_mapping: dict)
                     supply_item = SupplyItem(
                         external_code=item_code or None,
                         name=item_name,
-                        unit_of_measure=raw_row.get(mapping.unit_of_measure, "").strip() or None,
+                        unit_of_measure=raw_row.get(mapping.unit_of_measure, "").strip()
+                        or None,
                         source_job_id=job_uuid,
                     )
                     session.add(supply_item)
@@ -124,11 +128,14 @@ async def _async_ingest_csv(job_id: str, csv_content: str, column_mapping: dict)
 
                 txn = SupplyTransaction(
                     supply_item_id=supply_item.id,
-                    transaction_type=raw_row.get(mapping.transaction_type, "").strip() or "receipt",
+                    transaction_type=raw_row.get(mapping.transaction_type, "").strip()
+                    or "receipt",
                     quantity=qty,
-                    unit_of_measure=raw_row.get(mapping.unit_of_measure, "").strip() or None,
+                    unit_of_measure=raw_row.get(mapping.unit_of_measure, "").strip()
+                    or None,
                     facility_id=raw_row.get(mapping.facility_id, "").strip() or None,
-                    facility_name=raw_row.get(mapping.facility_name, "").strip() or None,
+                    facility_name=raw_row.get(mapping.facility_name, "").strip()
+                    or None,
                     transaction_date=_parse_date(raw_row.get(mapping.transaction_date)),
                     lot_number=raw_row.get(mapping.lot_number, "").strip() or None,
                     expiry_date=_parse_date(raw_row.get(mapping.expiry_date)),
@@ -165,12 +172,19 @@ async def _async_ingest_csv(job_id: str, csv_content: str, column_mapping: dict)
         job.rows_total = rows_total
         job.rows_succeeded = rows_ok
         job.rows_failed = rows_err
-        job.status = IngestionStatus.completed if rows_err == 0 else IngestionStatus.partial
+        job.status = (
+            IngestionStatus.completed if rows_err == 0 else IngestionStatus.partial
+        )
         job.completed_at = datetime.now(timezone.utc)
         await session.commit()
 
     logger.info("CSV ingestion job %s done: %d/%d rows ok", job_id, rows_ok, rows_total)
-    return {"job_id": job_id, "rows_total": rows_total, "rows_ok": rows_ok, "rows_err": rows_err}
+    return {
+        "job_id": job_id,
+        "rows_total": rows_total,
+        "rows_ok": rows_ok,
+        "rows_err": rows_err,
+    }
 
 
 # ── FHIR R4 Ingestion Task ────────────────────────────────────────────────────
@@ -240,7 +254,10 @@ async def _async_ingest_fhir(job_id: str, request_data: dict) -> dict:
                                 job_id=job_uuid,
                                 action="error",
                                 entity_type="patient_census",
-                                detail={"error": str(exc), "fhir_id": patient.get("id")},
+                                detail={
+                                    "error": str(exc),
+                                    "fhir_id": patient.get("id"),
+                                },
                             )
                         )
 
@@ -254,7 +271,9 @@ async def _async_ingest_fhir(job_id: str, request_data: dict) -> dict:
                         # Upsert SupplyItem from FHIR code
                         item_code = delivery.get("item_code", "")
                         existing = await session.execute(
-                            select(SupplyItem).where(SupplyItem.external_code == item_code)
+                            select(SupplyItem).where(
+                                SupplyItem.external_code == item_code
+                            )
                         )
                         supply_item = existing.scalars().first()
                         if supply_item is None:
@@ -294,7 +313,10 @@ async def _async_ingest_fhir(job_id: str, request_data: dict) -> dict:
                                 job_id=job_uuid,
                                 action="error",
                                 entity_type="supply_delivery",
-                                detail={"error": str(exc), "fhir_id": delivery.get("fhir_id")},
+                                detail={
+                                    "error": str(exc),
+                                    "fhir_id": delivery.get("fhir_id"),
+                                },
                             )
                         )
 
@@ -309,7 +331,9 @@ async def _async_ingest_fhir(job_id: str, request_data: dict) -> dict:
         job.rows_total = rows_ok + rows_err
         job.rows_succeeded = rows_ok
         job.rows_failed = rows_err
-        job.status = IngestionStatus.completed if rows_err == 0 else IngestionStatus.partial
+        job.status = (
+            IngestionStatus.completed if rows_err == 0 else IngestionStatus.partial
+        )
         job.completed_at = datetime.now(timezone.utc)
         await session.commit()
 

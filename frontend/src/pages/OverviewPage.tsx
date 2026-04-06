@@ -89,7 +89,7 @@ export default function OverviewPage() {
         <StatCard
           title="Completed"
           value={completedJobs}
-          subtitle="Successful jobs"
+          subtitle={failedJobs > 0 ? `${failedJobs} failed` : "No failures"}
           icon={CheckCircle}
         />
         <StatCard

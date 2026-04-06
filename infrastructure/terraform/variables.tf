@@ -55,3 +55,29 @@ variable "redis_auth_token" {
   type        = string
   sensitive   = true
 }
+
+# ─── ALB / API endpoint ───────────────────────────────────────────────────────
+
+variable "api_domain" {
+  description = "Public domain for the backend API (ACM certificate + optional Route 53 record)"
+  type        = string
+  default     = "api.vaxaivision.com"
+}
+
+variable "route53_zone_id" {
+  description = "Route 53 hosted zone ID for api.vaxaivision.com. Leave empty to skip DNS record creation (manual CNAME required)."
+  type        = string
+  default     = ""
+}
+
+variable "backend_container_port" {
+  description = "Port the ECS Fargate backend container listens on"
+  type        = number
+  default     = 8000
+}
+
+variable "backend_health_check_path" {
+  description = "Health check path for the ALB target group"
+  type        = string
+  default     = "/health"
+}

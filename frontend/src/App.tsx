@@ -6,6 +6,7 @@ import LoginPage from "@/pages/LoginPage";
 import OverviewPage from "@/pages/OverviewPage";
 import ForecastPage from "@/pages/ForecastPage";
 import IngestionPage from "@/pages/IngestionPage";
+import InventoryPage from "@/pages/InventoryPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -44,6 +45,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <IngestionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <ProtectedRoute>
+            <InventoryPage />
           </ProtectedRoute>
         }
       />

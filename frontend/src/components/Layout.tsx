@@ -1,10 +1,11 @@
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, TrendingUp, Upload, LogOut } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Upload, LogOut, Package } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Overview" },
+  { href: "/inventory", icon: Package, label: "Inventory" },
   { href: "/forecast", icon: TrendingUp, label: "Forecasting" },
   { href: "/ingestion", icon: Upload, label: "Data Ingestion" },
 ];

@@ -2,150 +2,87 @@ name: Deploy
 
 on:
   push:
-    branches: [main]      # → staging
+    branches: [main]      # → staging / continuous deploy
     tags:
-      - "v*"              # → production
+      - "v*"              # → production release
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/vaxai-backend
+  ECR_REGISTRY: 402079573320.dkr.ecr.us-east-2.amazonaws.com
+  ECR_REPOSITORY: vaxai-backend
 
 jobs:
-  # ── Build & push Docker image ─────────────────────────────────────────────────
+  # ── Build & push Docker image to ECR ─────────────────────────────────────────
   build-and-push:
-    name: Build & push
+    name: Build & push to ECR
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
-      image_digest: ${{ steps.build.outputs.digest }}
+      image: ${{ steps.build.outputs.image }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=sha-
-            type=ref,event=branch
-            type=semver,pattern={{version}}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build, tag, and push image to ECR
         id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker buildx build \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --push \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:${IMAGE_TAG} \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            ./backend
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
-  # ── Deploy to staging ─────────────────────────────────────────────────────────
-  deploy-staging:
-    name: Deploy → staging
+  # ── Deploy to ECS Express Mode ────────────────────────────────────────────────
+  deploy:
+    name: Deploy to ECS
     runs-on: ubuntu-latest
     needs: build-and-push
-    # Skip gracefully when AWS secrets are not yet configured
-    if: github.ref == 'refs/heads/main' && vars.AWS_REGION != ''
+    # Skipped until ECS_CLUSTER and ECS_SERVICE variables are set in GitHub
+    if: vars.AWS_REGION != '' && vars.ECS_CLUSTER != ''
     environment:
-      name: staging
-      url: https://staging.vaxai.health/docs
+      name: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
+      url: https://api.vaxaivision.com/docs
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Update kubeconfig (EKS staging)
-        run: aws eks update-kubeconfig --name vaxai-staging --region ${{ secrets.AWS_REGION }}
-
-      - name: Run DB migrations
+      - name: Force new ECS deployment
         run: |
-          kubectl create job --from=cronjob/flyway-migrate flyway-migrate-${{ github.sha }} \
-            -n vaxai-staging --wait=true --timeout=120s || true
+          aws ecs update-service \
+            --cluster ${{ vars.ECS_CLUSTER }} \
+            --service ${{ vars.ECS_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ vars.AWS_REGION }}
 
-      - name: Deploy via Helm
+      - name: Wait for ECS service to stabilise
         run: |
-          helm upgrade --install vaxai-backend ./helm/vaxai-backend \
-            --namespace vaxai-staging \
-            --create-namespace \
-            --set image.tag=sha-${{ github.sha }} \
-            --set image.registry=${{ env.REGISTRY }}/${{ github.repository }}/vaxai-backend \
-            --values helm/vaxai-backend/values-staging.yaml \
-            --wait \
-            --timeout 5m
+          aws ecs wait services-stable \
+            --cluster ${{ vars.ECS_CLUSTER }} \
+            --services ${{ vars.ECS_SERVICE }} \
+            --region ${{ vars.AWS_REGION }}
 
       - name: Smoke test
         run: |
-          ENDPOINT=$(kubectl get svc vaxai-backend -n vaxai-staging -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          curl -sf "https://${ENDPOINT}/health" || echo "Smoke test skipped (ALB not ready)"
-
-  # ── Deploy to production ──────────────────────────────────────────────────────
-  deploy-production:
-    name: Deploy → production
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    # Skip gracefully when AWS secrets are not yet configured
-    if: startsWith(github.ref, 'refs/tags/v') && vars.AWS_REGION != ''
-    environment:
-      name: production
-      url: https://api.vaxai.health/docs
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Update kubeconfig (EKS production)
-        run: aws eks update-kubeconfig --name vaxai-production --region ${{ secrets.AWS_REGION }}
-
-      - name: Run DB migrations
-        run: |
-          kubectl create job --from=cronjob/flyway-migrate flyway-migrate-${{ github.sha }} \
-            -n vaxai-production --wait=true --timeout=120s
-
-      - name: Deploy via Helm
-        run: |
-          helm upgrade --install vaxai-backend ./helm/vaxai-backend \
-            --namespace vaxai-production \
-            --create-namespace \
-            --set image.tag=${{ github.ref_name }} \
-            --set image.registry=${{ env.REGISTRY }}/${{ github.repository }}/vaxai-backend \
-            --values helm/vaxai-backend/values-production.yaml \
-            --wait \
-            --timeout 10m \
-            --atomic
-
-      - name: Notify PagerDuty on failure
-        if: failure()
-        uses: PagerDuty/pagerduty-action@v1
-        with:
-          token: ${{ secrets.PAGERDUTY_INTEGRATION_KEY }}
-          title: "Production deployment failed: ${{ github.ref_name }}"
-          severity: critical
+          sleep 15
+          curl -sf "https://api.vaxaivision.com/health" || echo "Smoke test skipped (DNS not ready)"

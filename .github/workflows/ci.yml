@@ -112,11 +112,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set lowercase image tag
+        run: echo "IMAGE_TAG=$(echo '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:ci' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build image (no push on PR)
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: false
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:ci
+          tags: ${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

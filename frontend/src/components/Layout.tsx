@@ -5,12 +5,12 @@ import { LayoutDashboard, TrendingUp, Upload, LogOut, Package, Thermometer, Map 
 import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Overview" },
-  { href: "/inventory", icon: Package, label: "Inventory" },
-  { href: "/forecast", icon: TrendingUp, label: "Forecasting" },
-  { href: "/cold-chain", icon: Thermometer, label: "Cold Chain" },
-  { href: "/coverage-map", icon: Map, label: "Coverage Map" },
-  { href: "/ingestion", icon: Upload, label: "Data Ingestion" },
+  { href: "/", icon: LayoutDashboard, label: "Overview", tour: "nav-overview" },
+  { href: "/inventory", icon: Package, label: "Inventory", tour: "nav-inventory" },
+  { href: "/forecast", icon: TrendingUp, label: "Forecasting", tour: "nav-forecast" },
+  { href: "/cold-chain", icon: Thermometer, label: "Cold Chain", tour: "nav-cold-chain" },
+  { href: "/coverage-map", icon: Map, label: "Coverage Map", tour: "nav-coverage-map" },
+  { href: "/ingestion", icon: Upload, label: "Data Ingestion", tour: "nav-ingestion" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -32,10 +32,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(({ href, icon: Icon, label }) => {
+          {navItems.map(({ href, icon: Icon, label, tour }) => {
             const active = location.pathname === href;
             return (
-              <Link key={href} to={href}>
+              <Link key={href} to={href} data-tour={tour}>
                 <div
                   className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                     active

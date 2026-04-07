@@ -1,68 +1,118 @@
-import { useEffect, useState } from "react";
-import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
+import { useCallback, useEffect, useState } from "react";
+import Joyride, { ACTIONS, CallBackProps, EVENTS, STATUS, Step } from "react-joyride";
+import { useAuthStore } from "@/store/auth";
 
-const TOUR_DONE_KEY = "vaxai_tour_done";
+const TOUR_KEY = "vaxai_demo_tour_done";
 
-const steps: Step[] = [
+const STEPS: Step[] = [
   {
     target: "body",
-    content: "Welcome to VaxAI Vision! This guided tour will walk you through the key features of the platform.",
     placement: "center",
     disableBeacon: true,
-    title: "Welcome to VaxAI Vision 👋",
+    title: "Welcome to VaxAI Vision",
+    content:
+      "This is a live demo pre-loaded with real-world vaccine supply chain data. Let's take a quick tour of the key features.",
   },
   {
-    target: "a[href='/inventory']",
-    content: "The Inventory dashboard shows real-time stock levels with adequate, low, and critical alerts per facility.",
-    title: "Inventory Intelligence",
-    disableBeacon: true,
+    target: "[data-tour='nav-overview']",
+    placement: "right",
+    title: "Operations Overview",
+    content:
+      "Your command centre: KPIs, stock trends, facility coverage rates, and recent alerts — all in one view.",
   },
   {
-    target: "a[href='/coverage-map']",
-    content: "The Coverage Map shows immunization coverage rates and vaccine stock across facilities on an interactive map.",
+    target: "[data-tour='nav-inventory']",
+    placement: "right",
+    title: "Inventory",
+    content:
+      "Track stock levels across all facilities. Filter by vaccine type, facility, or country. Spot shortfalls before they become crises.",
+  },
+  {
+    target: "[data-tour='nav-forecast']",
+    placement: "right",
+    title: "AI Demand Forecasting",
+    content:
+      "Prophet-powered 90-day demand forecasts with confidence intervals. Select any facility and vaccine to see predicted receipt, issue, and wastage curves.",
+  },
+  {
+    target: "[data-tour='nav-cold-chain']",
+    placement: "right",
+    title: "Cold Chain Monitoring",
+    content:
+      "Real-time temperature readings from cold chain sensors. Threshold breaches trigger instant alerts to prevent spoilage.",
+  },
+  {
+    target: "[data-tour='nav-coverage-map']",
+    placement: "right",
     title: "Geospatial Coverage Map",
-    disableBeacon: true,
+    content:
+      "Interactive map showing facility-level immunization coverage rates and stock status. Filter by country, vaccine type, or time period.",
   },
   {
-    target: "a[href='/forecast']",
-    content: "The Forecasting page uses AI to predict future vaccine demand and flag potential stockouts before they happen.",
-    title: "Demand Forecasting",
-    disableBeacon: true,
+    target: "body",
+    placement: "center",
+    title: "You're all set!",
+    content:
+      "Explore freely — all data is pre-loaded and safe to play with. Contact us at hello@vaxaivision.com to discuss a pilot for your organization.",
   },
 ];
 
 export default function DemoTour() {
+  const { email } = useAuthStore();
   const [run, setRun] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+
+  const isDemo = email === "demo@vaxaivision.com";
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tourDone = localStorage.getItem(TOUR_DONE_KEY);
-    if (params.get("demo") === "true" && !tourDone) {
-      setRun(true);
+    if (isDemo && !localStorage.getItem(TOUR_KEY)) {
+      // Small delay so the layout has rendered
+      const t = setTimeout(() => setRun(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, [isDemo]);
+
+  const handleCallback = useCallback((data: CallBackProps) => {
+    const { action, index, status, type } = data;
+
+    if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+      setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1));
+    } else if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRun(false);
+      localStorage.setItem(TOUR_KEY, "1");
     }
   }, []);
 
-  const handleCallback = (data: CallBackProps) => {
-    const { status } = data;
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      localStorage.setItem(TOUR_DONE_KEY, "true");
-      setRun(false);
-    }
-  };
+  if (!isDemo) return null;
 
   return (
     <Joyride
-      steps={steps}
+      steps={STEPS}
       run={run}
+      stepIndex={stepIndex}
       continuous
       showSkipButton
       showProgress
+      scrollToFirstStep
       callback={handleCallback}
-      locale={{ last: "End Tour" }}
       styles={{
         options: {
-          primaryColor: "#3A5BCC",
-          zIndex: 10000,
+          primaryColor: "#2563eb",
+          zIndex: 9999,
+        },
+        tooltip: {
+          borderRadius: 12,
+          boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+        },
+        buttonNext: {
+          borderRadius: 8,
+          fontWeight: 600,
+        },
+        buttonBack: {
+          borderRadius: 8,
+        },
+        buttonSkip: {
+          color: "#6b7280",
         },
       }}
     />

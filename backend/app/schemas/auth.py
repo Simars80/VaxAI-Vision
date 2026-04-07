@@ -33,6 +33,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
+    is_demo: bool = False
 
 
 class UserResponse(BaseModel):

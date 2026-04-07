@@ -11,6 +11,7 @@ from sqlalchemy.future import select
 from app.config import get_settings
 from app.core.security import (
     create_access_token,
+    create_demo_access_token,
     create_refresh_token,
     decode_token,
     hash_password,
@@ -118,6 +119,27 @@ async def refresh(
         access_token=create_access_token(str(user.id), user.role),
         refresh_token=create_refresh_token(str(user.id)),
         expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+DEMO_USER_EMAIL = "demo@vaxaivision.com"
+
+
+@router.post("/demo-login", response_model=TokenResponse)
+async def demo_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
+    """Issue a 2-hour JWT for the fixed demo account — no credentials required."""
+    result = await db.execute(select(User).where(User.email == DEMO_USER_EMAIL))
+    user = result.scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Demo mode is temporarily unavailable.",
+        )
+    return TokenResponse(
+        access_token=create_demo_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+        expires_in=120 * 60,
+        is_demo=True,
     )
 
 

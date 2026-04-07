@@ -52,6 +52,14 @@ def create_refresh_token(user_id: str) -> str:
     )
 
 
+def create_demo_access_token(user_id: str) -> str:
+    """Create a 2-hour read-only access token for the demo user."""
+    return _create_token(
+        {"sub": user_id, "role": "viewer", "type": "access", "is_demo": True},
+        timedelta(minutes=120),
+    )
+
+
 def decode_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT. Raises JWTError on failure."""
     return jwt.decode(

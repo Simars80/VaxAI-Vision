@@ -36,6 +36,7 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "https://vaxaivision.com",
         "https://www.vaxaivision.com",
+        "https://app.vaxaivision.com",
     ]
 
 

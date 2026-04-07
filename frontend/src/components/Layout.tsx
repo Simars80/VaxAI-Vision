@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store/auth";
+import DemoTour from "@/components/DemoTour";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, TrendingUp, Upload, LogOut, Package, Thermometer } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Upload, LogOut, Package, Thermometer, Map } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
@@ -8,6 +9,7 @@ const navItems = [
   { href: "/inventory", icon: Package, label: "Inventory" },
   { href: "/forecast", icon: TrendingUp, label: "Forecasting" },
   { href: "/cold-chain", icon: Thermometer, label: "Cold Chain" },
+  { href: "/coverage-map", icon: Map, label: "Coverage Map" },
   { href: "/ingestion", icon: Upload, label: "Data Ingestion" },
 ];
 
@@ -67,6 +69,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 overflow-auto p-8">{children}</main>
+      <DemoTour />
     </div>
   );
 }

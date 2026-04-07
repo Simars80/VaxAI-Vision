@@ -106,6 +106,8 @@ const Hero = () => {
                 <Box
                   display={"flex"}
                   justifyContent={{ base: "center", md: "flex-start" }}
+                  gap="12px"
+                  flexWrap="wrap"
                 >
                   <Link href={"#solutions"}>
                     <Button
@@ -123,6 +125,23 @@ const Hero = () => {
                       Start your Journey
                     </Button>
                   </Link>
+                  <a href="https://app.vaxaivision.com?demo=true" target="_blank" rel="noopener noreferrer">
+                    <Button
+                      mt="32px"
+                      fontSize={{base: '12px', md: "16px"}}
+                      fontWeight={600}
+                      color="#fff"
+                      bg="transparent"
+                      h={{base: '45px', md: "55px"}}
+                      borderRadius={"10px"}
+                      border="2px solid #3A5BCC"
+                      _hover={{
+                        opacity: 0.8,
+                      }}
+                    >
+                      Try Live Demo
+                    </Button>
+                  </a>
                 </Box>
               </Slide>
             </GridItem>

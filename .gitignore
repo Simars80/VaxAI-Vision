@@ -35,6 +35,8 @@ dist/
 .env
 .env.*
 !.env.example
+# Non-secret production config (public API URL only, no credentials)
+!frontend/.env.production
 
 # IDE
 .vscode/

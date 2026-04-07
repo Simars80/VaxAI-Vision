@@ -15,7 +15,7 @@ function DashboardPreview() {
   }, []);
 
   const bars = [72, 58, 84, 91, 63, 77, 88, 55, 79, 95, 68, 82];
-  const animatedBars = bars.map((v, i) => {
+  const animatedBars = bars.map((_v, i) => {
     const offset = (tick + i) % bars.length;
     return bars[offset];
   });

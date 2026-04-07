@@ -7,164 +7,191 @@ import {
   Grid,
   GridItem,
   Text,
-  Image,
+  Badge,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { Slide } from "react-awesome-reveal";
+import { Slide, Fade } from "react-awesome-reveal";
+import DashboardPreview from "./DashboardPreview";
 
 const Hero = () => {
-  const [show, setShow] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const text = [
-    ` Welcome to VaxAI, the leader in advanced solutions for
-    efficient vaccine distribution and inventory management.`,
-    `
-    Our AI technology ensures accurate real-time tracking and verification, optimizing distribution and minimizing waste for
-    healthcare facilities and government agencies.
-    `,
-  ];
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setShow(false);
-      setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % text.length);
-        setShow(true);
-      }, 500);
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [text.length]);
   return (
-    <>
+    <Box
+      bg="linear-gradient(135deg, #0F172A 0%, #1E293B 100%)"
+      position="relative"
+      zIndex={5}
+      overflow="hidden"
+    >
+      {/* Subtle grid background */}
       <Box
-        bg={{ base: "#1E1E1EB2", md: "#FBFBFB" }}
-        position={"relative"}
-        zIndex={5}
-      >
-        <Image
-          src={
-            "https://res.cloudinary.com/alonexx/image/upload/v1721987954/Group_1000003533_1_kvghhv.png"
-          }
-          display={{ base: "block", md: "none" }}
-          alt="img"
-          opacity={0.4}
-          position={"absolute"}
-          bottom={0}
-          zIndex={-10}
-        />
-        <Container maxW="container.xl">
-          <Grid
-            templateColumns={{ base: "auto", md: "repeat(2,1fr)" }}
-            gap="129px"
-          >
-            <GridItem py={{ base: "40px", md: "136px" }}>
-              <Slide direction="left">
-                <Text
-                  color={{ base: "#fff", md: "#1A1A1A" }}
-                  fontSize={{ base: "24px", md: "48px" }}
-                  fontWeight={700}
-                  textAlign={{ base: "center", md: "left" }}
+        position="absolute"
+        inset={0}
+        opacity={0.04}
+        backgroundImage="linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)"
+        backgroundSize="40px 40px"
+        pointerEvents="none"
+      />
+
+      {/* Glow accents */}
+      <Box
+        position="absolute"
+        top="-100px"
+        left="-100px"
+        w="400px"
+        h="400px"
+        borderRadius="full"
+        bg="radial-gradient(circle, rgba(58,91,204,0.15) 0%, transparent 70%)"
+        pointerEvents="none"
+      />
+      <Box
+        position="absolute"
+        bottom="-80px"
+        right="-80px"
+        w="350px"
+        h="350px"
+        borderRadius="full"
+        bg="radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)"
+        pointerEvents="none"
+      />
+
+      <Container maxW="container.xl" py={{ base: "60px", md: "100px" }}>
+        <Grid
+          templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+          gap={{ base: "48px", md: "64px" }}
+          alignItems="center"
+        >
+          {/* Left — copy */}
+          <GridItem>
+            <Slide direction="left" triggerOnce>
+              <Fade triggerOnce>
+                <Badge
+                  colorScheme="blue"
+                  fontSize="12px"
+                  px="12px"
+                  py="5px"
+                  borderRadius="full"
+                  mb="20px"
+                  bg="rgba(58,91,204,0.15)"
+                  color="#93C5FD"
+                  border="1px solid rgba(58,91,204,0.3)"
+                  textTransform="none"
+                  letterSpacing="0.02em"
                 >
-                  Redefining Vaccine Management
-                </Text>
-              </Slide>
-              <Box display={{base: 'none', md:'block'}}>
-              <Slide direction="left" duration={2000}>
-                <Text
-                  mt="20px"
-                  fontSize={{ base: "16px", md: "18px" }}
-                  fontWeight={400}
-                  color={{ base: "#fff", md: "#667085" }}
-                  textAlign={{ base: "center", md: "left" }}
-                >
-                  Welcome to VaxAI, the leader in advanced solutions for
-                  efficient vaccine distribution and inventory management. Our
-                  AI technology ensures accurate real-time tracking and
-                  verification, optimizing distribution and minimizing waste for
-                  healthcare facilities and government agencies.
-                </Text>
-              </Slide>
-              </Box>
-              <Box display={{base:'block', md:'none'}}>
+                  🌍 AI-Powered Vaccine Supply Chain Intelligence
+                </Badge>
+              </Fade>
+
               <Text
-                  textAlign={"center"}
-                  mt="20px"
-                  color={'#fff'}
-                  fontSize={{ base: "16px", md: "18px" }}
-                  opacity={show ? 1 : 0}
-                  transition={"opacity 0.5s ease-in-out"}
-                >
-                  {text[currentIndex]}
-                </Text>
-              </Box>
-            
+                color="#F1F5F9"
+                fontSize={{ base: "30px", md: "52px" }}
+                fontWeight={800}
+                lineHeight={1.15}
+                mb="20px"
+                letterSpacing="-0.02em"
+              >
+                Redefining{" "}
+                <Box as="span" color="#3A5BCC">
+                  Vaccine
+                </Box>{" "}
+                Management
+              </Text>
 
-              <Slide direction="left">
-                <Box
-                  display={"flex"}
-                  justifyContent={{ base: "center", md: "flex-start" }}
-                  gap="12px"
-                  flexWrap="wrap"
-                >
-                  <Link href={"#solutions"}>
-                    <Button
-                      mt="32px"
-                      fontSize={{base: '12px', md: "16px"}}
-                      fontWeight={600}
-                      color="#fff"
-                      bg="#3A5BCC"
-                      h={{base: '45px', md: "55px"}}
-                      borderRadius={"10px"}
-                      _hover={{
-                        opacity: 0.8,
-                      }}
-                    >
-                      Start your Journey
-                    </Button>
-                  </Link>
-                  <a href="https://app.vaxaivision.com?demo=true" target="_blank" rel="noopener noreferrer">
-                    <Button
-                      mt="32px"
-                      fontSize={{base: '12px', md: "16px"}}
-                      fontWeight={600}
-                      color="#fff"
-                      bg="transparent"
-                      h={{base: '45px', md: "55px"}}
-                      borderRadius={"10px"}
-                      border="2px solid #3A5BCC"
-                      _hover={{
-                        opacity: 0.8,
-                      }}
-                    >
-                      Try Live Demo
-                    </Button>
-                  </a>
-                </Box>
-              </Slide>
-            </GridItem>
+              <Text
+                fontSize={{ base: "15px", md: "17px" }}
+                fontWeight={400}
+                color="#94A3B8"
+                lineHeight={1.7}
+                mb="36px"
+                maxW="480px"
+              >
+                Real-time inventory tracking, AI-driven forecasting, and cold
+                chain monitoring — built for healthcare systems across Africa
+                and beyond.
+              </Text>
 
-            <GridItem display={{ base: "none", md: "block" }}>
-              <Box position={"absolute"} bottom={0} right={10}>
-                <Slide direction="right">
-                  <Image
-                    src={
-                      "https://res.cloudinary.com/alonexx/image/upload/v1721987954/Group_1000003533_1_kvghhv.png"
-                    }
-                    alt="hero"
-                    height={604}
-                    width={793}
-                    loading="lazy"
-                  />
-                </Slide>
+              {/* Stats row */}
+              <Box
+                display="flex"
+                gap={{ base: "20px", md: "32px" }}
+                mb="40px"
+                flexWrap="wrap"
+              >
+                {[
+                  { value: "2.4M+", label: "Doses tracked" },
+                  { value: "1,240", label: "Facilities" },
+                  { value: "98.7%", label: "Cold chain uptime" },
+                ].map((s) => (
+                  <Box key={s.label}>
+                    <Text
+                      color="#F1F5F9"
+                      fontSize={{ base: "20px", md: "24px" }}
+                      fontWeight={700}
+                    >
+                      {s.value}
+                    </Text>
+                    <Text color="#64748B" fontSize="12px">
+                      {s.label}
+                    </Text>
+                  </Box>
+                ))}
               </Box>
-            </GridItem>
-          </Grid>
-        </Container>
-      </Box>
-    </>
+
+              <Box display="flex" gap="14px" flexWrap="wrap">
+                <Link href="#solutions">
+                  <Button
+                    bg="#3A5BCC"
+                    color="#fff"
+                    h={{ base: "46px", md: "54px" }}
+                    px={{ base: "20px", md: "28px" }}
+                    borderRadius="10px"
+                    fontSize={{ base: "13px", md: "15px" }}
+                    fontWeight={600}
+                    _hover={{ bg: "#2D4BAF", transform: "translateY(-1px)" }}
+                    transition="all 0.2s"
+                    boxShadow="0 4px 15px rgba(58,91,204,0.4)"
+                  >
+                    Explore Solutions
+                  </Button>
+                </Link>
+                <Link href="/demo">
+                  <Button
+                    bg="rgba(255,255,255,0.05)"
+                    color="#F1F5F9"
+                    h={{ base: "46px", md: "54px" }}
+                    px={{ base: "20px", md: "28px" }}
+                    borderRadius="10px"
+                    fontSize={{ base: "13px", md: "15px" }}
+                    fontWeight={600}
+                    border="1px solid rgba(255,255,255,0.12)"
+                    _hover={{
+                      bg: "rgba(255,255,255,0.1)",
+                      transform: "translateY(-1px)",
+                    }}
+                    transition="all 0.2s"
+                  >
+                    ▶ Try Live Demo
+                  </Button>
+                </Link>
+              </Box>
+            </Slide>
+          </GridItem>
+
+          {/* Right — animated dashboard preview */}
+          <GridItem display={{ base: "none", md: "block" }}>
+            <Slide direction="right" triggerOnce>
+              <Box
+                h="420px"
+                borderRadius="16px"
+                overflow="hidden"
+                boxShadow="0 30px 60px rgba(0,0,0,0.5)"
+              >
+                <DashboardPreview />
+              </Box>
+            </Slide>
+          </GridItem>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

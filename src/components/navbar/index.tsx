@@ -38,6 +38,10 @@ const Navbar = () => {
       name: "Impact",
       path: "/impact",
     },
+    {
+      name: "Live Demo",
+      path: "/demo",
+    },
   ];
 
   return (

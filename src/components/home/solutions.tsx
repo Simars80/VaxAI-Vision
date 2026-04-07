@@ -141,7 +141,7 @@ const Solutions = () => {
                   <Text color="#667085" fontSize={"12px"} fontWeight={400}>
                     {card.sub}
                   </Text>
-                  <a href="https://app.vaxaivision.com?demo=true" target="_blank" rel="noopener noreferrer">
+                  <Link href="/demo">
                     <Button
                       bg="#3A5BCC"
                       h="50px"
@@ -154,7 +154,7 @@ const Solutions = () => {
                     >
                       Try Live Demo
                     </Button>
-                  </a>
+                  </Link>
                 </Box>
               </GridItem>
             ))}

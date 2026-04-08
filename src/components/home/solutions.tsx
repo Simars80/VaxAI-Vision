@@ -105,19 +105,25 @@ const Solutions = () => {
           <Slide direction="up" damping={0.1} cascade triggerOnce>
             {[
               {
-                title: "Inventory Intelligence",
+                title: "Inventory Dashboard",
                 emoji: "📦",
-                sub: "Real-time stock levels with adequate, low, and critical alerts per facility. Never be caught off-guard by a stockout again.",
+                sub: "Monitor real-time stock levels across every facility — colour-coded as adequate, low, or critical. Filter by vaccine type, country, or facility to spot shortfalls before they become stockouts.",
+                href: "/demo",
+                cta: "Explore Inventory",
               },
               {
                 title: "Geospatial Coverage Map",
                 emoji: "🗺️",
-                sub: "Interactive map of immunization coverage rates and vaccine stock across facilities — from Kano to Kisumu.",
+                sub: "Interactive Leaflet map showing immunisation coverage rates and stock status per facility — from Kano to Kisumu. Filter by country, vaccine type, and time period.",
+                href: "/demo",
+                cta: "View Coverage Map",
               },
               {
-                title: "Cold Chain Monitoring",
+                title: "Cold Chain Monitor",
                 emoji: "❄️",
-                sub: "Temperature sensor dashboard with breach alerts and historical trends. Keep every vial safe from factory to clinic.",
+                sub: "Live temperature readings from cold storage units with configurable alert thresholds, breach event timeline, and min/max trend charts. Keep every vial safe from factory to clinic.",
+                href: "/demo",
+                cta: "See Cold Chain Data",
               },
             ].map((card, idx) => (
               <GridItem key={idx}>
@@ -127,6 +133,8 @@ const Solutions = () => {
                   border="1px solid #DEE5ED"
                   bg="#fff"
                   h="full"
+                  display="flex"
+                  flexDir="column"
                 >
                   <Text fontSize="32px">{card.emoji}</Text>
                   <Text
@@ -138,21 +146,21 @@ const Solutions = () => {
                   >
                     {card.title}
                   </Text>
-                  <Text color="#667085" fontSize={"12px"} fontWeight={400}>
+                  <Text color="#667085" fontSize={"12px"} fontWeight={400} flex="1">
                     {card.sub}
                   </Text>
-                  <Link href="/demo">
+                  <Link href={card.href}>
                     <Button
                       bg="#3A5BCC"
                       h="50px"
                       borderRadius={"10px"}
                       mt="32px"
                       color="#fff"
-                      fontSize={"16px"}
-                      fontWeight={400}
+                      fontSize={"15px"}
+                      fontWeight={500}
                       _hover={{ opacity: 0.8 }}
                     >
-                      Try Live Demo
+                      {card.cta}
                     </Button>
                   </Link>
                 </Box>

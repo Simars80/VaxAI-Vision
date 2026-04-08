@@ -1,156 +1,189 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Box,
-  Container,
-  Text,
-  Button,
-  Spinner,
-  Center,
-} from "@chakra-ui/react";
-import Layout from "@/components/layout";
 import Link from "next/link";
+
+const DEMO_URL = "https://app.vaxaivision.com?demo=true";
+const TOPBAR_HEIGHT = 48;
 
 export default function DemoPage() {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <Layout>
-      {/* Header bar */}
-      <Box bg="#0F172A" py={{ base: "24px", md: "32px" }} borderBottom="1px solid #1E293B">
-        <Container maxW="container.xl">
-          <Box
-            display="flex"
-            alignItems={{ base: "flex-start", md: "center" }}
-            justifyContent="space-between"
-            flexDir={{ base: "column", md: "row" }}
-            gap="16px"
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0a1628" }}>
+      {/* Top bar */}
+      <div
+        style={{
+          height: TOPBAR_HEIGHT,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 16px",
+          background: "#0d1f3c",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        {/* Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: 14,
+              flexShrink: 0,
+            }}
           >
-            <Box>
-              <Text
-                color="#fff"
-                fontSize={{ base: "20px", md: "28px" }}
-                fontWeight={700}
-              >
-                Live Dashboard Demo
-              </Text>
-              <Text color="#94A3B8" fontSize={{ base: "13px", md: "15px" }} mt="4px">
-                Explore VaxAI Vision's real-time operational intelligence — inventory, cold chain, coverage maps &amp; forecasting.
-              </Text>
-            </Box>
-            <Box display="flex" gap="12px" flexWrap="wrap">
-              <Box
-                px="12px"
-                py="6px"
-                borderRadius="full"
-                bg="#10B981"
-                display="flex"
-                alignItems="center"
-                gap="6px"
-              >
-                <Box w="6px" h="6px" borderRadius="full" bg="#fff" />
-                <Text color="#fff" fontSize="12px" fontWeight={600}>
-                  Live Data
-                </Text>
-              </Box>
-              <Link href="#solutions">
-                <Button
-                  size="sm"
-                  bg="#3A5BCC"
-                  color="#fff"
-                  borderRadius="8px"
-                  _hover={{ opacity: 0.85 }}
-                  fontSize="13px"
-                >
-                  Request Access
-                </Button>
-              </Link>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
+            V
+          </div>
+          <span style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>VaxAI Vision</span>
+          <span
+            style={{
+              marginLeft: 8,
+              padding: "2px 8px",
+              borderRadius: 99,
+              background: "rgba(16,185,129,0.15)",
+              border: "1px solid rgba(16,185,129,0.3)",
+              color: "#10b981",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+            }}
+          >
+            LIVE DEMO
+          </span>
+        </div>
 
-      {/* Iframe embed */}
-      <Box bg="#0F172A" minH={{ base: "70vh", md: "85vh" }} position="relative">
+        {/* Exit Demo */}
+        <Link
+          href="/"
+          style={{
+            height: 30,
+            padding: "0 14px",
+            borderRadius: 7,
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "rgba(255,255,255,0.75)",
+            fontSize: 13,
+            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            textDecoration: "none",
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 11 }}>✕</span> Exit Demo
+        </Link>
+      </div>
+
+      {/* Mobile fallback */}
+      <div
+        style={{
+          display: "none",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          flex: 1,
+          padding: "40px 24px",
+          textAlign: "center",
+          gap: 16,
+        }}
+        className="demo-mobile-fallback"
+      >
+        <div style={{ fontSize: 40 }}>🖥️</div>
+        <p style={{ color: "#fff", fontWeight: 700, fontSize: 20, margin: 0 }}>
+          Best experienced on desktop
+        </p>
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, margin: 0, maxWidth: 320 }}>
+          The VaxAI Vision dashboard is optimised for screens wider than 768 px.
+        </p>
+        <a
+          href={DEMO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            marginTop: 8,
+            padding: "12px 28px",
+            borderRadius: 10,
+            background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: 15,
+            textDecoration: "none",
+          }}
+        >
+          Open in New Tab
+        </a>
+        <Link href="/" style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+          ← Back to vaxaivision.com
+        </Link>
+      </div>
+
+      {/* iframe — shown on desktop */}
+      <div
+        style={{ flex: 1, position: "relative" }}
+        className="demo-iframe-wrapper"
+      >
         {!loaded && (
-          <Center
-            position="absolute"
-            inset={0}
-            zIndex={10}
-            flexDir="column"
-            gap="16px"
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              zIndex: 10,
+            }}
           >
-            <Spinner size="xl" color="#3A5BCC" thickness="4px" />
-            <Text color="#94A3B8" fontSize="14px">
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                border: "3px solid rgba(37,99,235,0.3)",
+                borderTopColor: "#2563eb",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>
               Loading live dashboard…
-            </Text>
-          </Center>
+            </p>
+          </div>
         )}
         <iframe
-          src="https://app.vaxaivision.com?demo=true"
+          src={DEMO_URL}
           title="VaxAI Vision Live Demo"
           onLoad={() => setLoaded(true)}
           style={{
             width: "100%",
-            height: "85vh",
+            height: "100%",
             border: "none",
             display: "block",
             opacity: loaded ? 1 : 0,
             transition: "opacity 0.4s ease",
           }}
           allow="fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
-      </Box>
+      </div>
 
-      {/* Footer CTA */}
-      <Box bg="#1A1A1A" py={{ base: "40px", md: "64px" }} textAlign="center">
-        <Container maxW="container.md">
-          <Text
-            color="#fff"
-            fontSize={{ base: "20px", md: "32px" }}
-            fontWeight={700}
-            mb="12px"
-          >
-            Ready to deploy VaxAI at scale?
-          </Text>
-          <Text color="#94A3B8" fontSize={{ base: "14px", md: "16px" }} mb="28px">
-            Book a personalised walkthrough with our team and see how VaxAI
-            Vision fits your healthcare system.
-          </Text>
-          <Box display="flex" justifyContent="center" gap="16px" flexWrap="wrap">
-            <Link href="/contact">
-              <Button
-                bg="#3A5BCC"
-                color="#fff"
-                h="52px"
-                px="32px"
-                borderRadius="10px"
-                fontSize="16px"
-                fontWeight={600}
-                _hover={{ opacity: 0.85 }}
-              >
-                Contact Us
-              </Button>
-            </Link>
-            <Link href="/">
-              <Button
-                bg="transparent"
-                color="#fff"
-                h="52px"
-                px="32px"
-                borderRadius="10px"
-                fontSize="16px"
-                fontWeight={600}
-                border="2px solid #3A5BCC"
-                _hover={{ opacity: 0.85 }}
-              >
-                Back to Home
-              </Button>
-            </Link>
-          </Box>
-        </Container>
-      </Box>
-    </Layout>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @media (max-width: 767px) {
+          .demo-mobile-fallback { display: flex !important; }
+          .demo-iframe-wrapper { display: none !important; }
+        }
+      `}</style>
+    </div>
   );
 }

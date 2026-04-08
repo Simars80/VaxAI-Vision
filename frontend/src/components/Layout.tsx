@@ -14,7 +14,7 @@ const navItems = [
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { logout, email } = useAuthStore();
+  const { logout, email, isDemo } = useAuthStore();
   const location = useLocation();
 
   return (
@@ -68,7 +68,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto p-8">{children}</main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {isDemo && (
+          <div className="bg-amber-500 text-amber-950 text-xs font-semibold text-center py-2 px-4 flex items-center justify-center gap-2 flex-shrink-0">
+            <span>🧪</span>
+            <span>Demo mode — viewing pre-loaded sample data. No real patient data is shown.</span>
+          </div>
+        )}
+        <main className="flex-1 overflow-auto p-8">{children}</main>
+      </div>
       <DemoTour />
     </div>
   );

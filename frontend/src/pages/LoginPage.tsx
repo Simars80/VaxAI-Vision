@@ -111,11 +111,8 @@ function DashboardPreview() {
   );
 }
 
-const DEMO_EMAIL = "demo@vaxaivision.com";
-const DEMO_PASSWORD = "Demo1234!";
-
 export default function LoginPage() {
-  const { login, loading, error, isAuthenticated } = useAuthStore();
+  const { login, demoLogin, loading, error, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -130,9 +127,7 @@ export default function LoginPage() {
   };
 
   const handleDemoAccess = async () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
-    await login(DEMO_EMAIL, DEMO_PASSWORD);
+    await demoLogin();
   };
 
   return (

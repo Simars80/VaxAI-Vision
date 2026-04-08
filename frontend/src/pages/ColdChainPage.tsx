@@ -33,6 +33,7 @@ interface StorageUnit {
   id: string;
   name: string;
   location: string;
+  country: string;
   currentTemp: number;
   minTemp: number;
   maxTemp: number;
@@ -64,9 +65,10 @@ function generateReadings(
 
 const STORAGE_UNITS: StorageUnit[] = [
   {
-    id: "unit-1",
-    name: "Fridge A",
-    location: "Warehouse 1 – North Bay",
+    id: "NG-KAN",
+    name: "Kano Central Store",
+    location: "Kano, Nigeria",
+    country: "Nigeria",
     currentTemp: 4.2,
     minTemp: 2.8,
     maxTemp: 5.9,
@@ -76,9 +78,10 @@ const STORAGE_UNITS: StorageUnit[] = [
     readings: generateReadings(4.5, 18),
   },
   {
-    id: "unit-2",
-    name: "Freezer B",
-    location: "Warehouse 1 – South Bay",
+    id: "NG-LAG",
+    name: "Lagos Logistics Hub",
+    location: "Lagos, Nigeria",
+    country: "Nigeria",
     currentTemp: -18.4,
     minTemp: -20.1,
     maxTemp: -15.8,
@@ -88,9 +91,10 @@ const STORAGE_UNITS: StorageUnit[] = [
     readings: generateReadings(-18.5, 18, 12),
   },
   {
-    id: "unit-3",
-    name: "Fridge C",
-    location: "Clinic Annex",
+    id: "NG-ABJ",
+    name: "Abuja NPHCDA Depot",
+    location: "Abuja, Nigeria",
+    country: "Nigeria",
     currentTemp: 9.1,
     minTemp: 2.4,
     maxTemp: 9.1,
@@ -100,9 +104,10 @@ const STORAGE_UNITS: StorageUnit[] = [
     readings: generateReadings(4.0, 18, 14),
   },
   {
-    id: "unit-4",
-    name: "Cold Room D",
-    location: "Warehouse 2",
+    id: "KE-NBI",
+    name: "Nairobi KEMSA Store",
+    location: "Nairobi, Kenya",
+    country: "Kenya",
     currentTemp: 3.6,
     minTemp: 3.0,
     maxTemp: 5.1,
@@ -111,12 +116,38 @@ const STORAGE_UNITS: StorageUnit[] = [
     status: "ok",
     readings: generateReadings(3.8, 18),
   },
+  {
+    id: "KE-MBA",
+    name: "Mombasa Cold Room",
+    location: "Mombasa, Kenya",
+    country: "Kenya",
+    currentTemp: 7.3,
+    minTemp: 4.1,
+    maxTemp: 7.3,
+    thresholdLow: 2.0,
+    thresholdHigh: 8.0,
+    status: "warning",
+    readings: generateReadings(5.5, 18, 10),
+  },
+  {
+    id: "KE-KSM",
+    name: "Kisumu Regional Hub",
+    location: "Kisumu, Kenya",
+    country: "Kenya",
+    currentTemp: 5.0,
+    minTemp: 3.5,
+    maxTemp: 6.2,
+    thresholdLow: 2.0,
+    thresholdHigh: 8.0,
+    status: "ok",
+    readings: generateReadings(5.0, 18),
+  },
 ];
 
 const BREACH_EVENTS: BreachEvent[] = [
   {
     id: "br-1",
-    unitId: "unit-3",
+    unitId: "NG-ABJ",
     startTime: "09:20",
     endTime: null,
     peakTemp: 9.1,
@@ -124,7 +155,7 @@ const BREACH_EVENTS: BreachEvent[] = [
   },
   {
     id: "br-2",
-    unitId: "unit-2",
+    unitId: "NG-LAG",
     startTime: "08:50",
     endTime: "09:10",
     peakTemp: -14.3,
@@ -132,7 +163,15 @@ const BREACH_EVENTS: BreachEvent[] = [
   },
   {
     id: "br-3",
-    unitId: "unit-1",
+    unitId: "KE-MBA",
+    startTime: "07:15",
+    endTime: null,
+    peakTemp: 7.8,
+    type: "high",
+  },
+  {
+    id: "br-4",
+    unitId: "NG-KAN",
     startTime: "06:30",
     endTime: "06:40",
     peakTemp: 8.4,
@@ -229,6 +268,7 @@ function UnitCard({
 
       <div className="mt-3 flex justify-between text-xs text-muted-foreground">
         <span>Safe: {unit.thresholdLow}°C – {unit.thresholdHigh}°C</span>
+        <span className="font-medium">{unit.country}</span>
       </div>
     </button>
   );
@@ -250,7 +290,7 @@ export default function ColdChainPage() {
       <div>
         <h1 className="text-3xl font-bold">Cold Chain Monitoring</h1>
         <p className="text-muted-foreground mt-1">
-          Real-time temperature readings for vaccine cold storage units
+          Real-time temperature readings for 6 vaccine cold storage facilities across Nigeria and Kenya
         </p>
       </div>
 
@@ -263,7 +303,7 @@ export default function ColdChainPage() {
                 <Thermometer className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Units</p>
+                <p className="text-xs text-muted-foreground">Total Facilities</p>
                 <p className="text-2xl font-bold">{STORAGE_UNITS.length}</p>
               </div>
             </div>
@@ -314,7 +354,7 @@ export default function ColdChainPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Unit list */}
-        <div className="space-y-3">
+        <div className="space-y-3 overflow-y-auto max-h-[700px] pr-1">
           {STORAGE_UNITS.map((unit) => (
             <UnitCard
               key={unit.id}
@@ -393,7 +433,7 @@ export default function ColdChainPage() {
               {unitBreaches.length === 0 ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  No breach events recorded for this unit today.
+                  No breach events recorded for this facility today.
                 </div>
               ) : (
                 <div className="space-y-3">

@@ -71,3 +71,56 @@ async def get_readings(facility_id: str | None = None):
 async def get_facilities():
     """Return the list of monitored facilities."""
     return {"facilities": FACILITIES}
+
+
+@router.get("/alerts")
+async def get_alerts(facility_id: str | None = None):
+    """Return active and recent cold-chain breach alerts for all (or one) facility."""
+    random.seed(42)
+    now = datetime.utcnow()
+    alerts = []
+    alert_id = 1
+
+    for fac in FACILITIES:
+        if facility_id and fac["id"] != facility_id:
+            continue
+        for s in range(1, SENSORS_PER_FACILITY + 1):
+            sensor_id = f"{fac['id']}-S{s}"
+            # Seed per sensor for reproducibility
+            random.seed(hash(sensor_id) % (2**32))
+            # Randomly assign 0-2 alerts per sensor
+            num_alerts = random.choices([0, 1, 2], weights=[6, 3, 1])[0]
+            for _ in range(num_alerts):
+                hours_ago_start = random.uniform(0.5, 48)
+                duration_hours = random.uniform(0.5, 4)
+                start_dt = now - timedelta(hours=hours_ago_start)
+                end_dt = start_dt + timedelta(hours=duration_hours)
+                resolved = end_dt < now
+                alert_type = random.choice(["high", "low"])
+                if alert_type == "high":
+                    peak = round(random.uniform(8.5, 12.0), 1)
+                    threshold = 8.0
+                else:
+                    peak = round(random.uniform(-2.0, 1.5), 1)
+                    threshold = 2.0
+                alerts.append(
+                    {
+                        "id": f"alert-{alert_id}",
+                        "facility_id": fac["id"],
+                        "facility_name": fac["name"],
+                        "country": fac["country"],
+                        "sensor_id": sensor_id,
+                        "alert_type": alert_type,
+                        "peak_temp_celsius": peak,
+                        "threshold_celsius": threshold,
+                        "start_time": start_dt.isoformat() + "Z",
+                        "end_time": end_dt.isoformat() + "Z" if resolved else None,
+                        "resolved": resolved,
+                        "severity": "critical" if abs(peak - threshold) > 3 else "warning",
+                    }
+                )
+                alert_id += 1
+
+    # Sort: active first, then most recent
+    alerts.sort(key=lambda a: (a["resolved"], a["start_time"]), reverse=False)
+    return {"alerts": alerts, "total": len(alerts), "active": sum(1 for a in alerts if not a["resolved"])}

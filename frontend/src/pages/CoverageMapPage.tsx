@@ -1,222 +1,352 @@
-import { useMemo, useState } from "react";
-import "leaflet/dist/leaflet.css";
+import { useState, useMemo } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Filter, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface Facility {
   id: string;
   name: string;
   country: string;
+  region: string;
   lat: number;
   lng: number;
-  coverage: number; // 0–100
+  coverageRate: number;
   stockStatus: "adequate" | "low" | "critical";
-  vaccines: string[];
-  population: number;
-  lastUpdated: string;
+  vaccineType: string;
+  period: string;
+  dosesAdministered: number;
+  targetPopulation: number;
 }
 
+// ── Mock Data ─────────────────────────────────────────────────────────────────
+
 const FACILITIES: Facility[] = [
-  { id: "NG-KAN", name: "Kano Central Store",    country: "Nigeria",   lat: 12.002, lng: 8.592,   coverage: 82, stockStatus: "adequate", vaccines: ["bOPV", "PENTA", "PCV13"],            population: 38000, lastUpdated: "2026-04-05" },
-  { id: "NG-LAG", name: "Lagos Logistics Hub",   country: "Nigeria",   lat: 6.524,  lng: 3.379,   coverage: 74, stockStatus: "adequate", vaccines: ["bOPV", "PENTA", "PCV13", "ROTA"],    population: 51000, lastUpdated: "2026-04-06" },
-  { id: "NG-ABJ", name: "Abuja NPHCDA Depot",    country: "Nigeria",   lat: 9.058,  lng: 7.495,   coverage: 91, stockStatus: "adequate", vaccines: ["bOPV", "PENTA"],                     population: 44000, lastUpdated: "2026-04-06" },
-  { id: "NG-KAD", name: "Kaduna District HC",    country: "Nigeria",   lat: 10.526, lng: 7.438,   coverage: 41, stockStatus: "critical", vaccines: ["bOPV"],                              population: 22000, lastUpdated: "2026-04-03" },
-  { id: "NG-IBA", name: "Ibadan PHC Centre",     country: "Nigeria",   lat: 7.376,  lng: 3.947,   coverage: 63, stockStatus: "low",      vaccines: ["bOPV", "PENTA", "MR"],               population: 29000, lastUpdated: "2026-04-04" },
-  { id: "KE-NBI", name: "Nairobi KEMSA Store",   country: "Kenya",     lat: -1.292, lng: 36.822,  coverage: 88, stockStatus: "adequate", vaccines: ["bOPV", "PENTA", "ROTA", "MR"],       population: 57000, lastUpdated: "2026-04-06" },
-  { id: "KE-MBA", name: "Mombasa Cold Room",     country: "Kenya",     lat: -4.044, lng: 39.668,  coverage: 47, stockStatus: "low",      vaccines: ["bOPV", "PCV13"],                     population: 33000, lastUpdated: "2026-04-04" },
-  { id: "KE-KSM", name: "Kisumu Regional Hub",   country: "Kenya",     lat: -0.092, lng: 34.768,  coverage: 61, stockStatus: "adequate", vaccines: ["bOPV", "PENTA", "PCV13", "ROTA"],    population: 24000, lastUpdated: "2026-04-05" },
-  { id: "GH-ACC", name: "Accra District HQ",     country: "Ghana",     lat: 5.603,  lng: -0.187,  coverage: 85, stockStatus: "adequate", vaccines: ["bOPV", "PCV13", "MR", "PENTA"],      population: 44000, lastUpdated: "2026-04-06" },
-  { id: "GH-KSI", name: "Kumasi Central HC",     country: "Ghana",     lat: 6.688,  lng: -1.624,  coverage: 67, stockStatus: "adequate", vaccines: ["bOPV", "PENTA"],                     population: 31000, lastUpdated: "2026-04-05" },
-  { id: "GH-TAM", name: "Tamale North Clinic",   country: "Ghana",     lat: 9.403,  lng: -0.839,  coverage: 38, stockStatus: "critical", vaccines: ["bOPV"],                              population: 14000, lastUpdated: "2026-04-02" },
-  { id: "TZ-DAR", name: "Dar es Salaam PHC",     country: "Tanzania",  lat: -6.776, lng: 39.178,  coverage: 81, stockStatus: "adequate", vaccines: ["bOPV", "PCV13", "BCG", "MR"],        population: 49000, lastUpdated: "2026-04-06" },
-  { id: "TZ-DOD", name: "Dodoma Central HC",     country: "Tanzania",  lat: -6.173, lng: 35.738,  coverage: 58, stockStatus: "low",      vaccines: ["bOPV", "BCG"],                       population: 20000, lastUpdated: "2026-04-04" },
-  { id: "ET-ADD", name: "Addis Ababa PHC",        country: "Ethiopia",  lat: 9.145,  lng: 40.489,  coverage: 76, stockStatus: "adequate", vaccines: ["bOPV", "PENTA", "MR", "PCV13"],      population: 62000, lastUpdated: "2026-04-05" },
-  { id: "ET-MEK", name: "Mekelle District HC",   country: "Ethiopia",  lat: 13.496, lng: 39.476,  coverage: 32, stockStatus: "critical", vaccines: ["bOPV"],                              population: 11000, lastUpdated: "2026-04-01" },
-  { id: "SN-DAK", name: "Dakar Central MCH",     country: "Senegal",   lat: 14.693, lng: -17.447, coverage: 83, stockStatus: "adequate", vaccines: ["bOPV", "PCV13", "MR", "PENTA"],      population: 37000, lastUpdated: "2026-04-06" },
+  { id: "ng-1", name: "Lagos Central Clinic", country: "Nigeria", region: "Lagos", lat: 6.524, lng: 3.379, coverageRate: 87, stockStatus: "adequate", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 4320, targetPopulation: 4965 },
+  { id: "ng-2", name: "Kano District Hospital", country: "Nigeria", region: "Kano", lat: 12.000, lng: 8.517, coverageRate: 52, stockStatus: "low", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 1980, targetPopulation: 3808 },
+  { id: "ng-3", name: "Abuja PHC Centre", country: "Nigeria", region: "FCT", lat: 9.076, lng: 7.399, coverageRate: 74, stockStatus: "adequate", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 2960, targetPopulation: 4000 },
+  { id: "ng-4", name: "Ibadan Health Post", country: "Nigeria", region: "Oyo", lat: 7.388, lng: 3.896, coverageRate: 38, stockStatus: "critical", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 760, targetPopulation: 2000 },
+  { id: "ng-5", name: "Kaduna Rural Clinic", country: "Nigeria", region: "Kaduna", lat: 10.524, lng: 7.441, coverageRate: 61, stockStatus: "low", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 1525, targetPopulation: 2500 },
+  { id: "ke-1", name: "Nairobi Immunization Hub", country: "Kenya", region: "Nairobi", lat: -1.286, lng: 36.817, coverageRate: 91, stockStatus: "adequate", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 9100, targetPopulation: 10000 },
+  { id: "ke-2", name: "Mombasa Port Clinic", country: "Kenya", region: "Mombasa", lat: -4.043, lng: 39.668, coverageRate: 78, stockStatus: "adequate", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 3900, targetPopulation: 5000 },
+  { id: "ke-3", name: "Kisumu District Health", country: "Kenya", region: "Kisumu", lat: -0.102, lng: 34.762, coverageRate: 45, stockStatus: "critical", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 1350, targetPopulation: 3000 },
+  { id: "ke-4", name: "Nakuru County Hospital", country: "Kenya", region: "Nakuru", lat: -0.302, lng: 36.066, coverageRate: 83, stockStatus: "adequate", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 2490, targetPopulation: 3000 },
+  { id: "et-1", name: "Addis Ababa Health Centre", country: "Ethiopia", region: "Addis Ababa", lat: 9.032, lng: 38.740, coverageRate: 69, stockStatus: "low", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 6900, targetPopulation: 10000 },
+  { id: "et-2", name: "Dire Dawa PHC", country: "Ethiopia", region: "Dire Dawa", lat: 9.590, lng: 41.861, coverageRate: 42, stockStatus: "critical", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 1260, targetPopulation: 3000 },
+  { id: "et-3", name: "Bahir Dar District Clinic", country: "Ethiopia", region: "Amhara", lat: 11.593, lng: 37.390, coverageRate: 56, stockStatus: "low", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 2800, targetPopulation: 5000 },
+  { id: "gh-1", name: "Accra Central Hospital", country: "Ghana", region: "Greater Accra", lat: 5.556, lng: -0.197, coverageRate: 88, stockStatus: "adequate", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 4400, targetPopulation: 5000 },
+  { id: "gh-2", name: "Kumasi Health Post", country: "Ghana", region: "Ashanti", lat: 6.688, lng: -1.624, coverageRate: 71, stockStatus: "adequate", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 2840, targetPopulation: 4000 },
+  { id: "gh-3", name: "Tamale PHC", country: "Ghana", region: "Northern", lat: 9.403, lng: -0.839, coverageRate: 33, stockStatus: "critical", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 990, targetPopulation: 3000 },
+  { id: "ug-1", name: "Kampala City Clinic", country: "Uganda", region: "Central", lat: 0.347, lng: 32.582, coverageRate: 80, stockStatus: "adequate", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 4000, targetPopulation: 5000 },
+  { id: "ug-2", name: "Gulu District Hospital", country: "Uganda", region: "Northern", lat: 2.779, lng: 32.299, coverageRate: 49, stockStatus: "critical", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 1470, targetPopulation: 3000 },
+  { id: "tz-1", name: "Dar es Salaam Hub", country: "Tanzania", region: "Dar es Salaam", lat: -6.792, lng: 39.208, coverageRate: 85, stockStatus: "adequate", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 8500, targetPopulation: 10000 },
+  { id: "tz-2", name: "Dodoma Central Clinic", country: "Tanzania", region: "Dodoma", lat: -6.173, lng: 35.739, coverageRate: 60, stockStatus: "low", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 1800, targetPopulation: 3000 },
 ];
 
-const ALL_COUNTRIES = ["All Countries", ...Array.from(new Set(FACILITIES.map((f) => f.country))).sort()];
-const ALL_VACCINES = ["All Vaccines", "bOPV", "PENTA", "PCV13", "ROTA", "BCG", "MR"];
-const TIME_PERIODS = ["Last 7 days", "Last 30 days", "Last 90 days", "All time"];
+const ALL_COUNTRIES = ["All", ...Array.from(new Set(FACILITIES.map((f) => f.country))).sort()];
+const ALL_VACCINES = ["All", ...Array.from(new Set(FACILITIES.map((f) => f.vaccineType))).sort()];
+const ALL_PERIODS = ["All", ...Array.from(new Set(FACILITIES.map((f) => f.period))).sort()];
 
-function coverageColor(pct: number): string {
-  if (pct >= 80) return "#22c55e";
-  if (pct >= 60) return "#eab308";
-  if (pct >= 40) return "#f97316";
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function coverageColor(rate: number): string {
+  if (rate >= 80) return "#22c55e";
+  if (rate >= 50) return "#f59e0b";
   return "#ef4444";
 }
 
-function stockBadgeCls(status: Facility["stockStatus"]): string {
-  return status === "adequate"
-    ? "bg-emerald-100 text-emerald-700"
-    : status === "low"
-    ? "bg-yellow-100 text-yellow-700"
-    : "bg-red-100 text-red-700";
-}
+const STOCK_ICON: Record<string, React.ElementType> = {
+  adequate: CheckCircle,
+  low: AlertTriangle,
+  critical: XCircle,
+};
+
+const STOCK_COLOR: Record<string, string> = {
+  adequate: "text-green-600",
+  low: "text-amber-500",
+  critical: "text-red-500",
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CoverageMapPage() {
-  const [country, setCountry] = useState("All Countries");
-  const [vaccine, setVaccine] = useState("All Vaccines");
-  const [timePeriod, setTimePeriod] = useState("Last 30 days");
+  const [country, setCountry] = useState("All");
+  const [vaccine, setVaccine] = useState("All");
+  const [period, setPeriod] = useState("All");
+  const [selected, setSelected] = useState<Facility | null>(null);
 
-  const filtered = useMemo(() =>
-    FACILITIES.filter((f) => {
-      if (country !== "All Countries" && f.country !== country) return false;
-      if (vaccine !== "All Vaccines" && !f.vaccines.includes(vaccine)) return false;
-      return true;
-    }),
-    [country, vaccine]
-  );
+  const filtered = useMemo(() => {
+    return FACILITIES.filter(
+      (f) =>
+        (country === "All" || f.country === country) &&
+        (vaccine === "All" || f.vaccineType === vaccine) &&
+        (period === "All" || f.period === period),
+    );
+  }, [country, vaccine, period]);
 
-  const summary = useMemo(() => {
-    const total = filtered.length;
-    const avg = total ? Math.round(filtered.reduce((s, f) => s + f.coverage, 0) / total) : 0;
-    const critical = filtered.filter((f) => f.stockStatus === "critical").length;
-    const low = filtered.filter((f) => f.stockStatus === "low").length;
-    return { total, avg, critical, low };
+  const stats = useMemo(() => {
+    const high = filtered.filter((f) => f.coverageRate >= 80).length;
+    const medium = filtered.filter((f) => f.coverageRate >= 50 && f.coverageRate < 80).length;
+    const low = filtered.filter((f) => f.coverageRate < 50).length;
+    const avgCoverage =
+      filtered.length > 0
+        ? Math.round(filtered.reduce((s, f) => s + f.coverageRate, 0) / filtered.length)
+        : 0;
+    return { high, medium, low, avgCoverage };
   }, [filtered]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Geospatial Coverage Map</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Facility-level immunization coverage and stock status across all regions
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <MapPin className="h-8 w-8 text-primary" />
+          Geospatial Coverage Map
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Facility-level immunization coverage rates and vaccine stock status across regions
         </p>
       </div>
 
-      {/* Filters + legend */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <select className="border rounded-md px-3 py-1.5 text-sm bg-background" value={country} onChange={(e) => setCountry(e.target.value)}>
-          {ALL_COUNTRIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <select className="border rounded-md px-3 py-1.5 text-sm bg-background" value={vaccine} onChange={(e) => setVaccine(e.target.value)}>
-          {ALL_VACCINES.map((v) => <option key={v}>{v}</option>)}
-        </select>
-        <select className="border rounded-md px-3 py-1.5 text-sm bg-background" value={timePeriod} onChange={(e) => setTimePeriod(e.target.value)}>
-          {TIME_PERIODS.map((t) => <option key={t}>{t}</option>)}
-        </select>
-        <div className="ml-auto flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          {[
-            { color: "#22c55e", label: "≥80%" },
-            { color: "#eab308", label: "60–79%" },
-            { color: "#f97316", label: "40–59%" },
-            { color: "#ef4444", label: "<40%" },
-          ].map(({ color, label }) => (
-            <span key={label} className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full inline-block" style={{ background: color }} />
-              {label}
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              Filters:
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Country</label>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="text-sm border rounded-md px-2 py-1 bg-background"
+              >
+                {ALL_COUNTRIES.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Vaccine</label>
+              <select
+                value={vaccine}
+                onChange={(e) => setVaccine(e.target.value)}
+                className="text-sm border rounded-md px-2 py-1 bg-background"
+              >
+                {ALL_VACCINES.map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Period</label>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="text-sm border rounded-md px-2 py-1 bg-background"
+              >
+                {ALL_PERIODS.map((p) => (
+                  <option key={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+            <span className="text-xs text-muted-foreground ml-auto">
+              Showing {filtered.length} of {FACILITIES.length} facilities
             </span>
-          ))}
-        </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">Avg Coverage</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: coverageColor(stats.avgCoverage) }}>
+              {stats.avgCoverage}%
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">High \u226580%</p>
+            <p className="text-2xl font-bold mt-0.5 text-green-600">{stats.high}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">Medium 50\u201379%</p>
+            <p className="text-2xl font-bold mt-0.5 text-amber-500">{stats.medium}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">Low &lt;50%</p>
+            <p className="text-2xl font-bold mt-0.5 text-red-500">{stats.low}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Facilities", value: String(summary.total), cls: "text-foreground" },
-          { label: "Avg Coverage", value: `${summary.avg}%`, cls: summary.avg >= 80 ? "text-emerald-600" : summary.avg >= 60 ? "text-yellow-600" : "text-red-600" },
-          { label: "Low Stock", value: String(summary.low), cls: "text-yellow-600" },
-          { label: "Critical Stock", value: String(summary.critical), cls: "text-red-600" },
-        ].map((s) => (
-          <Card key={s.label}>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className={`text-2xl font-bold ${s.cls}`}>{s.value}</p>
+      {/* Map + Detail Panel */}
+      <div className="flex gap-4">
+        {/* Map */}
+        <Card className="flex-1 overflow-hidden p-0">
+          <MapContainer
+            center={[4, 20]}
+            zoom={4}
+            style={{ height: 480, width: "100%" }}
+            scrollWheelZoom
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {filtered.map((facility) => (
+              <CircleMarker
+                key={facility.id}
+                center={[facility.lat, facility.lng]}
+                radius={10}
+                pathOptions={{
+                  fillColor: coverageColor(facility.coverageRate),
+                  color: "#fff",
+                  weight: 1.5,
+                  fillOpacity: 0.85,
+                }}
+                eventHandlers={{ click: () => setSelected(facility) }}
+              >
+                <Popup>
+                  <div style={{ minWidth: 160 }}>
+                    <p style={{ fontWeight: 600, marginBottom: 4 }}>{facility.name}</p>
+                    <p style={{ color: "#666", fontSize: 12 }}>{facility.region}, {facility.country}</p>
+                    <p style={{ fontSize: 12 }}>Coverage: <strong>{facility.coverageRate}%</strong></p>
+                    <p style={{ fontSize: 12 }}>Stock: <strong>{facility.stockStatus}</strong></p>
+                    <p style={{ fontSize: 12 }}>Vaccine: <strong>{facility.vaccineType}</strong></p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
+          </MapContainer>
+        </Card>
+
+        {/* Detail panel */}
+        <div className="w-72 flex flex-col gap-3">
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm">Coverage Legend</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-2">
+              {[
+                { label: "High \u226580%", color: "#22c55e" },
+                { label: "Medium 50\u201379%", color: "#f59e0b" },
+                { label: "Low <50%", color: "#ef4444" },
+              ].map(({ label, color }) => (
+                <div key={label} className="flex items-center gap-2 text-sm">
+                  <span
+                    className="inline-block w-3 h-3 rounded-full"
+                    style={{ backgroundColor: color, boxShadow: "0 0 0 1.5px #888" }}
+                  />
+                  {label}
+                </div>
+              ))}
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Map */}
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Facility Coverage Map</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div style={{ height: "500px" }}>
-            <MapContainer center={[5, 20]} zoom={4} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              />
-              {filtered.map((f) => (
-                <CircleMarker
-                  key={f.id}
-                  center={[f.lat, f.lng]}
-                  radius={12}
-                  pathOptions={{
-                    fillColor: coverageColor(f.coverage),
-                    fillOpacity: 0.85,
-                    color: "#fff",
-                    weight: 1.5,
-                  }}
-                >
-                  <Popup>
-                    <div style={{ minWidth: 200 }}>
-                      <p style={{ fontWeight: 600, marginBottom: 4 }}>{f.name}</p>
-                      <p style={{ color: "#6b7280", fontSize: 12, marginBottom: 8 }}>{f.country}</p>
-                      <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                        <tbody>
-                          <tr><td style={{ color: "#6b7280", paddingBottom: 2 }}>Coverage</td><td style={{ textAlign: "right", fontWeight: 600, color: coverageColor(f.coverage) }}>{f.coverage}%</td></tr>
-                          <tr><td style={{ color: "#6b7280", paddingBottom: 2 }}>Stock</td><td style={{ textAlign: "right" }}>{f.stockStatus}</td></tr>
-                          <tr><td style={{ color: "#6b7280", paddingBottom: 2 }}>Population</td><td style={{ textAlign: "right" }}>{f.population.toLocaleString()}</td></tr>
-                          <tr><td style={{ color: "#6b7280", paddingBottom: 2 }}>Updated</td><td style={{ textAlign: "right" }}>{f.lastUpdated}</td></tr>
-                        </tbody>
-                      </table>
-                      <p style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>Vaccines: {f.vaccines.join(", ")}</p>
+          {selected ? (
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm truncate">{selected.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs">Location</p>
+                  <p className="font-medium">{selected.region}, {selected.country}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Coverage Rate</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${selected.coverageRate}%`,
+                          backgroundColor: coverageColor(selected.coverageRate),
+                        }}
+                      />
                     </div>
-                  </Popup>
-                </CircleMarker>
-              ))}
-            </MapContainer>
-          </div>
-        </CardContent>
-      </Card>
+                    <span className="font-bold text-sm" style={{ color: coverageColor(selected.coverageRate) }}>
+                      {selected.coverageRate}%
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Stock Status</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {(() => {
+                      const Icon = STOCK_ICON[selected.stockStatus];
+                      return <Icon className={`h-4 w-4 ${STOCK_COLOR[selected.stockStatus]}`} />;
+                    })()}
+                    <span className={`font-medium capitalize ${STOCK_COLOR[selected.stockStatus]}`}>
+                      {selected.stockStatus}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Vaccine</p>
+                    <Badge variant="outline" className="mt-0.5 text-xs">{selected.vaccineType}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Period</p>
+                    <p className="font-medium">{selected.period}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Doses Administered</p>
+                  <p className="font-medium">{selected.dosesAdministered.toLocaleString()} / {selected.targetPopulation.toLocaleString()}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-4 pb-4 px-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  Click a facility marker to see details
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Facility table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Facility List ({filtered.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground text-xs uppercase tracking-wide">
-                  <th className="text-left py-2 pr-4">Facility</th>
-                  <th className="text-left py-2 pr-4">Country</th>
-                  <th className="text-right py-2 pr-4">Coverage</th>
-                  <th className="text-left py-2 pr-4">Stock</th>
-                  <th className="text-left py-2 hidden sm:table-cell">Vaccines</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered
-                  .slice()
-                  .sort((a, b) => a.coverage - b.coverage)
-                  .map((f) => (
-                    <tr key={f.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="py-2 pr-4 font-medium">{f.name}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{f.country}</td>
-                      <td className="py-2 pr-4 text-right font-medium" style={{ color: coverageColor(f.coverage) }}>
-                        {f.coverage}%
-                      </td>
-                      <td className="py-2 pr-4">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${stockBadgeCls(f.stockStatus)}`}>
-                          {f.stockStatus}
-                        </span>
-                      </td>
-                      <td className="py-2 text-muted-foreground text-xs hidden sm:table-cell">
-                        {f.vaccines.join(", ")}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+          <Card className="flex-1 overflow-hidden">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm">Facilities ({filtered.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {filtered.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setSelected(f)}
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 transition-colors ${
+                      selected?.id === f.id ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    }`}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: coverageColor(f.coverageRate) }}
+                    />
+                    <span className="truncate flex-1">{f.name}</span>
+                    <span className="font-medium flex-shrink-0">{f.coverageRate}%</span>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

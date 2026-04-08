@@ -1,112 +1,97 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Animated mock dashboard preview
-function DashboardPreview() {
-  const [tick, setTick] = useState(0);
+// Animated counter hook
+function useCountUp(target: number, duration = 1600, started = false) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!started) return;
+    let start: number | null = null;
+    const step = (ts: number) => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration, started]);
+  return value;
+}
+
+function AnimatedKPIs() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2000);
-    return () => clearInterval(id);
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.3 }
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
   }, []);
 
-  const bars = [72, 58, 84, 91, 63, 77, 88, 55, 79, 95, 68, 82];
-  const animatedBars = bars.map((_v, i) => {
-    const offset = (tick + i) % bars.length;
-    return bars[offset];
-  });
+  const doses = useCountUp(2400000, 1800, visible);
+  const coldChain = useCountUp(987, 1400, visible);
+  const facilities = useCountUp(1240, 1600, visible);
 
-  const stats = [
-    { label: "Doses Tracked", value: "2.4M", change: "+12%", color: "text-emerald-400" },
-    { label: "Cold Chain OK", value: "98.7%", change: "+0.3%", color: "text-blue-400" },
-    { label: "Facilities", value: "1,240", change: "+8", color: "text-violet-400" },
+  const fmt = (n: number) =>
+    n >= 1000000
+      ? `${(n / 1000000).toFixed(1)}M`
+      : n >= 1000
+      ? `${(n / 1000).toFixed(0)}K`
+      : n.toString();
+
+  const kpis = [
+    {
+      value: fmt(doses),
+      label: "Doses Tracked",
+      change: "+12% this month",
+      color: "from-emerald-400 to-teal-400",
+      icon: "💉",
+    },
+    {
+      value: `${(coldChain / 10).toFixed(1)}%`,
+      label: "Cold Chain Uptime",
+      change: "+0.3% vs last month",
+      color: "from-blue-400 to-cyan-400",
+      icon: "❄️",
+    },
+    {
+      value: facilities.toLocaleString(),
+      label: "Facilities",
+      change: "+8 this week",
+      color: "from-violet-400 to-purple-400",
+      icon: "🏥",
+    },
   ];
 
   return (
-    <div className="w-full h-full rounded-xl overflow-hidden bg-gray-900 border border-gray-700 shadow-2xl select-none">
-      {/* Mock browser chrome */}
-      <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 border-b border-gray-700">
-        <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-        <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-        <div className="ml-2 flex-1 bg-gray-700 rounded text-[10px] text-gray-400 px-2 py-0.5 truncate">
-          vaxaivision.com/dashboard
+    <div ref={ref} className="grid grid-cols-3 gap-3 w-full max-w-lg">
+      {kpis.map((k) => (
+        <div
+          key={k.label}
+          className="relative rounded-2xl p-4 text-center"
+          style={{
+            background: "rgba(255,255,255,0.07)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.12)",
+          }}
+        >
+          <div className="text-2xl mb-1">{k.icon}</div>
+          <div
+            className={`text-xl font-extrabold bg-gradient-to-r ${k.color} bg-clip-text text-transparent`}
+          >
+            {k.value}
+          </div>
+          <div className="text-white/70 text-[10px] font-medium mt-0.5">{k.label}</div>
+          <div className="text-emerald-400 text-[9px] mt-0.5">{k.change}</div>
         </div>
-      </div>
-
-      {/* Mock sidebar + content */}
-      <div className="flex h-[calc(100%-32px)]">
-        {/* Sidebar */}
-        <div className="w-12 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3 gap-3">
-          <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center text-white text-xs font-bold">V</div>
-          {["▤", "◈", "⊞", "◎", "❄"].map((icon, i) => (
-            <div key={i} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs ${i === 0 ? "bg-blue-600/20 text-blue-400" : "text-gray-500 hover:text-gray-300"}`}>
-              {icon}
-            </div>
-          ))}
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 p-3 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="text-white text-xs font-semibold">Operations Overview</div>
-              <div className="text-gray-500 text-[10px]">Live · Updated just now</div>
-            </div>
-            <div className="flex gap-1">
-              <div className="px-2 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Live</div>
-              <div className="px-2 py-0.5 rounded text-[9px] bg-gray-700 text-gray-400">Export</div>
-            </div>
-          </div>
-
-          {/* Stat cards */}
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {stats.map((s) => (
-              <div key={s.label} className="bg-gray-800 rounded-lg p-2 border border-gray-700">
-                <div className="text-[9px] text-gray-400 mb-0.5">{s.label}</div>
-                <div className={`text-sm font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-[9px] text-emerald-400">{s.change}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Chart */}
-          <div className="bg-gray-800 rounded-lg p-2 border border-gray-700 mb-2">
-            <div className="text-[9px] text-gray-400 mb-2">Vaccination Coverage — Last 12 Months</div>
-            <div className="flex items-end gap-1 h-16">
-              {animatedBars.map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-sm bg-blue-500/70 transition-all duration-1000"
-                  style={{ height: `${h}%` }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Alert row */}
-          <div className="bg-gray-800 rounded-lg p-2 border border-gray-700">
-            <div className="text-[9px] text-gray-400 mb-1.5">Recent Alerts</div>
-            <div className="space-y-1">
-              {[
-                { color: "bg-emerald-500", text: "All cold chain sensors nominal", time: "2m ago" },
-                { color: "bg-yellow-500", text: "Low stock: OPV — Kano State", time: "18m ago" },
-              ].map((a, i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  <div className={`w-1.5 h-1.5 rounded-full ${a.color} flex-shrink-0`} />
-                  <div className="text-[9px] text-gray-300 flex-1 truncate">{a.text}</div>
-                  <div className="text-[9px] text-gray-500">{a.time}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
@@ -116,6 +101,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showSignIn, setShowSignIn] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) navigate("/");
@@ -131,122 +117,138 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-950">
-      {/* Left — product preview panel */}
-      <div className="hidden lg:flex flex-col flex-1 bg-gradient-to-br from-gray-900 via-blue-950 to-gray-900 p-12 justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-10">
-            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
-              V
-            </div>
-            <span className="text-white text-xl font-semibold">VaxAI Vision</span>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #0a1628 0%, #0d2440 35%, #0a3352 60%, #083344 100%)",
+      }}
+    >
+      {/* Background orbs */}
+      <div
+        className="absolute top-[-120px] left-[-120px] w-[500px] h-[500px] rounded-full opacity-20 pointer-events-none"
+        style={{ background: "radial-gradient(circle, #0ea5e9 0%, transparent 70%)" }}
+      />
+      <div
+        className="absolute bottom-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-15 pointer-events-none"
+        style={{ background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)" }}
+      />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-5 pointer-events-none"
+        style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 60%)" }}
+      />
+
+      {/* Main card */}
+      <div
+        className="relative z-10 w-full max-w-md mx-4 rounded-3xl px-8 py-10 flex flex-col items-center gap-6"
+        style={{
+          background: "rgba(255,255,255,0.06)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
+        }}
+      >
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
+              boxShadow: "0 8px 24px rgba(37,99,235,0.5)",
+            }}
+          >
+            V
           </div>
-          <h1 className="text-3xl font-bold text-white mb-3 leading-tight">
-            AI-powered vaccine supply<br />chain intelligence
-          </h1>
-          <p className="text-blue-200/70 text-base mb-8 max-w-sm">
-            Real-time forecasting, cold chain monitoring, and geospatial coverage
-            maps — built for healthcare enterprises and public health teams.
-          </p>
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2 mb-10">
-            {["Live inventory tracking", "Cold chain alerts", "AI demand forecasting", "Coverage maps"].map((f) => (
-              <span key={f} className="px-3 py-1 rounded-full bg-white/10 text-white/80 text-xs border border-white/10">
-                {f}
-              </span>
-            ))}
+          <div className="text-center">
+            <h1 className="text-white text-xl font-bold tracking-tight">VaxAI Vision</h1>
+            <p className="text-white/50 text-xs mt-0.5">
+              AI-powered vaccine supply chain intelligence
+            </p>
           </div>
         </div>
 
-        {/* Animated dashboard preview */}
-        <div className="flex-1 max-h-80 flex items-end">
-          <DashboardPreview />
+        {/* KPI counters */}
+        <AnimatedKPIs />
+
+        {/* Demo CTA — primary action, above the fold */}
+        <div className="w-full flex flex-col items-center gap-2">
+          <button
+            onClick={handleDemoAccess}
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-60"
+            style={{
+              background: loading
+                ? "rgba(37,99,235,0.5)"
+                : "linear-gradient(135deg, #2563eb, #0ea5e9)",
+              boxShadow: loading ? "none" : "0 8px 24px rgba(37,99,235,0.45)",
+            }}
+          >
+            {loading ? "Loading demo…" : "▶  Try Live Demo — No Sign-up Required"}
+          </button>
+          <p className="text-white/40 text-[10px] text-center">
+            Pre-loaded with 13 months of real-world vaccine supply data
+          </p>
         </div>
+
+        {/* Divider */}
+        <div className="w-full flex items-center gap-3">
+          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
+          <button
+            className="text-white/40 text-xs hover:text-white/70 transition-colors px-2"
+            onClick={() => setShowSignIn((v) => !v)}
+          >
+            {showSignIn ? "Hide sign in" : "Sign in with your account"}
+          </button>
+          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
+        </div>
+
+        {/* Sign-in form — secondary, collapsible */}
+        {showSignIn && (
+          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
+            <Input
+              id="email"
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-blue-400"
+            />
+            <Input
+              id="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-blue-400"
+            />
+            {error && (
+              <p className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
+                {error}
+              </p>
+            )}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        )}
+
+        {/* Footer */}
+        <p className="text-white/25 text-[10px] text-center">
+          Healthcare-grade security · HIPAA-ready · No PHI in demo data
+        </p>
       </div>
 
-      {/* Right — login panel */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-[440px] lg:flex-shrink-0 bg-white p-8">
-        {/* Mobile logo */}
-        <div className="flex items-center gap-2 mb-8 lg:hidden">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">V</div>
-          <span className="text-lg font-semibold">VaxAI Vision</span>
-        </div>
-
-        <Card className="w-full max-w-sm shadow-none border-0 lg:shadow-sm lg:border">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl">Sign in</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Access the vaccine supply chain dashboard
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Demo CTA */}
-            <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-              <p className="text-xs text-blue-700 font-medium mb-2">
-                Want to explore first? Try the live demo.
-              </p>
-              <Button
-                type="button"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                onClick={handleDemoAccess}
-                disabled={loading}
-              >
-                {loading ? "Signing in…" : "▶  Try Live Demo"}
-              </Button>
-              <p className="text-[10px] text-blue-500/80 mt-1.5 text-center">
-                Pre-loaded with sample data · No sign-up required
-              </p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">or sign in</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="email">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="password">
-                  Password
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
-                  {error}
-                </p>
-              )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in…" : "Sign in"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+      {/* Trust logos row */}
+      <div className="relative z-10 mt-6 flex items-center gap-4 text-white/20 text-xs">
+        <span>Designed for WHO · UNICEF · GAVI partners</span>
       </div>
     </div>
   );

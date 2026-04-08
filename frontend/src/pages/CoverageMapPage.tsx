@@ -1,54 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Filter, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface Facility {
-  id: string;
-  name: string;
-  country: string;
-  region: string;
-  lat: number;
-  lng: number;
-  coverageRate: number;
-  stockStatus: "adequate" | "low" | "critical";
-  vaccineType: string;
-  period: string;
-  dosesAdministered: number;
-  targetPopulation: number;
-}
-
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-
-const FACILITIES: Facility[] = [
-  { id: "ng-1", name: "Lagos Central Clinic", country: "Nigeria", region: "Lagos", lat: 6.524, lng: 3.379, coverageRate: 87, stockStatus: "adequate", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 4320, targetPopulation: 4965 },
-  { id: "ng-2", name: "Kano District Hospital", country: "Nigeria", region: "Kano", lat: 12.000, lng: 8.517, coverageRate: 52, stockStatus: "low", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 1980, targetPopulation: 3808 },
-  { id: "ng-3", name: "Abuja PHC Centre", country: "Nigeria", region: "FCT", lat: 9.076, lng: 7.399, coverageRate: 74, stockStatus: "adequate", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 2960, targetPopulation: 4000 },
-  { id: "ng-4", name: "Ibadan Health Post", country: "Nigeria", region: "Oyo", lat: 7.388, lng: 3.896, coverageRate: 38, stockStatus: "critical", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 760, targetPopulation: 2000 },
-  { id: "ng-5", name: "Kaduna Rural Clinic", country: "Nigeria", region: "Kaduna", lat: 10.524, lng: 7.441, coverageRate: 61, stockStatus: "low", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 1525, targetPopulation: 2500 },
-  { id: "ke-1", name: "Nairobi Immunization Hub", country: "Kenya", region: "Nairobi", lat: -1.286, lng: 36.817, coverageRate: 91, stockStatus: "adequate", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 9100, targetPopulation: 10000 },
-  { id: "ke-2", name: "Mombasa Port Clinic", country: "Kenya", region: "Mombasa", lat: -4.043, lng: 39.668, coverageRate: 78, stockStatus: "adequate", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 3900, targetPopulation: 5000 },
-  { id: "ke-3", name: "Kisumu District Health", country: "Kenya", region: "Kisumu", lat: -0.102, lng: 34.762, coverageRate: 45, stockStatus: "critical", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 1350, targetPopulation: 3000 },
-  { id: "ke-4", name: "Nakuru County Hospital", country: "Kenya", region: "Nakuru", lat: -0.302, lng: 36.066, coverageRate: 83, stockStatus: "adequate", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 2490, targetPopulation: 3000 },
-  { id: "et-1", name: "Addis Ababa Health Centre", country: "Ethiopia", region: "Addis Ababa", lat: 9.032, lng: 38.740, coverageRate: 69, stockStatus: "low", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 6900, targetPopulation: 10000 },
-  { id: "et-2", name: "Dire Dawa PHC", country: "Ethiopia", region: "Dire Dawa", lat: 9.590, lng: 41.861, coverageRate: 42, stockStatus: "critical", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 1260, targetPopulation: 3000 },
-  { id: "et-3", name: "Bahir Dar District Clinic", country: "Ethiopia", region: "Amhara", lat: 11.593, lng: 37.390, coverageRate: 56, stockStatus: "low", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 2800, targetPopulation: 5000 },
-  { id: "gh-1", name: "Accra Central Hospital", country: "Ghana", region: "Greater Accra", lat: 5.556, lng: -0.197, coverageRate: 88, stockStatus: "adequate", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 4400, targetPopulation: 5000 },
-  { id: "gh-2", name: "Kumasi Health Post", country: "Ghana", region: "Ashanti", lat: 6.688, lng: -1.624, coverageRate: 71, stockStatus: "adequate", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 2840, targetPopulation: 4000 },
-  { id: "gh-3", name: "Tamale PHC", country: "Ghana", region: "Northern", lat: 9.403, lng: -0.839, coverageRate: 33, stockStatus: "critical", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 990, targetPopulation: 3000 },
-  { id: "ug-1", name: "Kampala City Clinic", country: "Uganda", region: "Central", lat: 0.347, lng: 32.582, coverageRate: 80, stockStatus: "adequate", vaccineType: "BCG", period: "2024-Q4", dosesAdministered: 4000, targetPopulation: 5000 },
-  { id: "ug-2", name: "Gulu District Hospital", country: "Uganda", region: "Northern", lat: 2.779, lng: 32.299, coverageRate: 49, stockStatus: "critical", vaccineType: "DTP", period: "2024-Q4", dosesAdministered: 1470, targetPopulation: 3000 },
-  { id: "tz-1", name: "Dar es Salaam Hub", country: "Tanzania", region: "Dar es Salaam", lat: -6.792, lng: 39.208, coverageRate: 85, stockStatus: "adequate", vaccineType: "MCV", period: "2024-Q4", dosesAdministered: 8500, targetPopulation: 10000 },
-  { id: "tz-2", name: "Dodoma Central Clinic", country: "Tanzania", region: "Dodoma", lat: -6.173, lng: 35.739, coverageRate: 60, stockStatus: "low", vaccineType: "OPV", period: "2024-Q4", dosesAdministered: 1800, targetPopulation: 3000 },
-];
-
-const ALL_COUNTRIES = ["All", ...Array.from(new Set(FACILITIES.map((f) => f.country))).sort()];
-const ALL_VACCINES = ["All", ...Array.from(new Set(FACILITIES.map((f) => f.vaccineType))).sort()];
-const ALL_PERIODS = ["All", ...Array.from(new Set(FACILITIES.map((f) => f.period))).sort()];
+import { MapPin, Filter, AlertTriangle, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { getCoverageFacilities, type Facility } from "@/api/coverage";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -73,19 +29,44 @@ const STOCK_COLOR: Record<string, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CoverageMapPage() {
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [country, setCountry] = useState("All");
   const [vaccine, setVaccine] = useState("All");
   const [period, setPeriod] = useState("All");
   const [selected, setSelected] = useState<Facility | null>(null);
 
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getCoverageFacilities()
+      .then(setFacilities)
+      .catch(() => setError("Failed to load facility data. Please try again."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const allCountries = useMemo(
+    () => ["All", ...Array.from(new Set(facilities.map((f) => f.country))).sort()],
+    [facilities],
+  );
+  const allVaccines = useMemo(
+    () => ["All", ...Array.from(new Set(facilities.map((f) => f.vaccineType))).sort()],
+    [facilities],
+  );
+  const allPeriods = useMemo(
+    () => ["All", ...Array.from(new Set(facilities.map((f) => f.period))).sort()],
+    [facilities],
+  );
+
   const filtered = useMemo(() => {
-    return FACILITIES.filter(
+    return facilities.filter(
       (f) =>
         (country === "All" || f.country === country) &&
         (vaccine === "All" || f.vaccineType === vaccine) &&
         (period === "All" || f.period === period),
     );
-  }, [country, vaccine, period]);
+  }, [facilities, country, vaccine, period]);
 
   const stats = useMemo(() => {
     const high = filtered.filter((f) => f.coverageRate >= 80).length;
@@ -98,6 +79,15 @@ export default function CoverageMapPage() {
     return { high, medium, low, avgCoverage };
   }, [filtered]);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Loading facilities…</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -109,6 +99,13 @@ export default function CoverageMapPage() {
           Facility-level immunization coverage rates and vaccine stock status across regions
         </p>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
@@ -125,7 +122,7 @@ export default function CoverageMapPage() {
                 onChange={(e) => setCountry(e.target.value)}
                 className="text-sm border rounded-md px-2 py-1 bg-background"
               >
-                {ALL_COUNTRIES.map((c) => (
+                {allCountries.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
@@ -137,7 +134,7 @@ export default function CoverageMapPage() {
                 onChange={(e) => setVaccine(e.target.value)}
                 className="text-sm border rounded-md px-2 py-1 bg-background"
               >
-                {ALL_VACCINES.map((v) => (
+                {allVaccines.map((v) => (
                   <option key={v}>{v}</option>
                 ))}
               </select>
@@ -149,13 +146,13 @@ export default function CoverageMapPage() {
                 onChange={(e) => setPeriod(e.target.value)}
                 className="text-sm border rounded-md px-2 py-1 bg-background"
               >
-                {ALL_PERIODS.map((p) => (
+                {allPeriods.map((p) => (
                   <option key={p}>{p}</option>
                 ))}
               </select>
             </div>
             <span className="text-xs text-muted-foreground ml-auto">
-              Showing {filtered.length} of {FACILITIES.length} facilities
+              Showing {filtered.length} of {facilities.length} facilities
             </span>
           </div>
         </CardContent>

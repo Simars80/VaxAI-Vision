@@ -187,6 +187,15 @@ const Hero = () => {
               >
                 <DashboardPreview />
               </Box>
+              <Text
+                textAlign="center"
+                mt="14px"
+                color="#64748B"
+                fontSize="13px"
+                letterSpacing="0.01em"
+              >
+                ↓ Live demo below
+              </Text>
             </Slide>
           </GridItem>
         </Grid>

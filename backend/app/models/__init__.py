@@ -1,3 +1,11 @@
+from app.models.cold_chain import (
+    AlertSeverity,
+    AlertType,
+    ColdChainAlert,
+    ColdChainFacility,
+    ColdChainReading,
+    ReadingStatus,
+)
 from app.models.forecasting import ForecastPrediction, ModelRun, ModelRunStatus
 from app.models.ingestion import (
     IngestionAuditLog,
@@ -29,4 +37,10 @@ __all__ = [
     "ModelRun",
     "ModelRunStatus",
     "ForecastPrediction",
+    "ColdChainFacility",
+    "ColdChainReading",
+    "ColdChainAlert",
+    "AlertType",
+    "AlertSeverity",
+    "ReadingStatus",
 ]

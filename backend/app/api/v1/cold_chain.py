@@ -1,126 +1,223 @@
-"""Cold chain temperature monitoring API — VAX-31."""
+"""Cold chain temperature monitoring API — VAX-54 (DB-backed)."""
 
-from datetime import datetime, timedelta
-import math
-import random
+from __future__ import annotations
 
-from fastapi import APIRouter
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from app.models.cold_chain import (
+    AlertSeverity,
+    AlertType,
+    ColdChainAlert,
+    ColdChainFacility,
+    ColdChainReading,
+    ReadingStatus,
+)
 
 router = APIRouter(prefix="/cold-chain", tags=["cold-chain"])
 
-FACILITIES = [
-    {"id": "NG-KAN", "name": "Kano Central Store", "country": "Nigeria"},
-    {"id": "NG-LAG", "name": "Lagos Logistics Hub", "country": "Nigeria"},
-    {"id": "NG-ABJ", "name": "Abuja NPHCDA Depot", "country": "Nigeria"},
-    {"id": "KE-NBI", "name": "Nairobi KEMSA Store", "country": "Kenya"},
-    {"id": "KE-MBA", "name": "Mombasa Cold Room", "country": "Kenya"},
-    {"id": "KE-KSM", "name": "Kisumu Regional Hub", "country": "Kenya"},
-]
 
-SENSORS_PER_FACILITY = 2
+# ── Schemas ───────────────────────────────────────────────────────────────────
 
 
-def _generate_readings(facility_id: str, sensor_id: str) -> list[dict]:
-    """Generate 30 days of hourly mock readings with occasional breaches."""
-    random.seed(hash(facility_id + sensor_id))
-    now = datetime.utcnow()
-    start = now - timedelta(days=30)
-    readings = []
-    for h in range(30 * 24):
-        ts = start + timedelta(hours=h)
-        # Normal range 2–8°C with occasional breaches
-        base = 5.0 + math.sin(h / 6) * 1.5
-        noise = random.gauss(0, 0.3)
-        # ~5% breach chance
-        spike = random.choice([0] * 19 + [random.uniform(4, 6)]) if random.random() < 0.05 else 0
-        temp = round(base + noise + spike, 2)
-        if temp < 0:
-            status = "breach"
-        elif temp > 8:
-            status = "breach"
-        elif temp < 2 or temp > 7:
-            status = "warning"
-        else:
-            status = "normal"
-        readings.append(
+class FacilityOut(BaseModel):
+    id: str
+    name: str
+    country: str
+    min_temp_c: float
+    max_temp_c: float
+
+    class Config:
+        from_attributes = True
+
+
+class ReadingOut(BaseModel):
+    id: str
+    facility_id: str
+    sensor_id: str
+    timestamp: str
+    temp_celsius: float
+    status: str
+
+    class Config:
+        from_attributes = True
+
+
+class ReadingIn(BaseModel):
+    facility_id: str
+    sensor_id: str
+    timestamp: datetime
+    temp_celsius: float
+
+
+class AlertOut(BaseModel):
+    id: str
+    facility_id: str
+    sensor_id: str
+    alert_type: str
+    peak_temp_celsius: float
+    threshold_celsius: float
+    start_time: str
+    end_time: str | None
+    resolved: bool
+    severity: str
+
+    class Config:
+        from_attributes = True
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+def _classify_reading(temp: float, min_t: float = 2.0, max_t: float = 8.0) -> ReadingStatus:
+    if temp < min_t or temp > max_t:
+        return ReadingStatus.breach
+    if temp < (min_t + 0.5) or temp > (max_t - 0.5):
+        return ReadingStatus.warning
+    return ReadingStatus.normal
+
+
+def _to_iso(dt: datetime | None) -> str | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat().replace("+00:00", "Z")
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
+
+@router.get("/facilities", summary="List monitored cold storage facilities")
+async def get_facilities(db: AsyncSession = Depends(get_db)) -> dict:
+    result = await db.execute(select(ColdChainFacility).order_by(ColdChainFacility.id))
+    facilities = result.scalars().all()
+    return {
+        "facilities": [
+            FacilityOut.model_validate(f).model_dump() for f in facilities
+        ]
+    }
+
+
+@router.get("/readings", summary="Get sensor readings with optional facility and time filters")
+async def get_readings(
+    facility_id: str | None = Query(default=None, description="Filter by facility ID"),
+    since: datetime | None = Query(
+        default=None,
+        description="Return readings at or after this UTC timestamp (ISO 8601). Defaults to 7 days ago.",
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    if since is None:
+        since = datetime.now(timezone.utc) - timedelta(days=7)
+    elif since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
+
+    stmt = (
+        select(ColdChainReading)
+        .where(ColdChainReading.timestamp >= since)
+        .order_by(ColdChainReading.timestamp.desc())
+    )
+    if facility_id:
+        stmt = stmt.where(ColdChainReading.facility_id == facility_id)
+
+    result = await db.execute(stmt)
+    readings = result.scalars().all()
+
+    return {
+        "readings": [
             {
-                "facility_id": facility_id,
-                "sensor_id": sensor_id,
-                "timestamp": ts.isoformat() + "Z",
-                "temp_celsius": temp,
-                "status": status,
+                "id": str(r.id),
+                "facility_id": r.facility_id,
+                "sensor_id": r.sensor_id,
+                "timestamp": _to_iso(r.timestamp),
+                "temp_celsius": r.temp_celsius,
+                "status": r.status.value if hasattr(r.status, "value") else r.status,
             }
-        )
-    return readings
+            for r in readings
+        ]
+    }
 
 
-@router.get("/readings")
-async def get_readings(facility_id: str | None = None):
-    """Return mock sensor readings for all (or one) facility."""
-    all_readings: list[dict] = []
-    for fac in FACILITIES:
-        if facility_id and fac["id"] != facility_id:
-            continue
-        for s in range(1, SENSORS_PER_FACILITY + 1):
-            sensor_id = f"{fac['id']}-S{s}"
-            all_readings.extend(_generate_readings(fac["id"], sensor_id))
-    return {"readings": all_readings}
+@router.post("/readings", status_code=201, summary="Ingest a new sensor reading")
+async def create_reading(
+    payload: ReadingIn,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    # Validate facility exists
+    facility = await db.get(ColdChainFacility, payload.facility_id)
+    if facility is None:
+        raise HTTPException(status_code=404, detail=f"Facility '{payload.facility_id}' not found")
+
+    ts = payload.timestamp
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+
+    status = _classify_reading(payload.temp_celsius, facility.min_temp_c, facility.max_temp_c)
+
+    reading = ColdChainReading(
+        id=uuid.uuid4(),
+        facility_id=payload.facility_id,
+        sensor_id=payload.sensor_id,
+        timestamp=ts,
+        temp_celsius=payload.temp_celsius,
+        status=status,
+    )
+    db.add(reading)
+    await db.flush()
+
+    return {
+        "id": str(reading.id),
+        "facility_id": reading.facility_id,
+        "sensor_id": reading.sensor_id,
+        "timestamp": _to_iso(reading.timestamp),
+        "temp_celsius": reading.temp_celsius,
+        "status": reading.status.value if hasattr(reading.status, "value") else reading.status,
+    }
 
 
-@router.get("/facilities")
-async def get_facilities():
-    """Return the list of monitored facilities."""
-    return {"facilities": FACILITIES}
+@router.get("/alerts", summary="Get cold-chain breach alerts with optional filters")
+async def get_alerts(
+    facility_id: str | None = Query(default=None, description="Filter by facility ID"),
+    resolved: bool | None = Query(default=None, description="Filter by resolved status"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    stmt = select(ColdChainAlert).order_by(
+        ColdChainAlert.resolved.asc(),
+        ColdChainAlert.start_time.desc(),
+    )
+    if facility_id:
+        stmt = stmt.where(ColdChainAlert.facility_id == facility_id)
+    if resolved is not None:
+        stmt = stmt.where(ColdChainAlert.resolved == resolved)
 
+    result = await db.execute(stmt)
+    alerts = result.scalars().all()
 
-@router.get("/alerts")
-async def get_alerts(facility_id: str | None = None):
-    """Return active and recent cold-chain breach alerts for all (or one) facility."""
-    random.seed(42)
-    now = datetime.utcnow()
-    alerts = []
-    alert_id = 1
+    active_count = sum(1 for a in alerts if not a.resolved)
 
-    for fac in FACILITIES:
-        if facility_id and fac["id"] != facility_id:
-            continue
-        for s in range(1, SENSORS_PER_FACILITY + 1):
-            sensor_id = f"{fac['id']}-S{s}"
-            # Seed per sensor for reproducibility
-            random.seed(hash(sensor_id) % (2**32))
-            # Randomly assign 0-2 alerts per sensor
-            num_alerts = random.choices([0, 1, 2], weights=[6, 3, 1])[0]
-            for _ in range(num_alerts):
-                hours_ago_start = random.uniform(0.5, 48)
-                duration_hours = random.uniform(0.5, 4)
-                start_dt = now - timedelta(hours=hours_ago_start)
-                end_dt = start_dt + timedelta(hours=duration_hours)
-                resolved = end_dt < now
-                alert_type = random.choice(["high", "low"])
-                if alert_type == "high":
-                    peak = round(random.uniform(8.5, 12.0), 1)
-                    threshold = 8.0
-                else:
-                    peak = round(random.uniform(-2.0, 1.5), 1)
-                    threshold = 2.0
-                alerts.append(
-                    {
-                        "id": f"alert-{alert_id}",
-                        "facility_id": fac["id"],
-                        "facility_name": fac["name"],
-                        "country": fac["country"],
-                        "sensor_id": sensor_id,
-                        "alert_type": alert_type,
-                        "peak_temp_celsius": peak,
-                        "threshold_celsius": threshold,
-                        "start_time": start_dt.isoformat() + "Z",
-                        "end_time": end_dt.isoformat() + "Z" if resolved else None,
-                        "resolved": resolved,
-                        "severity": "critical" if abs(peak - threshold) > 3 else "warning",
-                    }
-                )
-                alert_id += 1
-
-    # Sort: active first, then most recent
-    alerts.sort(key=lambda a: (a["resolved"], a["start_time"]), reverse=False)
-    return {"alerts": alerts, "total": len(alerts), "active": sum(1 for a in alerts if not a["resolved"])}
+    return {
+        "alerts": [
+            {
+                "id": str(a.id),
+                "facility_id": a.facility_id,
+                "sensor_id": a.sensor_id,
+                "alert_type": a.alert_type.value if hasattr(a.alert_type, "value") else a.alert_type,
+                "peak_temp_celsius": a.peak_temp_celsius,
+                "threshold_celsius": a.threshold_celsius,
+                "start_time": _to_iso(a.start_time),
+                "end_time": _to_iso(a.end_time),
+                "resolved": a.resolved,
+                "severity": a.severity.value if hasattr(a.severity, "value") else a.severity,
+            }
+            for a in alerts
+        ],
+        "total": len(alerts),
+        "active": active_count,
+    }

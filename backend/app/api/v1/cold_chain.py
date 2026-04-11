@@ -12,8 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.cold_chain import (
-    AlertSeverity,
-    AlertType,
     ColdChainAlert,
     ColdChainFacility,
     ColdChainReading,
@@ -75,7 +73,9 @@ class AlertOut(BaseModel):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _classify_reading(temp: float, min_t: float = 2.0, max_t: float = 8.0) -> ReadingStatus:
+def _classify_reading(
+    temp: float, min_t: float = 2.0, max_t: float = 8.0
+) -> ReadingStatus:
     if temp < min_t or temp > max_t:
         return ReadingStatus.breach
     if temp < (min_t + 0.5) or temp > (max_t - 0.5):
@@ -99,13 +99,13 @@ async def get_facilities(db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(ColdChainFacility).order_by(ColdChainFacility.id))
     facilities = result.scalars().all()
     return {
-        "facilities": [
-            FacilityOut.model_validate(f).model_dump() for f in facilities
-        ]
+        "facilities": [FacilityOut.model_validate(f).model_dump() for f in facilities]
     }
 
 
-@router.get("/readings", summary="Get sensor readings with optional facility and time filters")
+@router.get(
+    "/readings", summary="Get sensor readings with optional facility and time filters"
+)
 async def get_readings(
     facility_id: str | None = Query(default=None, description="Filter by facility ID"),
     since: datetime | None = Query(
@@ -153,13 +153,17 @@ async def create_reading(
     # Validate facility exists
     facility = await db.get(ColdChainFacility, payload.facility_id)
     if facility is None:
-        raise HTTPException(status_code=404, detail=f"Facility '{payload.facility_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Facility '{payload.facility_id}' not found"
+        )
 
     ts = payload.timestamp
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
 
-    status = _classify_reading(payload.temp_celsius, facility.min_temp_c, facility.max_temp_c)
+    status = _classify_reading(
+        payload.temp_celsius, facility.min_temp_c, facility.max_temp_c
+    )
 
     reading = ColdChainReading(
         id=uuid.uuid4(),
@@ -178,14 +182,18 @@ async def create_reading(
         "sensor_id": reading.sensor_id,
         "timestamp": _to_iso(reading.timestamp),
         "temp_celsius": reading.temp_celsius,
-        "status": reading.status.value if hasattr(reading.status, "value") else reading.status,
+        "status": reading.status.value
+        if hasattr(reading.status, "value")
+        else reading.status,
     }
 
 
 @router.get("/alerts", summary="Get cold-chain breach alerts with optional filters")
 async def get_alerts(
     facility_id: str | None = Query(default=None, description="Filter by facility ID"),
-    resolved: bool | None = Query(default=None, description="Filter by resolved status"),
+    resolved: bool | None = Query(
+        default=None, description="Filter by resolved status"
+    ),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     stmt = select(ColdChainAlert).order_by(
@@ -208,13 +216,17 @@ async def get_alerts(
                 "id": str(a.id),
                 "facility_id": a.facility_id,
                 "sensor_id": a.sensor_id,
-                "alert_type": a.alert_type.value if hasattr(a.alert_type, "value") else a.alert_type,
+                "alert_type": a.alert_type.value
+                if hasattr(a.alert_type, "value")
+                else a.alert_type,
                 "peak_temp_celsius": a.peak_temp_celsius,
                 "threshold_celsius": a.threshold_celsius,
                 "start_time": _to_iso(a.start_time),
                 "end_time": _to_iso(a.end_time),
                 "resolved": a.resolved,
-                "severity": a.severity.value if hasattr(a.severity, "value") else a.severity,
+                "severity": a.severity.value
+                if hasattr(a.severity, "value")
+                else a.severity,
             }
             for a in alerts
         ],

@@ -7,7 +7,6 @@ Each test that mutates the DB runs inside a transaction that is rolled back afte
 import os
 from typing import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker

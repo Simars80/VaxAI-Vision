@@ -49,7 +49,9 @@ class FacilitiesResponse(BaseModel):
 )
 async def get_coverage_facilities(
     country: str | None = Query(default=None, description="Filter by country name"),
-    vaccine_type: str | None = Query(default=None, description="Filter by vaccine type"),
+    vaccine_type: str | None = Query(
+        default=None, description="Filter by vaccine type"
+    ),
     stock_status: str | None = Query(
         default=None,
         description="Filter by stock status (adequate | low | critical)",
@@ -61,7 +63,9 @@ async def get_coverage_facilities(
 
     Supports optional filtering by country, vaccine_type, and stock_status.
     """
-    stmt = select(CoverageFacility).order_by(CoverageFacility.country, CoverageFacility.name)
+    stmt = select(CoverageFacility).order_by(
+        CoverageFacility.country, CoverageFacility.name
+    )
 
     if country:
         stmt = stmt.where(CoverageFacility.country == country)

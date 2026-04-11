@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import uuid
 
 from sqlalchemy import DateTime, Float, Integer, String, func
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base

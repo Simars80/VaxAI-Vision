@@ -46,3 +46,14 @@ dist/
 
 # Docker
 *.log
+
+# Business/personal documents (not part of codebase)
+Banking/
+Bills/
+Chemonics Proposal/
+Company Docs/
+Incorporation Docs/
+Vax AI Vision Tax Related/
+VaxAI Business Case/
+VaxAI Vision Dev/
+~$*

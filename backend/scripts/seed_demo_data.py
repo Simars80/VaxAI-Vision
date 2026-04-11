@@ -29,10 +29,8 @@ import math
 import os
 import sys
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from dateutil.relativedelta import relativedelta  # type: ignore[import]
-from typing import Optional
 
 # ---------------------------------------------------------------------------
 # Make sure the app package is importable when run from backend/

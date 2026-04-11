@@ -76,7 +76,10 @@ async def get_stock_levels(
     """
     # Signed quantity expression: receipts/adjustments positive, issues/wastage negative
     signed_qty = case(
-        (SupplyTransaction.transaction_type.in_(["issue", "wastage"]), -SupplyTransaction.quantity),
+        (
+            SupplyTransaction.transaction_type.in_(["issue", "wastage"]),
+            -SupplyTransaction.quantity,
+        ),
         else_=SupplyTransaction.quantity,
     )
 

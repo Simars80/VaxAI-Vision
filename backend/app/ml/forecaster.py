@@ -36,6 +36,12 @@ class ForecastConfig:
     # Time-series frequency for Prophet
     freq: str = "W"
 
+    # Data source: "supply" for supply_transactions, "dhis2" for coverage data
+    data_source: str = "supply"
+
+    # DHIS2-specific settings
+    dhis2_imputation: str = "forward_fill"
+
     # Prophet settings
     prophet_seasonality_mode: str = "multiplicative"
     prophet_changepoint_prior_scale: float = 0.05

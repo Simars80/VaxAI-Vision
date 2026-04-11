@@ -19,7 +19,13 @@ from typing import Any
 
 import pandas as pd
 
-from app.ml.features import build_time_series, load_transactions
+from app.ml.features import (
+    ImputationStrategy,
+    build_dhis2_time_series,
+    build_time_series,
+    load_dhis2_coverage,
+    load_transactions,
+)
 from app.ml.forecaster import ForecastConfig, VaxAIForecaster
 
 logger = logging.getLogger(__name__)
@@ -91,6 +97,16 @@ async def train_model(
     Returns a dict with the MLflow run_id, final metrics, and model path.
     """
     config = config or ForecastConfig()
+
+    # Route to DHIS2 pipeline if configured
+    if config.data_source == "dhis2":
+        return await train_model_dhis2(
+            vaccine_type=supply_item_id,
+            facility_id=facility_id,
+            config=config,
+            model_run_id=model_run_id,
+        )
+
     run_label = f"item={supply_item_id[:8]}" + (
         f" fac={facility_id[:8]}" if facility_id else ""
     )
@@ -114,12 +130,99 @@ async def train_model(
     if ts_df.empty or len(ts_df) < 8:
         return {"error": f"Insufficient time-series data ({len(ts_df)} rows)"}
 
-    # ── 2. Train / test split ──────────────────────────────────────────────────
+    return _fit_evaluate_and_log(
+        ts_df=ts_df,
+        config=config,
+        run_label=run_label,
+        item_key=supply_item_id,
+        facility_id=facility_id,
+    )
+
+
+async def train_model_dhis2(
+    vaccine_type: str,
+    facility_id: str | None = None,
+    country: str | None = None,
+    config: ForecastConfig | None = None,
+    model_run_id: str | None = None,
+) -> dict[str, Any]:
+    """End-to-end training pipeline for DHIS2 immunization coverage data.
+
+    Uses doses_administered per antigen per period as the forecast target.
+    """
+    config = config or ForecastConfig(data_source="dhis2", freq="MS")
+    imputation = ImputationStrategy(config.dhis2_imputation)
+    run_label = f"dhis2-{vaccine_type}" + (
+        f" fac={facility_id[:8]}" if facility_id else ""
+    )
+
+    # ── 1. Load DHIS2 coverage data ───────────────────────────────────────────
+    from app.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        raw_df = await load_dhis2_coverage(
+            session,
+            vaccine_type=vaccine_type,
+            facility_id=facility_id,
+            country=country,
+        )
+
+    if raw_df.empty:
+        return {"error": f"No DHIS2 coverage data for vaccine_type={vaccine_type}"}
+
+    # ── 2. Build time series with quality checks ──────────────────────────────
+    ts_df, quality_report = build_dhis2_time_series(
+        raw_df,
+        vaccine_type=vaccine_type,
+        facility_id=facility_id,
+        freq=config.freq,
+        imputation=imputation,
+    )
+
+    if ts_df.empty or len(ts_df) < 8:
+        return {
+            "error": f"Insufficient DHIS2 time-series data ({len(ts_df)} rows)",
+            "data_quality": {
+                "completeness": quality_report.completeness_score,
+                "missing_periods": quality_report.missing_periods[:10],
+                "warnings": quality_report.warnings,
+            },
+        }
+
+    result = _fit_evaluate_and_log(
+        ts_df=ts_df,
+        config=config,
+        run_label=run_label,
+        item_key=vaccine_type,
+        facility_id=facility_id,
+    )
+
+    # Attach quality metadata to the result
+    result["data_source"] = "dhis2"
+    result["data_quality"] = {
+        "completeness": quality_report.completeness_score,
+        "missing_periods_count": len(quality_report.missing_periods),
+        "facilities_with_gaps": len(quality_report.facilities_with_gaps),
+        "warnings": quality_report.warnings,
+    }
+    return result
+
+
+def _fit_evaluate_and_log(
+    ts_df: pd.DataFrame,
+    config: ForecastConfig,
+    run_label: str,
+    item_key: str,
+    facility_id: str | None,
+) -> dict[str, Any]:
+    """Shared train/evaluate/log logic for both supply and DHIS2 pipelines."""
+
+    # ── Train / test split ────────────────────────────────────────────────────
     split_idx = max(8, int(len(ts_df) * (1 - _TEST_FRACTION)))
     train_df = ts_df.iloc[:split_idx]
     test_df = ts_df.iloc[split_idx:]
 
-    # ── 3. Walk-forward backtesting ────────────────────────────────────────────
+    # ── Walk-forward backtesting ──────────────────────────────────────────────
     cv_results = walk_forward_backtest(ts_df, config)
     avg_metrics: dict[str, float] = {}
     if cv_results:
@@ -129,13 +232,13 @@ async def train_model(
                 float(sum(vals) / len(vals)) if vals else float("nan")
             )
 
-    # ── 4. Final model fit on full training data ───────────────────────────────
+    # ── Final model fit ───────────────────────────────────────────────────────
     forecaster = VaxAIForecaster(config)
     forecaster.fit(train_df)
     final_metrics = forecaster.evaluate(test_df) if not test_df.empty else {}
     all_metrics = {**final_metrics, **avg_metrics}
 
-    # ── 5. MLflow logging ──────────────────────────────────────────────────────
+    # ── MLflow logging ────────────────────────────────────────────────────────
     mlflow_run_id: str | None = None
     try:
         import mlflow
@@ -146,11 +249,11 @@ async def train_model(
         with mlflow.start_run(run_name=f"vaxai-forecast-{run_label}") as run:
             mlflow_run_id = run.info.run_id
 
-            # Log hyper-parameters
             mlflow.log_params(
                 {
-                    "supply_item_id": supply_item_id,
+                    "item_key": item_key,
                     "facility_id": facility_id or "all",
+                    "data_source": config.data_source,
                     "freq": config.freq,
                     "horizon": config.horizon,
                     "prophet_weight": config.prophet_weight,
@@ -160,12 +263,10 @@ async def train_model(
                 }
             )
 
-            # Log metrics
             for k, v in all_metrics.items():
                 if not pd.isna(v):
                     mlflow.log_metric(k, v)
 
-            # Save and log model artifact
             with tempfile.TemporaryDirectory() as tmpdir:
                 model_dir = Path(tmpdir) / "model"
                 forecaster.save(model_dir)
@@ -178,14 +279,14 @@ async def train_model(
     except Exception as exc:
         logger.warning("MLflow logging failed (non-fatal): %s", exc)
 
-    # ── 6. Persist model locally for serving ──────────────────────────────────
+    # ── Persist model locally ─────────────────────────────────────────────────
     local_path = (
-        Path("/tmp/vaxai_models") / supply_item_id[:8] / (facility_id or "global")
+        Path("/tmp/vaxai_models") / item_key[:8] / (facility_id or "global")
     )
     forecaster.save(local_path)
 
     return {
-        "supply_item_id": supply_item_id,
+        "item_key": item_key,
         "facility_id": facility_id,
         "mlflow_run_id": mlflow_run_id,
         "model_path": str(local_path),

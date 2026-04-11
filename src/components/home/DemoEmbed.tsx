@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
-const DEMO_URL = "https://app.vaxaivision.com?demo=true";
+const DEMO_URL = "https://app.vaxaivision.com";
 
 const DemoEmbed = () => {
   const [loaded, setLoaded] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Fallback: if onLoad doesn't fire within 6s, show iframe anyway
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoaded(true);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section
@@ -121,6 +130,7 @@ const DemoEmbed = () => {
             )}
 
             <iframe
+              ref={iframeRef}
               src={DEMO_URL}
               title="VaxAI Vision Live Demo"
               onLoad={() => setLoaded(true)}
@@ -130,7 +140,7 @@ const DemoEmbed = () => {
                 border: "none",
                 display: "block",
                 opacity: loaded ? 1 : 0,
-                transition: "opacity 0.4s ease",
+                transition: "opacity 0.5s ease",
               }}
               allow="fullscreen"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"

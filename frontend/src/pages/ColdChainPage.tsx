@@ -203,7 +203,7 @@ export default function ColdChainPage() {
   const activeBreaches = allAlerts.filter((a) => !a.resolved).length;
   const okCount = facilities.filter((f) => deriveStatus(f.id, allAlerts) === "ok").length;
   const warnCount = facilities.filter((f) => deriveStatus(f.id, allAlerts) === "warning").length;
-  const breachCount = facilities.filter((f) => deriveStatus(f.id, allAlerts) === "breach").length;
+  const _breachCount = facilities.filter((f) => deriveStatus(f.id, allAlerts) === "breach").length;
 
   return (
     <div className="space-y-6">

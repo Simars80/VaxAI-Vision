@@ -329,9 +329,9 @@ export const team = [
     image: `https://res.cloudinary.com/alonexx/image/upload/v1718995080/Abdulhafeez_Mustapha_1_u79a1h.png`,
     name: "Abdulhafeez Ayodele Mustapha",
     position: "Founder",
-    bio: `Abdulhafeez Ayodele Mustapha is a dedicated pharmacist, applied data scientist, and vaccine supply chain specialist with over six years of experience in public health, international development, and logistics management. Holding an MBA/MPH dual degree from Johns Hopkins University, Abdulhafeez has played pivotal roles in major public health initiatives, including COVID-19 vaccine deployment and immunization campaigns with UNICEF, Clinton Health Access Initiative, and Nigeria's Presidential Task Force on COVID-19.`,
+    bio: `Abdulhafeez Ayodele Mustapha is a dedicated pharmacist, applied data scientist, and vaccine supply chain specialist with over ten years of experience in public health, international development, and logistics management. Holding an MBA/MPH dual degree from Johns Hopkins University, Abdulhafeez has played pivotal roles in major public health initiatives, including COVID-19 vaccine deployment and immunization campaigns with UNICEF, Clinton Health Access Initiative, and Nigeria's Presidential Task Force on COVID-19.`,
     linkedIn: `https://www.linkedin.com/in/abdulhafeezmustapha/`,
-    email: `abdulhafeez@vaxaivision.com`,
+    email: `amustapha@vaxaivision.com`,
   },
   {
     image: `https://res.cloudinary.com/alonexx/image/upload/v1718995079/image_13_tmtxw5.png`,
@@ -339,6 +339,6 @@ export const team = [
     position: "Co-founder",
     bio: `Daniel Irowa-Omoregie is a Physician and  results-driven healthcare strategist combining clinical experience with emerging business expertise to design and execute innovative growth initiatives. Passionate about the intersection of healthcare and technology, he excels at translating complex scientific concepts into actionable commercial plans. Daniel’s success stems from his ability to collaborate effectively across teams, understanding the needs of both technical experts and business leadership.`,
     linkedIn: `https://www.linkedin.com/in/deio/`,
-    email: `daniel@vaxaivision.com`,
+    email: `dirowa@vaxaivision.com`,
   },
 ];

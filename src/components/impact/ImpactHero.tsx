@@ -84,7 +84,7 @@ const ImpactHero = () => {
           </Slide>
 
           <Fade triggerOnce delay={400}>
-            <Box display="flex" gap="16px" flexWrap="wrap" justify="center">
+            <Box display="flex" gap="16px" flexWrap="wrap" justifyContent="center">
               <a href="#ask">
                 <Button
                   bg="#3A5BCC"

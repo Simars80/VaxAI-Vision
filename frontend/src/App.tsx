@@ -9,6 +9,7 @@ import IngestionPage from "@/pages/IngestionPage";
 import InventoryPage from "@/pages/InventoryPage";
 import ColdChainPage from "@/pages/ColdChainPage";
 import CoverageMapPage from "@/pages/CoverageMapPage";
+import Dhis2ConfigPage from "@/pages/admin/Dhis2Config";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -71,6 +72,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <CoverageMapPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/dhis2"
+        element={
+          <ProtectedRoute>
+            <Dhis2ConfigPage />
           </ProtectedRoute>
         }
       />

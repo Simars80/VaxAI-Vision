@@ -88,7 +88,7 @@ const DemoEmbed = () => {
           </p>
         </div>
 
-        {/* Desktop embed â browser chrome frame */}
+        {/* Desktop embed — browser chrome frame */}
         <div className="demo-embed-desktop">
           <div
             style={{
@@ -348,7 +348,7 @@ const DemoEmbed = () => {
                 fontSize: 28,
               }}
             >
-              ð¥ï¸
+              🖥️
             </div>
             <p
               style={{

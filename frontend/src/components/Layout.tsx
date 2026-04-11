@@ -14,6 +14,10 @@ const navItems = [
   { href: "/admin/dhis2", icon: Settings, label: "DHIS2 Integration", tour: "nav-dhis2" },
 ];
 
+const adminItems = [
+  { href: "/admin/dhis2", icon: Settings, label: "DHIS2 Integration", tour: "nav-dhis2" },
+];
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { logout, email, isDemo } = useAuthStore();
   const location = useLocation();
@@ -50,6 +54,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+
+          {/* Admin section */}
+          <div className="pt-4 mt-4 border-t">
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Admin
+            </p>
+            {adminItems.map(({ href, icon: Icon, label, tour }) => {
+              const active = location.pathname === href;
+              return (
+                <Link key={href} to={href} data-tour={tour}>
+                  <div
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="p-4 border-t">

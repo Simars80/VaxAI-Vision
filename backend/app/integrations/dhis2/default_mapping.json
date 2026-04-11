@@ -1,0 +1,38 @@
+{
+  "country_code": "SL",
+  "org_unit_level_facility": 4,
+  "stock_data_set": null,
+  "immunization_data_set": null,
+  "data_elements": {
+    "fbfJHSPpUQD": {
+      "vaxai_field": "doses_administered",
+      "vaccine_type": "BCG",
+      "description": "ANC 1st visit (proxy — replace with real EPI element IDs per instance)"
+    },
+    "cYeuwXTCPkU": {
+      "vaxai_field": "doses_administered",
+      "vaccine_type": "Penta3",
+      "description": "ANC 2nd visit (proxy)"
+    },
+    "Jtf34kNZhzP": {
+      "vaxai_field": "doses_administered",
+      "vaccine_type": "OPV3",
+      "description": "ANC 3rd visit (proxy)"
+    },
+    "hfdmMSPBgLG": {
+      "vaxai_field": "target_population",
+      "vaccine_type": "all",
+      "description": "ANC visits total (proxy for target pop)"
+    },
+    "bqK6eSIwo3h": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual stock data element"
+    },
+    "V37YqbqpEhV": {
+      "vaxai_field": "consumed",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual consumption data element"
+    }
+  }
+}

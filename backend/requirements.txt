@@ -17,6 +17,7 @@ redis==5.2.0
 # Auth / security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1              # pinned: passlib 1.7.4 is incompatible with bcrypt>=4.1
 
 # Ingestion / job queue
 celery==5.4.0

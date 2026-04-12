@@ -1,0 +1,28 @@
+{
+  "model": "RandomForest",
+  "accuracy": 1.0,
+  "per_class": {
+    "stage_1": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "stage_2": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "stage_3": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "stage_4": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "train_samples": 480,
+  "val_samples": 120
+}

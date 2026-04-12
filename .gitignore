@@ -44,6 +44,15 @@ dist/
 *.swp
 *.swo
 
+# ML data and model artifacts (regenerated via training pipeline)
+backend/data/vvm_synthetic/
+backend/data/vvm_models/*.pkl
+backend/data/vvm_models/*.pt
+backend/data/vvm_models/*.onnx
+backend/data/vvm_models/*.tflite
+backend/data/vvm_models/*.keras
+backend/data/demo_scenarios/
+
 # Docker
 *.log
 

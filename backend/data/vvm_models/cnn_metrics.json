@@ -1,0 +1,9 @@
+{
+  "model": "SmallCNN-PyTorch",
+  "val_accuracy": 0.95,
+  "best_val_accuracy": 0.95,
+  "onnx_size_mb": 0.11,
+  "epochs_trained": 26,
+  "train_samples": 480,
+  "val_samples": 120
+}

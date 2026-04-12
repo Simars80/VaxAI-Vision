@@ -40,6 +40,11 @@ numpy==1.26.4
 mlflow==2.17.2
 scikit-learn==1.5.2
 
+# Vision ML (VVM classifier)
+torch>=2.2.0
+onnx>=1.14.0
+onnxruntime>=1.16.0
+
 # Date arithmetic (also pulled in by pandas/prophet, listed explicitly for scripts)
 python-dateutil>=2.9.0
 

@@ -1,10 +1,10 @@
 """mSupply integration API endpoints.
 
-POST /api/v1/integrations/msupply/sync       — trigger a full or incremental sync
-GET  /api/v1/integrations/msupply/sync/status — latest sync status for a config
-POST /api/v1/integrations/msupply/configs     — create an mSupply connection config
-GET  /api/v1/integrations/msupply/configs     — list all configs
-POST /api/v1/integrations/msupply/test        — test an mSupply connection
+POST /api/v1/integrations/msupply/sync       â trigger a full or incremental sync
+GET  /api/v1/integrations/msupply/sync/status â latest sync status for a config
+POST /api/v1/integrations/msupply/configs     â create an mSupply connection config
+GET  /api/v1/integrations/msupply/configs     â list all configs
+POST /api/v1/integrations/msupply/test        â test an mSupply connection
 """
 
 from __future__ import annotations
@@ -20,10 +20,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.integrations.msupply.client import MSupplyClient, MSupplyClientError
 from app.integrations.msupply.mapper import MSupplyMapper, MSupplyMappingConfig
-from app.models.cold_chain import ColdChainFacility
 from app.models.coverage import CoverageFacility
 from app.models.msupply_sync import MSupplySyncConfig, MSupplySyncLog, MSupplySyncStatus
-from app.models.supply import SupplyItem, SupplyTransaction
+from app.models.supply import SupplyTransaction
 from app.schemas.msupply import (
     MSupplyConfigCreate,
     MSupplyConfigResponse,
@@ -150,7 +149,7 @@ async def sync_status(
 async def _run_sync(
     config: MSupplySyncConfig, log: MSupplySyncLog, db: AsyncSession
 ) -> dict[str, int]:
-    """Execute a sync run: fetch from mSupply → map → upsert into VaxAI DB."""
+    """Execute a sync run: fetch from mSupply â map â upsert into VaxAI DB."""
     stats = {"fetched": 0, "created": 0, "updated": 0, "failed": 0}
 
     mapping = (
@@ -166,7 +165,7 @@ async def _run_sync(
         password=config.auth_password_encrypted,
         api_token=config.auth_token_encrypted,
     ) as client:
-        # 1. Sync stores → facilities
+        # 1. Sync stores â facilities
         stores = await client.fetch_stores()
         stats["fetched"] += len(stores)
         facilities = mapper.map_stores(stores)
@@ -181,7 +180,7 @@ async def _run_sync(
                     )
                     stats["failed"] += 1
 
-        # 2. Sync stock lines → inventory
+        # 2. Sync stock lines â inventory
         stock_lines = await client.fetch_stock_lines()
         stats["fetched"] += len(stock_lines)
         mapped = mapper.map_stock_lines(stock_lines)

@@ -1,10 +1,10 @@
 """DHIS2 integration API endpoints.
 
-POST /api/v1/integrations/dhis2/sync      — trigger a full or incremental sync
-GET  /api/v1/integrations/dhis2/sync/status — latest sync status for a config
-POST /api/v1/integrations/dhis2/configs    — create a DHIS2 connection config
-GET  /api/v1/integrations/dhis2/configs    — list all configs
-POST /api/v1/integrations/dhis2/test       — test a DHIS2 connection
+POST /api/v1/integrations/dhis2/sync      â trigger a full or incremental sync
+GET  /api/v1/integrations/dhis2/sync/status â latest sync status for a config
+POST /api/v1/integrations/dhis2/configs    â create a DHIS2 connection config
+GET  /api/v1/integrations/dhis2/configs    â list all configs
+POST /api/v1/integrations/dhis2/test       â test a DHIS2 connection
 """
 
 from __future__ import annotations
@@ -20,10 +20,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.integrations.dhis2.client import DHIS2Client, DHIS2ClientError
 from app.integrations.dhis2.mapper import DHIS2Mapper, MappingConfig
-from app.models.cold_chain import ColdChainFacility
 from app.models.coverage import CoverageFacility
 from app.models.dhis2_sync import DHIS2SyncConfig, DHIS2SyncLog, SyncStatus
-from app.models.supply import SupplyItem, SupplyTransaction
+from app.models.supply import SupplyTransaction
 from app.schemas.dhis2 import (
     DHIS2ConfigCreate,
     DHIS2ConfigResponse,
@@ -152,7 +151,7 @@ async def sync_status(
 async def _run_sync(
     config: DHIS2SyncConfig, log: DHIS2SyncLog, db: AsyncSession
 ) -> dict[str, int]:
-    """Execute a sync run: fetch from DHIS2 → map → upsert into VaxAI DB."""
+    """Execute a sync run: fetch from DHIS2 â map â upsert into VaxAI DB."""
     stats = {"fetched": 0, "created": 0, "updated": 0, "failed": 0}
 
     mapping = MappingConfig(config.mapping_config) if config.mapping_config else MappingConfig.default()
@@ -164,7 +163,7 @@ async def _run_sync(
         password=config.auth_password_encrypted,  # TODO: decrypt in production
         personal_access_token=config.auth_pat_encrypted,
     ) as client:
-        # 1. Sync organisation units → facilities
+        # 1. Sync organisation units â facilities
         org_units = await client.fetch_organisation_units(
             level=mapping.org_unit_level_facility
         )

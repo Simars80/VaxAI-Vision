@@ -325,7 +325,7 @@ export default function ImpactReportPage() {
                       dataKey="value"
                       label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}
                     >
-                      {stockChartData.map((entry: StockSummary) => (
+                      {stockChartData.map((entry) => (
                         <Cell
                           key={entry.name}
                           fill={STOCK_COLORS[entry.name] ?? "#94a3b8"}

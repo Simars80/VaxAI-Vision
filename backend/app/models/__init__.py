@@ -21,6 +21,7 @@ from app.models.supply import (
     SupplyTransaction,
 )
 from app.models.user import User, UserRole
+from app.models.vision_scan import VisionScanResult, VVMStageDB
 
 __all__ = [
     "User",
@@ -43,4 +44,6 @@ __all__ = [
     "AlertType",
     "AlertSeverity",
     "ReadingStatus",
+    "VisionScanResult",
+    "VVMStageDB",
 ]

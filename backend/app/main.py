@@ -1,4 +1,4 @@
-"""VaxAI Vision — FastAPI application entry point."""
+"""VaxAI Vision â FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
@@ -38,15 +38,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── HIPAA Safeguards ───────────────────────────────────────────────────────────
+# ââ HIPAA Safeguards âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # HTTPS enforcement is active in staging/production; skipped locally.
 app.add_middleware(
     HttpsEnforcementMiddleware,
-    enforce=settings.ENV in ("staging", "production"),
+    enforce=settings.ENFORCE_HTTPS and settings.ENV in ("staging", "production"),
 )
 app.add_middleware(PhiAuditMiddleware)
 
-# ── CORS ───────────────────────────────────────────────────────────────────────
+# ââ CORS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -55,6 +55,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ────────────────────────────────────────────────────────────────────
+# ââ Routers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.include_router(health_router)  # /health, /health/ready, /version
 app.include_router(v1_router, prefix="/api")  # /api/v1/...

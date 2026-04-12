@@ -31,7 +31,9 @@ class FHIRSyncConfig(Base):
     client_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     client_secret_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     token_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
-    scopes: Mapped[str] = mapped_column(String(512), nullable=False, default="system/*.read")
+    scopes: Mapped[str] = mapped_column(
+        String(512), nullable=False, default="system/*.read"
+    )
     # Static bearer token (alternative to OAuth2)
     access_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     country_code: Mapped[str] = mapped_column(String(2), nullable=False, default="XX")
@@ -64,9 +66,7 @@ class FHIRSyncLog(Base):
         nullable=False,
         default=FHIRSyncStatus.pending,
     )
-    sync_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="full"
-    )
+    sync_type: Mapped[str] = mapped_column(String(32), nullable=False, default="full")
     records_fetched: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     records_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     records_updated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

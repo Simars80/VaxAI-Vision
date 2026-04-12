@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 MODEL_VERSION = "0.1.0-demo"
 
-_DEFAULT_MODEL_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "vvm_models"
+_DEFAULT_MODEL_DIR = (
+    Path(__file__).resolve().parent.parent.parent / "data" / "vvm_models"
+)
 
 Backend = Literal["tflite", "onnx", "sklearn", "cpu"]
 
@@ -55,7 +57,9 @@ class VVMClassifier:
     def _try_load_tflite(self) -> None:
         tflite_path = self.model_dir / "vvm_classifier.tflite"
         if not tflite_path.exists():
-            logger.warning("TFLite model not found at %s, trying ONNX fallback", tflite_path)
+            logger.warning(
+                "TFLite model not found at %s, trying ONNX fallback", tflite_path
+            )
             self.backend = "onnx"
             self._try_load_onnx()
             return
@@ -63,9 +67,11 @@ class VVMClassifier:
         try:
             try:
                 import tflite_runtime.interpreter as tflite
+
                 self._interpreter = tflite.Interpreter(model_path=str(tflite_path))
             except ImportError:
                 import tensorflow as tf
+
                 self._interpreter = tf.lite.Interpreter(model_path=str(tflite_path))
             self._interpreter.allocate_tensors()
             self._loaded = True
@@ -78,13 +84,16 @@ class VVMClassifier:
     def _try_load_onnx(self) -> None:
         onnx_path = self.model_dir / "vvm_classifier.onnx"
         if not onnx_path.exists():
-            logger.warning("ONNX model not found at %s, trying sklearn fallback", onnx_path)
+            logger.warning(
+                "ONNX model not found at %s, trying sklearn fallback", onnx_path
+            )
             self.backend = "sklearn"
             self._try_load_sklearn()
             return
 
         try:
             import onnxruntime as ort
+
             self._onnx_session = ort.InferenceSession(str(onnx_path))
             self._loaded = True
             logger.info("ONNX VVM model loaded from %s", onnx_path)
@@ -96,7 +105,9 @@ class VVMClassifier:
     def _try_load_sklearn(self) -> None:
         pkl_path = self.model_dir / "vvm_rf_model.pkl"
         if not pkl_path.exists():
-            logger.warning("sklearn model not found at %s, falling back to placeholder", pkl_path)
+            logger.warning(
+                "sklearn model not found at %s, falling back to placeholder", pkl_path
+            )
             self.backend = "cpu"
             self._loaded = True
             return
@@ -149,6 +160,7 @@ class VVMClassifier:
 
     def _predict_sklearn(self, img) -> tuple[VVMStage, float]:
         from app.ml.vvm_train import _extract_features
+
         features = _extract_features(img).reshape(1, -1)
         probs = self._sklearn_model.predict_proba(features)[0]
         idx = int(np.argmax(probs))

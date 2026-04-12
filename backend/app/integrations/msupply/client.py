@@ -94,9 +94,7 @@ class MSupplyClient:
                 f"{exc.response.text[:512]}"
             ) from exc
         except httpx.RequestError as exc:
-            raise MSupplyClientError(
-                f"Network error fetching {path}: {exc}"
-            ) from exc
+            raise MSupplyClientError(f"Network error fetching {path}: {exc}") from exc
         return resp.json()
 
     async def _get_paged(

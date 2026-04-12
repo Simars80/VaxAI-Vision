@@ -1,6 +1,19 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, cold_chain, coverage, dhis2, fhir, forecasting, ingestion, inventory, msupply, openlmis, reports, vision
+from app.api.v1 import (
+    auth,
+    cold_chain,
+    coverage,
+    dhis2,
+    fhir,
+    forecasting,
+    ingestion,
+    inventory,
+    msupply,
+    openlmis,
+    reports,
+    vision,
+)
 
 router = APIRouter(prefix="/v1")
 router.include_router(auth.router)

@@ -39,7 +39,9 @@ class FHIRMappingConfig:
         self.vaccine_code_system: str = config.get(
             "vaccine_code_system", "http://hl7.org/fhir/sid/cvx"
         )
-        self.vaccine_code_mappings: dict[str, dict] = config.get("vaccine_code_mappings", {})
+        self.vaccine_code_mappings: dict[str, dict] = config.get(
+            "vaccine_code_mappings", {}
+        )
         self.device_type_codes: dict[str, str] = config.get("device_type_codes", {})
         self.supply_item_code_system: str = config.get(
             "supply_item_code_system", "http://snomed.info/sct"
@@ -77,19 +79,21 @@ class FHIRMapper:
             part_of = loc.get("partOf") or {}
             loc_type = self._extract_first_coding_display(loc.get("type", []))
 
-            result.append({
-                "fhir_id": loc.get("id", ""),
-                "name": loc.get("name", ""),
-                "status": loc.get("status", ""),
-                "facility_type": loc_type,
-                "managing_organization": managing_org.get("display", ""),
-                "part_of_id": part_of.get("reference", "").replace("Location/", ""),
-                "part_of_name": part_of.get("display", ""),
-                "address": self._extract_address(loc),
-                "country": self.mapping.country_code,
-                "lat": lat,
-                "lng": lng,
-            })
+            result.append(
+                {
+                    "fhir_id": loc.get("id", ""),
+                    "name": loc.get("name", ""),
+                    "status": loc.get("status", ""),
+                    "facility_type": loc_type,
+                    "managing_organization": managing_org.get("display", ""),
+                    "part_of_id": part_of.get("reference", "").replace("Location/", ""),
+                    "part_of_name": part_of.get("display", ""),
+                    "address": self._extract_address(loc),
+                    "country": self.mapping.country_code,
+                    "lat": lat,
+                    "lng": lng,
+                }
+            )
         return result
 
     # -- Immunization -> coverage data ----------------------------------------
@@ -108,25 +112,29 @@ class FHIRMapper:
 
         for imm in immunizations:
             vaccine_code = self._extract_vaccine_code(imm)
-            mapping = self.mapping.resolve_vaccine(vaccine_code) if vaccine_code else None
+            mapping = (
+                self.mapping.resolve_vaccine(vaccine_code) if vaccine_code else None
+            )
 
             if mapping is None:
                 result["unmapped"].append(imm)
                 continue
 
             location_ref = (imm.get("location") or {}).get("reference", "")
-            result["coverage"].append({
-                "fhir_id": imm.get("id", ""),
-                "vaccine_code": vaccine_code,
-                "vaccine_type": mapping.get("vaccine_type", "unknown"),
-                "status": imm.get("status", ""),
-                "occurrence_date": imm.get("occurrenceDateTime", ""),
-                "facility_ref": location_ref.replace("Location/", ""),
-                "patient_ref": (imm.get("patient") or {}).get("reference", ""),
-                "dose_quantity": self._extract_dose_quantity(imm),
-                "is_primary_source": imm.get("primarySource", True),
-                "source": "fhir",
-            })
+            result["coverage"].append(
+                {
+                    "fhir_id": imm.get("id", ""),
+                    "vaccine_code": vaccine_code,
+                    "vaccine_type": mapping.get("vaccine_type", "unknown"),
+                    "status": imm.get("status", ""),
+                    "occurrence_date": imm.get("occurrenceDateTime", ""),
+                    "facility_ref": location_ref.replace("Location/", ""),
+                    "patient_ref": (imm.get("patient") or {}).get("reference", ""),
+                    "dose_quantity": self._extract_dose_quantity(imm),
+                    "is_primary_source": imm.get("primarySource", True),
+                    "source": "fhir",
+                }
+            )
 
         return result
 
@@ -140,18 +148,22 @@ class FHIRMapper:
             destination = (sd.get("destination") or {}).get("reference", "")
             quantity = self._extract_supply_quantity(sd)
 
-            result.append({
-                "fhir_id": sd.get("id", ""),
-                "item_code": item_code,
-                "item_name": item_name,
-                "transaction_type": "receipt",
-                "quantity": quantity,
-                "facility_ref": destination.replace("Location/", ""),
-                "occurrence_date": (sd.get("occurrenceDateTime") or
-                                    (sd.get("occurrencePeriod") or {}).get("start", "")),
-                "status": sd.get("status", ""),
-                "source": "fhir",
-            })
+            result.append(
+                {
+                    "fhir_id": sd.get("id", ""),
+                    "item_code": item_code,
+                    "item_name": item_name,
+                    "transaction_type": "receipt",
+                    "quantity": quantity,
+                    "facility_ref": destination.replace("Location/", ""),
+                    "occurrence_date": (
+                        sd.get("occurrenceDateTime")
+                        or (sd.get("occurrencePeriod") or {}).get("start", "")
+                    ),
+                    "status": sd.get("status", ""),
+                    "source": "fhir",
+                }
+            )
         return result
 
     def map_supply_requests(self, requests: list[dict]) -> list[dict]:
@@ -162,22 +174,22 @@ class FHIRMapper:
                 sr.get("itemCodeableConcept") or sr.get("itemReference") or {}
             )
             deliver_to = (sr.get("deliverTo") or {}).get("reference", "")
-            quantity = self._safe_float(
-                (sr.get("quantity") or {}).get("value")
-            )
+            quantity = self._safe_float((sr.get("quantity") or {}).get("value"))
 
-            result.append({
-                "fhir_id": sr.get("id", ""),
-                "item_code": item_code,
-                "item_name": item_name,
-                "transaction_type": "request",
-                "quantity": quantity,
-                "facility_ref": deliver_to.replace("Location/", ""),
-                "authored_on": sr.get("authoredOn", ""),
-                "status": sr.get("status", ""),
-                "priority": sr.get("priority", ""),
-                "source": "fhir",
-            })
+            result.append(
+                {
+                    "fhir_id": sr.get("id", ""),
+                    "item_code": item_code,
+                    "item_name": item_name,
+                    "transaction_type": "request",
+                    "quantity": quantity,
+                    "facility_ref": deliver_to.replace("Location/", ""),
+                    "authored_on": sr.get("authoredOn", ""),
+                    "status": sr.get("status", ""),
+                    "priority": sr.get("priority", ""),
+                    "source": "fhir",
+                }
+            )
         return result
 
     # -- Device -> cold chain equipment ---------------------------------------
@@ -191,18 +203,21 @@ class FHIRMapper:
             )
             location_ref = (dev.get("location") or {}).get("reference", "")
 
-            result.append({
-                "fhir_id": dev.get("id", ""),
-                "device_name": (dev.get("deviceName") or [{}])[0].get("name", "")
-                    if dev.get("deviceName") else dev.get("type", {}).get("text", ""),
-                "device_type": device_type,
-                "status": dev.get("status", ""),
-                "manufacturer": dev.get("manufacturer", ""),
-                "model_number": dev.get("modelNumber", ""),
-                "serial_number": dev.get("serialNumber", ""),
-                "facility_ref": location_ref.replace("Location/", ""),
-                "source": "fhir",
-            })
+            result.append(
+                {
+                    "fhir_id": dev.get("id", ""),
+                    "device_name": (dev.get("deviceName") or [{}])[0].get("name", "")
+                    if dev.get("deviceName")
+                    else dev.get("type", {}).get("text", ""),
+                    "device_type": device_type,
+                    "status": dev.get("status", ""),
+                    "manufacturer": dev.get("manufacturer", ""),
+                    "model_number": dev.get("modelNumber", ""),
+                    "serial_number": dev.get("serialNumber", ""),
+                    "facility_ref": location_ref.replace("Location/", ""),
+                    "source": "fhir",
+                }
+            )
         return result
 
     # -- Private helpers ------------------------------------------------------

@@ -76,7 +76,9 @@ class ImpactReportData(BaseModel):
 # ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
-def _apply_filters(stmt, date_from: str | None, date_to: str | None, country: str | None):
+def _apply_filters(
+    stmt, date_from: str | None, date_to: str | None, country: str | None
+):
     """Apply optional date / country filters to a CoverageFacility query."""
     if country:
         stmt = stmt.where(CoverageFacility.country == country)
@@ -95,13 +97,17 @@ async def _build_report(
     base = select(CoverageFacility)
     base = _apply_filters(base, date_from, date_to, country)
 
-    result = await db.execute(base.order_by(CoverageFacility.country, CoverageFacility.name))
+    result = await db.execute(
+        base.order_by(CoverageFacility.country, CoverageFacility.name)
+    )
     rows = result.scalars().all()
 
     # -- coverage by country --------------------------------------------------
     country_map: dict[str, dict] = {}
     for r in rows:
-        entry = country_map.setdefault(r.country, {"count": 0, "cov_sum": 0.0, "doses": 0})
+        entry = country_map.setdefault(
+            r.country, {"count": 0, "cov_sum": 0.0, "doses": 0}
+        )
         entry["count"] += 1
         entry["cov_sum"] += r.coverage_rate
         entry["doses"] += r.doses_administered
@@ -120,7 +126,9 @@ async def _build_report(
     status_map: dict[str, int] = {}
     for r in rows:
         status_map[r.stock_status] = status_map.get(r.stock_status, 0) + 1
-    stock_summary = [StockSummary(status=s, facilityCount=n) for s, n in status_map.items()]
+    stock_summary = [
+        StockSummary(status=s, facilityCount=n) for s, n in status_map.items()
+    ]
 
     # -- cold-chain (placeholder until cold_chain model is wired) -------------
     cold_chain = ColdChainSummary(
@@ -166,7 +174,9 @@ async def _build_report(
 # ââ Endpoints âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
-@router.get("/impact", response_model=ImpactReportData, summary="Aggregated impact report")
+@router.get(
+    "/impact", response_model=ImpactReportData, summary="Aggregated impact report"
+)
 async def get_impact_report(
     dateFrom: str | None = Query(default=None),
     dateTo: str | None = Query(default=None),
@@ -187,17 +197,41 @@ async def get_impact_report_csv(
     _: User = Depends(get_current_active_user),
 ):
     """Stream the facility-performance section of the impact report as CSV."""
-    report = await _build_report(db, date_from=dateFrom, date_to=dateTo, country=country)
+    report = await _build_report(
+        db, date_from=dateFrom, date_to=dateTo, country=country
+    )
 
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["id", "name", "region", "country", "vaccineType",
-                     "dosesAdministered", "targetPopulation", "coverageRate",
-                     "stockStatus", "current"])
+    writer.writerow(
+        [
+            "id",
+            "name",
+            "region",
+            "country",
+            "vaccineType",
+            "dosesAdministered",
+            "targetPopulation",
+            "coverageRate",
+            "stockStatus",
+            "current",
+        ]
+    )
     for f in report.facilityPerformance:
-        writer.writerow([f.id, f.name, f.region, f.country, f.vaccineType,
-                         f.dosesAdministered, f.targetPopulation, f.coverageRate,
-                         f.stockStatus, f.current])
+        writer.writerow(
+            [
+                f.id,
+                f.name,
+                f.region,
+                f.country,
+                f.vaccineType,
+                f.dosesAdministered,
+                f.targetPopulation,
+                f.coverageRate,
+                f.stockStatus,
+                f.current,
+            ]
+        )
     buf.seek(0)
 
     return StreamingResponse(

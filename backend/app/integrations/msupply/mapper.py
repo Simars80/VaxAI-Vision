@@ -137,16 +137,15 @@ class MSupplyMapper:
                     "item_code": item_code,
                     "store_id": line.get("store_id", ""),
                     "quantity_consumed": self._safe_float(
-                        line.get("actual_consumption",
-                                 line.get("consumption", 0))
+                        line.get("actual_consumption", line.get("consumption", 0))
                     ),
                     "stock_on_hand": self._safe_float(
-                        line.get("stock_on_hand",
-                                 line.get("closing_stock", 0))
+                        line.get("stock_on_hand", line.get("closing_stock", 0))
                     ),
                     "quantity_requested": self._safe_float(
-                        line.get("requested_quantity",
-                                 line.get("suggested_quantity", 0))
+                        line.get(
+                            "requested_quantity", line.get("suggested_quantity", 0)
+                        )
                     ),
                     "vaccine_type": vaccine_type,
                     "source": "msupply",
@@ -155,18 +154,17 @@ class MSupplyMapper:
 
         return result
 
-    def _to_inventory_record(
-        self, line: dict, field: str, vaccine_type: str
-    ) -> dict:
+    def _to_inventory_record(self, line: dict, field: str, vaccine_type: str) -> dict:
         tx_type_map = {
             "stock_on_hand": "adjustment",
             "consumed": "issue",
             "wastage": "wastage",
         }
         quantity = self._safe_float(
-            line.get("available_number_of_packs",
-                      line.get("total_number_of_packs",
-                               line.get("quantity", 0)))
+            line.get(
+                "available_number_of_packs",
+                line.get("total_number_of_packs", line.get("quantity", 0)),
+            )
         )
         return {
             "msupply_item_code": line.get("item_code", line.get("item_id", "")),

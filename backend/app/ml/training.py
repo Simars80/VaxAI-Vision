@@ -280,9 +280,7 @@ def _fit_evaluate_and_log(
         logger.warning("MLflow logging failed (non-fatal): %s", exc)
 
     # ── Persist model locally ─────────────────────────────────────────────────
-    local_path = (
-        Path("/tmp/vaxai_models") / item_key[:8] / (facility_id or "global")
-    )
+    local_path = Path("/tmp/vaxai_models") / item_key[:8] / (facility_id or "global")
     forecaster.save(local_path)
 
     return {

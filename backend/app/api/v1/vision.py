@@ -130,7 +130,11 @@ async def scan_history(
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(VisionScanResult).order_by(VisionScanResult.scanned_at.desc()).limit(limit)
+    stmt = (
+        select(VisionScanResult)
+        .order_by(VisionScanResult.scanned_at.desc())
+        .limit(limit)
+    )
     if facility_id:
         stmt = stmt.where(VisionScanResult.facility_id == facility_id)
     result = await db.execute(stmt)

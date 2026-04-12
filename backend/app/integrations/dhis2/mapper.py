@@ -163,7 +163,9 @@ class DHIS2Mapper:
                     "org_unit_name": metadata_items.get(
                         row[ou_idx] if ou_idx is not None else "", {}
                     ).get("name", ""),
-                    "value": self._safe_float(row[val_idx] if val_idx is not None else None),
+                    "value": self._safe_float(
+                        row[val_idx] if val_idx is not None else None
+                    ),
                     "vaxai_field": mapping.get("vaxai_field") if mapping else None,
                     "vaccine_type": mapping.get("vaccine_type") if mapping else None,
                 }
@@ -172,9 +174,7 @@ class DHIS2Mapper:
 
     # -- Private helpers -----------------------------------------------------
 
-    def _to_inventory_record(
-        self, dv: dict, field: str, vaccine_type: str
-    ) -> dict:
+    def _to_inventory_record(self, dv: dict, field: str, vaccine_type: str) -> dict:
         tx_type_map = {
             "stock_on_hand": "adjustment",
             "consumed": "issue",
@@ -190,9 +190,7 @@ class DHIS2Mapper:
             "source": "dhis2",
         }
 
-    def _to_coverage_record(
-        self, dv: dict, field: str, vaccine_type: str
-    ) -> dict:
+    def _to_coverage_record(self, dv: dict, field: str, vaccine_type: str) -> dict:
         return {
             "dhis2_data_element": dv.get("dataElement"),
             "org_unit_id": dv.get("orgUnit"),

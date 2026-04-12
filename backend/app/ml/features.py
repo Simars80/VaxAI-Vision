@@ -172,8 +172,13 @@ async def load_dhis2_coverage(
     result = await session.execute(sql, params)
     rows = result.fetchall()
     cols = [
-        "vaccine_type", "facility_id", "facility_name", "period",
-        "doses_administered", "target_population", "coverage_rate",
+        "vaccine_type",
+        "facility_id",
+        "facility_name",
+        "period",
+        "doses_administered",
+        "target_population",
+        "coverage_rate",
     ]
     if not rows:
         return pd.DataFrame(columns=cols)

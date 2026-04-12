@@ -182,7 +182,9 @@ async def _run_sync(
                     await _upsert_coverage_facility(db, fac, mapping.country_code)
                     stats["created"] += 1
                 except Exception:
-                    logger.warning("Failed to upsert facility %s", fac["fhir_id"], exc_info=True)
+                    logger.warning(
+                        "Failed to upsert facility %s", fac["fhir_id"], exc_info=True
+                    )
                     stats["failed"] += 1
 
         # 2. Sync Immunization -> coverage
@@ -211,7 +213,9 @@ async def _run_sync(
                 await _upsert_cold_chain_facility(db, dev, mapping.country_code)
                 stats["created"] += 1
             except Exception:
-                logger.warning("Failed to upsert device %s", dev["fhir_id"], exc_info=True)
+                logger.warning(
+                    "Failed to upsert device %s", dev["fhir_id"], exc_info=True
+                )
                 stats["failed"] += 1
 
     return stats
@@ -262,7 +266,9 @@ async def _insert_supply_transaction(db: AsyncSession, inv: dict) -> None:
     )
 
 
-async def _upsert_cold_chain_facility(db: AsyncSession, dev: dict, country_code: str) -> None:
+async def _upsert_cold_chain_facility(
+    db: AsyncSession, dev: dict, country_code: str
+) -> None:
     device_id = dev["fhir_id"][:32]
     existing = await db.get(ColdChainFacility, device_id)
     if existing:

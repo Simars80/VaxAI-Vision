@@ -60,7 +60,12 @@ class FHIRClient:
 
     async def __aenter__(self) -> FHIRClient:
         self._client = self._build_client()
-        if not self._access_token and self._client_id and self._client_secret and self._token_url:
+        if (
+            not self._access_token
+            and self._client_id
+            and self._client_secret
+            and self._token_url
+        ):
             await self._authenticate()
         return self
 
@@ -119,9 +124,7 @@ class FHIRClient:
             self._client = self._build_client()
         return self._client
 
-    async def _get_json(
-        self, path: str, params: dict[str, str] | None = None
-    ) -> dict:
+    async def _get_json(self, path: str, params: dict[str, str] | None = None) -> dict:
         client = self._client_or_raise()
         try:
             resp = await client.get(path, params=params or {})
@@ -132,9 +135,7 @@ class FHIRClient:
                 f"{exc.response.text[:512]}"
             ) from exc
         except httpx.RequestError as exc:
-            raise FHIRClientError(
-                f"Network error fetching {path}: {exc}"
-            ) from exc
+            raise FHIRClientError(f"Network error fetching {path}: {exc}") from exc
         return resp.json()
 
     async def _search_resource(
@@ -164,7 +165,7 @@ class FHIRClient:
                     break
 
             if next_url and next_url.startswith(self.base_url):
-                url = next_url[len(self.base_url):]
+                url = next_url[len(self.base_url) :]
             elif next_url:
                 url = next_url
             else:
@@ -208,7 +209,9 @@ class FHIRClient:
         params: dict[str, str] = {}
         if vaccine_code:
             params["vaccine-code"] = vaccine_code
-        return await self._search_resource("Immunization", params=params, max_items=max_items)
+        return await self._search_resource(
+            "Immunization", params=params, max_items=max_items
+        )
 
     async def fetch_devices(
         self,

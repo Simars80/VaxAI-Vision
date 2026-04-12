@@ -61,9 +61,7 @@ class OpenLMISSyncLog(Base):
         nullable=False,
         default=OpenLMISSyncStatus.pending,
     )
-    sync_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="full"
-    )
+    sync_type: Mapped[str] = mapped_column(String(32), nullable=False, default="full")
     records_fetched: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     records_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     records_updated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

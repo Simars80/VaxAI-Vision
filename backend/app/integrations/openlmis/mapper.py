@@ -86,9 +86,7 @@ class OpenLMISMapper:
             )
         return result
 
-    def map_stock_card_summaries(
-        self, summaries: list[dict]
-    ) -> dict[str, list[dict]]:
+    def map_stock_card_summaries(self, summaries: list[dict]) -> dict[str, list[dict]]:
         """Classify and transform stock card summaries by VaxAI domain.
 
         Returns::
@@ -121,9 +119,7 @@ class OpenLMISMapper:
 
         return result
 
-    def map_requisitions(
-        self, requisitions: list[dict]
-    ) -> dict[str, list[dict]]:
+    def map_requisitions(self, requisitions: list[dict]) -> dict[str, list[dict]]:
         """Classify requisition line items into usage data.
 
         Returns::
@@ -163,9 +159,7 @@ class OpenLMISMapper:
                         "quantity_consumed": self._safe_float(
                             line.get("totalConsumedQuantity", 0)
                         ),
-                        "stock_on_hand": self._safe_float(
-                            line.get("stockOnHand", 0)
-                        ),
+                        "stock_on_hand": self._safe_float(line.get("stockOnHand", 0)),
                         "quantity_requested": self._safe_float(
                             line.get("requestedQuantity", 0)
                         ),

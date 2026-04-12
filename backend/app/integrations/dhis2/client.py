@@ -84,9 +84,7 @@ class DHIS2Client:
 
     # -- Internal request helpers --------------------------------------------
 
-    async def _get_json(
-        self, path: str, params: dict[str, str] | None = None
-    ) -> dict:
+    async def _get_json(self, path: str, params: dict[str, str] | None = None) -> dict:
         client = self._client_or_raise()
         try:
             resp = await client.get(path, params=params or {})
@@ -97,9 +95,7 @@ class DHIS2Client:
                 f"{exc.response.text[:512]}"
             ) from exc
         except httpx.RequestError as exc:
-            raise DHIS2ClientError(
-                f"Network error fetching {path}: {exc}"
-            ) from exc
+            raise DHIS2ClientError(f"Network error fetching {path}: {exc}") from exc
         return resp.json()
 
     async def _get_paged(

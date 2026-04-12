@@ -218,7 +218,9 @@ def train_cnn(
             patience_counter += 1
 
         if epoch % 5 == 0 or patience_counter == 0:
-            logger.info("Epoch %d â val_acc: %.4f (best: %.4f)", epoch, val_acc, best_acc)
+            logger.info(
+                "Epoch %d â val_acc: %.4f (best: %.4f)", epoch, val_acc, best_acc
+            )
 
         if patience_counter >= 5:
             logger.info("Early stopping at epoch %d", epoch)
@@ -288,7 +290,11 @@ def convert_onnx_to_tflite(
 
     output_path = Path(output_path)
     output_path.write_bytes(tflite_model)
-    logger.info("TFLite model written to %s (%.2f MB)", output_path, output_path.stat().st_size / (1024 * 1024))
+    logger.info(
+        "TFLite model written to %s (%.2f MB)",
+        output_path,
+        output_path.stat().st_size / (1024 * 1024),
+    )
     return output_path
 
 

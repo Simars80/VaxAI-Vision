@@ -154,7 +154,11 @@ async def _run_sync(
     """Execute a sync run: fetch from DHIS2 â map â upsert into VaxAI DB."""
     stats = {"fetched": 0, "created": 0, "updated": 0, "failed": 0}
 
-    mapping = MappingConfig(config.mapping_config) if config.mapping_config else MappingConfig.default()
+    mapping = (
+        MappingConfig(config.mapping_config)
+        if config.mapping_config
+        else MappingConfig.default()
+    )
     mapper = DHIS2Mapper(mapping)
 
     async with DHIS2Client(
@@ -175,7 +179,9 @@ async def _run_sync(
                     await _upsert_coverage_facility(db, fac, mapping.country_code)
                     stats["created"] += 1
                 except Exception:
-                    logger.warning("Failed to upsert facility %s", fac["dhis2_id"], exc_info=True)
+                    logger.warning(
+                        "Failed to upsert facility %s", fac["dhis2_id"], exc_info=True
+                    )
                     stats["failed"] += 1
 
         # 2. Sync data value sets (if data set configured)

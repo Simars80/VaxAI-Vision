@@ -21,7 +21,11 @@ from app.database import get_db
 from app.integrations.openlmis.client import OpenLMISClient, OpenLMISClientError
 from app.integrations.openlmis.mapper import OpenLMISMapper, OpenLMISMappingConfig
 from app.models.coverage import CoverageFacility
-from app.models.openlmis_sync import OpenLMISSyncConfig, OpenLMISSyncLog, OpenLMISSyncStatus
+from app.models.openlmis_sync import (
+    OpenLMISSyncConfig,
+    OpenLMISSyncLog,
+    OpenLMISSyncStatus,
+)
 from app.models.supply import SupplyTransaction
 from app.schemas.openlmis import (
     OpenLMISConfigCreate,
@@ -179,7 +183,9 @@ async def _run_sync(
                     stats["created"] += 1
                 except Exception:
                     logger.warning(
-                        "Failed to upsert facility %s", fac["openlmis_id"], exc_info=True
+                        "Failed to upsert facility %s",
+                        fac["openlmis_id"],
+                        exc_info=True,
                     )
                     stats["failed"] += 1
 

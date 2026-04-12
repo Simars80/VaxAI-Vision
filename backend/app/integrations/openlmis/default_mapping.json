@@ -1,0 +1,37 @@
+{
+  "country_code": "XX",
+  "epi_program_id": null,
+  "geographic_zone_level_facility": 4,
+  "orderable_mappings": {
+    "BCG_ORDERABLE_ID": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual OpenLMIS orderable UUID per instance"
+    },
+    "PENTA_ORDERABLE_ID": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "Penta",
+      "description": "Placeholder — map to actual OpenLMIS orderable UUID per instance"
+    },
+    "OPV_ORDERABLE_ID": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "OPV",
+      "description": "Placeholder — map to actual OpenLMIS orderable UUID per instance"
+    },
+    "BCG_CONSUMED_ID": {
+      "vaxai_field": "consumed",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual consumption orderable"
+    },
+    "PENTA_CONSUMED_ID": {
+      "vaxai_field": "consumed",
+      "vaccine_type": "Penta",
+      "description": "Placeholder — map to actual consumption orderable"
+    },
+    "BCG_WASTAGE_ID": {
+      "vaxai_field": "wastage",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual wastage orderable"
+    }
+  }
+}

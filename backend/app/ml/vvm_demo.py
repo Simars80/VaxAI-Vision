@@ -1,12 +1,11 @@
 """Demo scan scenarios for VVM Scanner live demo.
 
 Generates a curated set of VVM images that exercise all 4 stages, including
-edge cases (stage 2→3 boundary) for a realistic demo flow.
+edge cases (stage 2â3 boundary) for a realistic demo flow.
 """
 
 from __future__ import annotations
 
-import io
 import json
 from pathlib import Path
 
@@ -29,9 +28,9 @@ DEMO_SCENARIOS = [
         "name": "Cold Chain Break Detection",
         "description": "Checking vaccines after suspected cold chain failure",
         "scans": [
-            {"stage": "stage_3", "note": "Heat exposure — discard"},
-            {"stage": "stage_4", "note": "Severely degraded — discard"},
-            {"stage": "stage_2", "note": "Borderline — use immediately"},
+            {"stage": "stage_3", "note": "Heat exposure â discard"},
+            {"stage": "stage_4", "note": "Severely degraded â discard"},
+            {"stage": "stage_2", "note": "Borderline â use immediately"},
             {"stage": "stage_3", "note": "Another compromised vial"},
         ],
     },
@@ -40,11 +39,11 @@ DEMO_SCENARIOS = [
         "name": "Mobile Outreach Triage",
         "description": "Sorting vaccines for rural outreach campaign",
         "scans": [
-            {"stage": "stage_1", "note": "Good — add to outreach kit"},
+            {"stage": "stage_1", "note": "Good â add to outreach kit"},
             {"stage": "stage_2", "note": "Use first, expiring soon"},
-            {"stage": "stage_1", "note": "Good — add to outreach kit"},
-            {"stage": "stage_4", "note": "Expired — remove from stock"},
-            {"stage": "stage_1", "note": "Good — add to outreach kit"},
+            {"stage": "stage_1", "note": "Good â add to outreach kit"},
+            {"stage": "stage_4", "note": "Expired â remove from stock"},
+            {"stage": "stage_1", "note": "Good â add to outreach kit"},
         ],
     },
     {
@@ -53,9 +52,9 @@ DEMO_SCENARIOS = [
         "description": "Full inventory check with all VVM stages represented",
         "scans": [
             {"stage": "stage_1", "note": "Excellent condition"},
-            {"stage": "stage_2", "note": "Approaching limit — prioritize"},
-            {"stage": "stage_3", "note": "Beyond use — quarantine"},
-            {"stage": "stage_4", "note": "Expired — disposal"},
+            {"stage": "stage_2", "note": "Approaching limit â prioritize"},
+            {"stage": "stage_3", "note": "Beyond use â quarantine"},
+            {"stage": "stage_4", "note": "Expired â disposal"},
         ],
     },
 ]

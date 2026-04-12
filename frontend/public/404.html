@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>VaxAI Vision</title>
+    <script>
+      // GitHub Pages SPA redirect — preserves the path for client-side routing.
+      // Stores the intended URL in sessionStorage, then redirects to index.html,
+      // which picks it up and calls history.replaceState() before React mounts.
+      sessionStorage.redirect = location.href;
+      location.replace('/');
+    </script>
+  </head>
+  <body></body>
+</html>

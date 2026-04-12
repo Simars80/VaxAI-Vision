@@ -11,7 +11,6 @@ import json
 import logging
 import random
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 VVM_STAGES = ("stage_1", "stage_2", "stage_3", "stage_4")
 
-# Color profiles per stage (inner_rgb, outer_rgb) — base values before jitter
+# Color profiles per stage (inner_rgb, outer_rgb) â base values before jitter
 _STAGE_PROFILES: dict[str, list[tuple[tuple[int, ...], tuple[int, ...]]]] = {
     "stage_1": [
         ((240, 240, 245), (120, 80, 140)),

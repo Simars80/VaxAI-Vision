@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Filter, AlertTriangle, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { getCoverageFacilities, type Facility } from "@/api/coverage";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function coverageColor(rate: number): string {
   if (rate >= 80) return "#22c55e";
@@ -26,8 +25,6 @@ const STOCK_COLOR: Record<string, string> = {
   critical: "text-red-500",
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function CoverageMapPage() {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,15 +33,16 @@ export default function CoverageMapPage() {
   const [vaccine, setVaccine] = useState("All");
   const [period, setPeriod] = useState("All");
   const [selected, setSelected] = useState<Facility | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLoading(true);
     setError(null);
     getCoverageFacilities()
       .then(setFacilities)
-      .catch(() => setError("Failed to load facility data. Please try again."))
+      .catch(() => setError(t("coverage.loadError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const allCountries = useMemo(
     () => ["All", ...Array.from(new Set(facilities.map((f) => f.country))).sort()],
@@ -83,7 +81,7 @@ export default function CoverageMapPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-3 text-muted-foreground">Loading facilities…</span>
+        <span className="ms-3 text-muted-foreground">{t("coverage.loadingFacilities")}</span>
       </div>
     );
   }
@@ -93,10 +91,10 @@ export default function CoverageMapPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <MapPin className="h-8 w-8 text-primary" />
-          Geospatial Coverage Map
+          {t("coverage.title")}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Facility-level immunization coverage rates and vaccine stock status across regions
+          {t("coverage.subtitle")}
         </p>
       </div>
 
@@ -107,16 +105,15 @@ export default function CoverageMapPage() {
         </div>
       )}
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Filter className="h-4 w-4" />
-              Filters:
+              {t("coverage.filters")}
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Country</label>
+              <label className="text-sm font-medium">{t("common.country")}</label>
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
@@ -128,7 +125,7 @@ export default function CoverageMapPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Vaccine</label>
+              <label className="text-sm font-medium">{t("common.vaccine")}</label>
               <select
                 value={vaccine}
                 onChange={(e) => setVaccine(e.target.value)}
@@ -140,7 +137,7 @@ export default function CoverageMapPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Period</label>
+              <label className="text-sm font-medium">{t("common.period")}</label>
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value)}
@@ -151,18 +148,17 @@ export default function CoverageMapPage() {
                 ))}
               </select>
             </div>
-            <span className="text-xs text-muted-foreground ml-auto">
-              Showing {filtered.length} of {facilities.length} facilities
+            <span className="text-xs text-muted-foreground ms-auto">
+              {t("common.showing", { count: filtered.length, total: facilities.length })}
             </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Avg Coverage</p>
+            <p className="text-xs text-muted-foreground">{t("coverage.avgCoverage")}</p>
             <p className="text-2xl font-bold mt-0.5" style={{ color: coverageColor(stats.avgCoverage) }}>
               {stats.avgCoverage}%
             </p>
@@ -170,27 +166,25 @@ export default function CoverageMapPage() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">High \u226580%</p>
+            <p className="text-xs text-muted-foreground">{t("coverage.high80")}</p>
             <p className="text-2xl font-bold mt-0.5 text-green-600">{stats.high}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Medium 50\u201379%</p>
+            <p className="text-xs text-muted-foreground">{t("coverage.medium50")}</p>
             <p className="text-2xl font-bold mt-0.5 text-amber-500">{stats.medium}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Low &lt;50%</p>
+            <p className="text-xs text-muted-foreground">{t("coverage.low50")}</p>
             <p className="text-2xl font-bold mt-0.5 text-red-500">{stats.low}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Map + Detail Panel */}
       <div className="flex gap-4">
-        {/* Map */}
         <Card className="flex-1 overflow-hidden p-0">
           <MapContainer
             center={[4, 20]}
@@ -219,9 +213,9 @@ export default function CoverageMapPage() {
                   <div style={{ minWidth: 160 }}>
                     <p style={{ fontWeight: 600, marginBottom: 4 }}>{facility.name}</p>
                     <p style={{ color: "#666", fontSize: 12 }}>{facility.region}, {facility.country}</p>
-                    <p style={{ fontSize: 12 }}>Coverage: <strong>{facility.coverageRate}%</strong></p>
-                    <p style={{ fontSize: 12 }}>Stock: <strong>{facility.stockStatus}</strong></p>
-                    <p style={{ fontSize: 12 }}>Vaccine: <strong>{facility.vaccineType}</strong></p>
+                    <p style={{ fontSize: 12 }}>{t("coverage.coverageRate")}: <strong>{facility.coverageRate}%</strong></p>
+                    <p style={{ fontSize: 12 }}>{t("coverage.stockStatus")}: <strong>{facility.stockStatus}</strong></p>
+                    <p style={{ fontSize: 12 }}>{t("common.vaccine")}: <strong>{facility.vaccineType}</strong></p>
                   </div>
                 </Popup>
               </CircleMarker>
@@ -229,17 +223,16 @@ export default function CoverageMapPage() {
           </MapContainer>
         </Card>
 
-        {/* Detail panel */}
         <div className="w-72 flex flex-col gap-3">
           <Card>
             <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm">Coverage Legend</CardTitle>
+              <CardTitle className="text-sm">{t("coverage.coverageLegend")}</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
               {[
-                { label: "High \u226580%", color: "#22c55e" },
-                { label: "Medium 50\u201379%", color: "#f59e0b" },
-                { label: "Low <50%", color: "#ef4444" },
+                { label: t("coverage.high80"), color: "#22c55e" },
+                { label: t("coverage.medium50"), color: "#f59e0b" },
+                { label: t("coverage.low50"), color: "#ef4444" },
               ].map(({ label, color }) => (
                 <div key={label} className="flex items-center gap-2 text-sm">
                   <span
@@ -259,11 +252,11 @@ export default function CoverageMapPage() {
               </CardHeader>
               <CardContent className="px-4 pb-4 space-y-3 text-sm">
                 <div>
-                  <p className="text-muted-foreground text-xs">Location</p>
+                  <p className="text-muted-foreground text-xs">{t("coverage.location")}</p>
                   <p className="font-medium">{selected.region}, {selected.country}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">Coverage Rate</p>
+                  <p className="text-muted-foreground text-xs">{t("coverage.coverageRate")}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div
@@ -280,7 +273,7 @@ export default function CoverageMapPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">Stock Status</p>
+                  <p className="text-muted-foreground text-xs">{t("coverage.stockStatus")}</p>
                   <div className="flex items-center gap-1 mt-0.5">
                     {(() => {
                       const Icon = STOCK_ICON[selected.stockStatus];
@@ -293,16 +286,16 @@ export default function CoverageMapPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-muted-foreground text-xs">Vaccine</p>
+                    <p className="text-muted-foreground text-xs">{t("common.vaccine")}</p>
                     <Badge variant="outline" className="mt-0.5 text-xs">{selected.vaccineType}</Badge>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Period</p>
+                    <p className="text-muted-foreground text-xs">{t("common.period")}</p>
                     <p className="font-medium">{selected.period}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">Doses Administered</p>
+                  <p className="text-muted-foreground text-xs">{t("coverage.dosesAdministered")}</p>
                   <p className="font-medium">{selected.dosesAdministered.toLocaleString()} / {selected.targetPopulation.toLocaleString()}</p>
                 </div>
               </CardContent>
@@ -311,7 +304,7 @@ export default function CoverageMapPage() {
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-sm text-muted-foreground text-center">
-                  Click a facility marker to see details
+                  {t("coverage.clickToSeeDetails")}
                 </p>
               </CardContent>
             </Card>
@@ -319,7 +312,7 @@ export default function CoverageMapPage() {
 
           <Card className="flex-1 overflow-hidden">
             <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm">Facilities ({filtered.length})</CardTitle>
+              <CardTitle className="text-sm">{t("reports.facilities")} ({filtered.length})</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -327,7 +320,7 @@ export default function CoverageMapPage() {
                   <button
                     key={f.id}
                     onClick={() => setSelected(f)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 transition-colors ${
+                    className={`w-full text-start px-2 py-1.5 rounded text-xs flex items-center gap-2 transition-colors ${
                       selected?.id === f.id ? "bg-primary/10 text-primary" : "hover:bg-muted"
                     }`}
                   >

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ export default function IngestionPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   const loadJobs = () => {
     setLoading(true);
@@ -53,13 +55,12 @@ export default function IngestionPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Data Ingestion</h1>
+        <h1 className="text-3xl font-bold">{t("ingestion.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Upload CSV/Excel files or trigger FHIR R4 connector pulls
+          {t("ingestion.subtitle")}
         </p>
       </div>
 
-      {/* Upload card */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
@@ -80,10 +81,10 @@ export default function IngestionPage() {
               ) : (
                 <Upload className="h-4 w-4" />
               )}
-              {uploading ? "Uploading…" : "Upload CSV / Excel"}
+              {uploading ? t("ingestion.uploading") : t("ingestion.uploadCsvExcel")}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Max 50 MB · Supported: .csv, .xlsx, .xls
+              {t("ingestion.maxFileSize")}
             </p>
           </div>
           {error && (
@@ -94,55 +95,54 @@ export default function IngestionPage() {
         </CardContent>
       </Card>
 
-      {/* Jobs table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Ingestion Jobs</CardTitle>
+          <CardTitle className="text-lg">{t("ingestion.ingestionJobs")}</CardTitle>
           <Button variant="outline" size="sm" onClick={loadJobs} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("common.refresh")}
           </Button>
         </CardHeader>
         <CardContent>
           {loading && jobs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : jobs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No ingestion jobs yet. Upload a file to get started.
+              {t("ingestion.noJobsYet")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-muted-foreground text-left">
-                    <th className="pb-2 pr-4 font-medium">Source</th>
-                    <th className="pb-2 pr-4 font-medium">File / URL</th>
-                    <th className="pb-2 pr-4 font-medium">Status</th>
-                    <th className="pb-2 pr-4 font-medium">Rows</th>
-                    <th className="pb-2 font-medium">Created</th>
+                  <tr className="border-b text-muted-foreground text-start">
+                    <th className="pb-2 pe-4 font-medium">{t("ingestion.source")}</th>
+                    <th className="pb-2 pe-4 font-medium">{t("ingestion.fileUrl")}</th>
+                    <th className="pb-2 pe-4 font-medium">{t("common.status")}</th>
+                    <th className="pb-2 pe-4 font-medium">{t("ingestion.rows")}</th>
+                    <th className="pb-2 font-medium">{t("ingestion.created")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {jobs.map((job) => (
                     <tr key={job.id} className="border-b last:border-0 hover:bg-muted/30">
-                      <td className="py-2 pr-4">
+                      <td className="py-2 pe-4">
                         <Badge variant="outline">{job.source}</Badge>
                       </td>
-                      <td className="py-2 pr-4 max-w-48 truncate text-muted-foreground">
+                      <td className="py-2 pe-4 max-w-48 truncate text-muted-foreground">
                         {job.file_name ?? "—"}
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2 pe-4">
                         <StatusBadge status={job.status} />
                       </td>
-                      <td className="py-2 pr-4 tabular-nums">
+                      <td className="py-2 pe-4 tabular-nums">
                         {job.rows_total != null ? (
                           <span>
                             <span className="text-green-600">{job.rows_succeeded ?? 0}</span>
                             {" / "}
                             {job.rows_total}
                             {(job.rows_failed ?? 0) > 0 && (
-                              <span className="text-destructive ml-1">
-                                ({job.rows_failed} failed)
+                              <span className="text-destructive ms-1">
+                                ({job.rows_failed} {t("common.failed")})
                               </span>
                             )}
                           </span>

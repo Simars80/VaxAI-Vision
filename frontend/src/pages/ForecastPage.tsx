@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AreaChart,
   Area,
@@ -33,6 +34,7 @@ export default function ForecastPage() {
   const [loading, setLoading] = useState(false);
   const [trainLoading, setTrainLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     listModelRuns(5).then(setModelRuns).catch(console.error);
@@ -77,35 +79,34 @@ export default function ForecastPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Demand Forecasting</h1>
+        <h1 className="text-3xl font-bold">{t("forecast.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Prophet + LightGBM ensemble predictions for supply demand
+          {t("forecast.subtitle")}
         </p>
       </div>
 
-      {/* Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-48 space-y-1">
-              <label className="text-sm font-medium">Supply Item ID</label>
+              <label className="text-sm font-medium">{t("forecast.supplyItemId")}</label>
               <Input
-                placeholder="UUID of supply item"
+                placeholder={t("forecast.supplyItemPlaceholder")}
                 value={itemId}
                 onChange={(e) => setItemId(e.target.value)}
               />
             </div>
             <div className="flex-1 min-w-48 space-y-1">
-              <label className="text-sm font-medium">Facility ID (optional)</label>
+              <label className="text-sm font-medium">{t("forecast.facilityId")}</label>
               <Input
-                placeholder="Filter by facility"
+                placeholder={t("forecast.facilityPlaceholder")}
                 value={facilityId}
                 onChange={(e) => setFacilityId(e.target.value)}
               />
             </div>
             <Button onClick={fetchForecast} disabled={loading || !itemId}>
               <TrendingUp className="h-4 w-4" />
-              {loading ? "Loading…" : "Show Forecast"}
+              {loading ? t("common.loading") : t("forecast.showForecast")}
             </Button>
             <Button variant="outline" onClick={handleTrain} disabled={trainLoading || !itemId}>
               {trainLoading ? (
@@ -113,7 +114,7 @@ export default function ForecastPage() {
               ) : (
                 <Play className="h-4 w-4" />
               )}
-              {trainLoading ? "Queuing…" : "Train Model"}
+              {trainLoading ? t("forecast.queuing") : t("forecast.trainModel")}
             </Button>
           </div>
           {error && (
@@ -124,11 +125,10 @@ export default function ForecastPage() {
         </CardContent>
       </Card>
 
-      {/* Forecast chart */}
       {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">12-Period Demand Forecast</CardTitle>
+            <CardTitle className="text-lg">{t("forecast.chartTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
@@ -150,7 +150,7 @@ export default function ForecastPage() {
                   contentStyle={{ fontSize: 12 }}
                   formatter={(val: number, name: string) => [
                     val.toLocaleString(),
-                    name === "predicted" ? "Forecast" : name === "lower" ? "Lower 85%" : "Upper 85%",
+                    name === "predicted" ? t("forecast.forecastLabel") : name === "lower" ? t("forecast.lower85") : t("forecast.upper85"),
                   ]}
                 />
                 <Legend />
@@ -182,14 +182,13 @@ export default function ForecastPage() {
         </Card>
       )}
 
-      {/* Recent model runs */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Recent Training Runs</CardTitle>
+          <CardTitle className="text-lg">{t("forecast.recentTrainingRuns")}</CardTitle>
         </CardHeader>
         <CardContent>
           {modelRuns.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No model runs yet.</p>
+            <p className="text-muted-foreground text-sm">{t("forecast.noModelRuns")}</p>
           ) : (
             <div className="space-y-2">
               {modelRuns.map((run) => (

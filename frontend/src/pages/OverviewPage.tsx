@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listIngestionJobs, type IngestionJob } from "@/api/supply";
@@ -48,6 +49,7 @@ export default function OverviewPage() {
   const [jobs, setJobs] = useState<IngestionJob[]>([]);
   const [runs, setRuns] = useState<ModelRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     Promise.all([listIngestionJobs(10), listModelRuns(5)])
@@ -66,51 +68,49 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Supply Chain Overview</h1>
+        <h1 className="text-3xl font-bold">{t("overview.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Real-time visibility into your vaccine supply chain
+          {t("overview.subtitle")}
         </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Ingestion Jobs"
+          title={t("overview.ingestionJobs")}
           value={jobs.length}
-          subtitle="Last 10 jobs"
+          subtitle={t("overview.last10Jobs")}
           icon={Activity}
         />
         <StatCard
-          title="Records Ingested"
+          title={t("overview.recordsIngested")}
           value={totalRows.toLocaleString()}
-          subtitle="Successful rows"
+          subtitle={t("overview.successfulRows")}
           icon={Package}
         />
         <StatCard
-          title="Completed"
+          title={t("overview.completed")}
           value={completedJobs}
-          subtitle={failedJobs > 0 ? `${failedJobs} failed` : "No failures"}
+          subtitle={failedJobs > 0 ? `${failedJobs} ${t("common.failed")}` : t("common.noFailures")}
           icon={CheckCircle}
         />
         <StatCard
-          title="Model Runs"
+          title={t("overview.modelRuns")}
           value={runs.length}
-          subtitle="Forecasting pipelines"
+          subtitle={t("overview.forecastingPipelines")}
           icon={Clock}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent ingestion jobs */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Recent Ingestion Jobs</CardTitle>
+            <CardTitle className="text-lg">{t("overview.recentIngestionJobs")}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+              <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
             ) : jobs.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No ingestion jobs yet.</p>
+              <p className="text-muted-foreground text-sm">{t("overview.noIngestionJobs")}</p>
             ) : (
               <div className="space-y-3">
                 {jobs.slice(0, 6).map((job) => (
@@ -124,7 +124,7 @@ export default function OverviewPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(job.created_at), "MMM d, HH:mm")}
-                        {job.rows_total != null && ` · ${job.rows_total} rows`}
+                        {job.rows_total != null && ` · ${job.rows_total} ${t("common.rows")}`}
                       </p>
                     </div>
                     <StatusBadge status={job.status} />
@@ -135,16 +135,15 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Recent model runs */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Model Training Runs</CardTitle>
+            <CardTitle className="text-lg">{t("overview.modelTrainingRuns")}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+              <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
             ) : runs.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No model runs yet.</p>
+              <p className="text-muted-foreground text-sm">{t("overview.noModelRuns")}</p>
             ) : (
               <div className="space-y-3">
                 {runs.map((run) => (

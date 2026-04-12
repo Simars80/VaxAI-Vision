@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bar,
   BarChart,
@@ -13,8 +14,6 @@ import { AlertTriangle, CheckCircle, Package, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type FacilityStockLevel, type StockSummary, getStockLevels } from "@/api/supply";
-
-// ── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<string, string> = {
   adequate: "#22c55e",
@@ -33,8 +32,6 @@ const STATUS_ICON: Record<string, React.ElementType> = {
   low: AlertTriangle,
   critical: XCircle,
 };
-
-// ── Sub-components ───────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   const Icon = STATUS_ICON[status] ?? Package;
@@ -77,12 +74,13 @@ function SummaryCard({
 }
 
 function FacilityChart({ facility }: { facility: FacilityStockLevel }) {
+  const { t } = useTranslation();
   const data = facility.items.map((item) => ({
     name: item.name.length > 20 ? item.name.slice(0, 18) + "…" : item.name,
     fullName: item.name,
     stock: Math.max(0, item.current_stock),
     status: item.status,
-    unit: item.unit_of_measure ?? "units",
+    unit: item.unit_of_measure ?? t("common.units"),
   }));
 
   return (
@@ -90,14 +88,14 @@ function FacilityChart({ facility }: { facility: FacilityStockLevel }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center justify-between">
           <span className="truncate">{facility.facility_name}</span>
-          <span className="text-xs text-muted-foreground font-normal ml-2 shrink-0">
-            {facility.items.length} vaccines
+          <span className="text-xs text-muted-foreground font-normal ms-2 shrink-0">
+            {t("inventory.vaccines", { count: facility.items.length })}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No stock data.</p>
+          <p className="text-sm text-muted-foreground">{t("inventory.noStockData")}</p>
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data} margin={{ top: 4, right: 8, bottom: 40, left: 0 }}>
@@ -112,11 +110,11 @@ function FacilityChart({ facility }: { facility: FacilityStockLevel }) {
               <YAxis tick={{ fontSize: 11 }} width={40} />
               <Tooltip
                 formatter={(value: number, _name: string, props: { payload?: { fullName?: string; unit?: string } }) => [
-                  `${value.toLocaleString()} ${props.payload?.unit ?? "units"}`,
-                  props.payload?.fullName ?? "Stock",
+                  `${value.toLocaleString()} ${props.payload?.unit ?? t("common.units")}`,
+                  props.payload?.fullName ?? t("inventory.currentStock"),
                 ]}
               />
-              <Bar dataKey="stock" name="Current Stock" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="stock" name={t("inventory.currentStock")} radius={[4, 4, 0, 0]}>
                 {data.map((entry, idx) => (
                   <Cell key={idx} fill={STATUS_COLOR[entry.status] ?? "#6b7280"} />
                 ))}
@@ -125,17 +123,16 @@ function FacilityChart({ facility }: { facility: FacilityStockLevel }) {
           </ResponsiveContainer>
         )}
 
-        {/* Item list */}
         <div className="mt-3 space-y-1">
           {facility.items.map((item) => (
             <div
               key={item.supply_item_id}
               className="flex items-center justify-between text-sm py-1 border-b last:border-0"
             >
-              <span className="truncate mr-2 text-muted-foreground">{item.name}</span>
+              <span className="truncate me-2 text-muted-foreground">{item.name}</span>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="font-medium">
-                  {item.current_stock.toLocaleString()} {item.unit_of_measure ?? "units"}
+                  {item.current_stock.toLocaleString()} {item.unit_of_measure ?? t("common.units")}
                 </span>
                 <StatusBadge status={item.status} />
               </div>
@@ -146,8 +143,6 @@ function FacilityChart({ facility }: { facility: FacilityStockLevel }) {
     </Card>
   );
 }
-
-// ── Demo data fallback ───────────────────────────────────────────────────────
 
 const DEMO_DATA: StockSummary = {
   total_facilities: 4,
@@ -199,13 +194,12 @@ const DEMO_DATA: StockSummary = {
   ],
 };
 
-// ── Page ─────────────────────────────────────────────────────────────────────
-
 export default function InventoryPage() {
   const [summary, setSummary] = useState<StockSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [usingDemo, setUsingDemo] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<string>("all");
+  const { t } = useTranslation();
 
   useEffect(() => {
     getStockLevels()
@@ -232,54 +226,51 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Inventory Stock Levels</h1>
+        <h1 className="text-3xl font-bold">{t("inventory.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Current vaccine stock per facility — color coded by availability
+          {t("inventory.subtitle")}
         </p>
         {usingDemo && (
           <Badge variant="outline" className="mt-2 text-xs">
-            Demo data — no live transactions found
+            {t("demo.dataBadge")}
           </Badge>
         )}
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground">Loading stock data…</p>
+        <p className="text-muted-foreground">{t("inventory.loadingStock")}</p>
       ) : summary ? (
         <>
-          {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <SummaryCard
-              label="Facilities"
+              label={t("inventory.facilities")}
               value={summary.total_facilities}
               icon={Package}
               colorClass="bg-primary/10 text-primary"
             />
             <SummaryCard
-              label="Adequate"
+              label={t("inventory.adequate")}
               value={summary.adequate_count}
               icon={CheckCircle}
               colorClass="bg-green-100 text-green-700"
             />
             <SummaryCard
-              label="Low Stock"
+              label={t("inventory.lowStock")}
               value={summary.low_count}
               icon={AlertTriangle}
               colorClass="bg-amber-100 text-amber-700"
             />
             <SummaryCard
-              label="Critical"
+              label={t("inventory.critical")}
               value={summary.critical_count}
               icon={XCircle}
               colorClass="bg-red-100 text-red-700"
             />
           </div>
 
-          {/* Legend */}
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground font-medium">Status:</span>
+            <span className="text-muted-foreground font-medium">{t("common.status")}:</span>
             {Object.entries(STATUS_COLOR).map(([status, color]) => (
               <span key={status} className="flex items-center gap-1.5">
                 <span
@@ -291,16 +282,15 @@ export default function InventoryPage() {
             ))}
           </div>
 
-          {/* Facility filter */}
           {summary.facilities.length > 1 && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Facility:</label>
+              <label className="text-sm text-muted-foreground">{t("common.facility")}:</label>
               <select
                 className="text-sm border rounded-md px-2 py-1 bg-background"
                 value={selectedFacility}
                 onChange={(e) => setSelectedFacility(e.target.value)}
               >
-                <option value="all">All facilities</option>
+                <option value="all">{t("common.allFacilities")}</option>
                 {summary.facilities.map((f) => (
                   <option key={f.facility_id} value={f.facility_id}>
                     {f.facility_name}
@@ -310,7 +300,6 @@ export default function InventoryPage() {
             </div>
           )}
 
-          {/* Charts grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {facilitiesToShow.map((facility) => (
               <FacilityChart key={facility.facility_id} facility={facility} />
@@ -318,7 +307,7 @@ export default function InventoryPage() {
           </div>
 
           {facilitiesToShow.length === 0 && (
-            <p className="text-muted-foreground">No data for selected facility.</p>
+            <p className="text-muted-foreground">{t("inventory.noDataForFacility")}</p>
           )}
         </>
       ) : null}

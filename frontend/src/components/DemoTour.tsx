@@ -1,72 +1,69 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Joyride, { ACTIONS, CallBackProps, EVENTS, STATUS, Step } from "react-joyride";
 import { useAuthStore } from "@/store/auth";
 
 const TOUR_KEY = "vaxai_demo_tour_done";
 
-const STEPS: Step[] = [
-  {
-    target: "body",
-    placement: "center",
-    disableBeacon: true,
-    title: "Welcome to VaxAI Vision",
-    content:
-      "This is a live demo pre-loaded with real-world vaccine supply chain data. Let's take a quick tour of the key features.",
-  },
-  {
-    target: "[data-tour='nav-overview']",
-    placement: "right",
-    title: "Operations Overview",
-    content:
-      "Your command centre: KPIs, stock trends, facility coverage rates, and recent alerts — all in one view.",
-  },
-  {
-    target: "[data-tour='nav-inventory']",
-    placement: "right",
-    title: "Inventory",
-    content:
-      "Track stock levels across all facilities. Filter by vaccine type, facility, or country. Spot shortfalls before they become crises.",
-  },
-  {
-    target: "[data-tour='nav-forecast']",
-    placement: "right",
-    title: "AI Demand Forecasting",
-    content:
-      "Prophet-powered 90-day demand forecasts with confidence intervals. Select any facility and vaccine to see predicted receipt, issue, and wastage curves.",
-  },
-  {
-    target: "[data-tour='nav-cold-chain']",
-    placement: "right",
-    title: "Cold Chain Monitoring",
-    content:
-      "Real-time temperature readings from cold chain sensors. Threshold breaches trigger instant alerts to prevent spoilage.",
-  },
-  {
-    target: "[data-tour='nav-coverage-map']",
-    placement: "right",
-    title: "Geospatial Coverage Map",
-    content:
-      "Interactive map showing facility-level immunization coverage rates and stock status. Filter by country, vaccine type, or time period.",
-  },
-  {
-    target: "body",
-    placement: "center",
-    title: "You're all set!",
-    content:
-      "Explore freely — all data is pre-loaded and safe to play with. Contact us at hello@vaxaivision.com to discuss a pilot for your organization.",
-  },
-];
+function useTourSteps(): Step[] {
+  const { t } = useTranslation();
+  return [
+    {
+      target: "body",
+      placement: "center",
+      disableBeacon: true,
+      title: t("tour.welcomeTitle"),
+      content: t("tour.welcomeContent"),
+    },
+    {
+      target: "[data-tour='nav-overview']",
+      placement: "right",
+      title: t("tour.overviewTitle"),
+      content: t("tour.overviewContent"),
+    },
+    {
+      target: "[data-tour='nav-inventory']",
+      placement: "right",
+      title: t("tour.inventoryTitle"),
+      content: t("tour.inventoryContent"),
+    },
+    {
+      target: "[data-tour='nav-forecast']",
+      placement: "right",
+      title: t("tour.forecastTitle"),
+      content: t("tour.forecastContent"),
+    },
+    {
+      target: "[data-tour='nav-cold-chain']",
+      placement: "right",
+      title: t("tour.coldChainTitle"),
+      content: t("tour.coldChainContent"),
+    },
+    {
+      target: "[data-tour='nav-coverage-map']",
+      placement: "right",
+      title: t("tour.coverageTitle"),
+      content: t("tour.coverageContent"),
+    },
+    {
+      target: "body",
+      placement: "center",
+      title: t("tour.doneTitle"),
+      content: t("tour.doneContent"),
+    },
+  ];
+}
 
 export default function DemoTour() {
   const { email } = useAuthStore();
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const steps = useTourSteps();
 
   const isDemo = email === "demo@vaxaivision.com";
 
   useEffect(() => {
     if (isDemo && !localStorage.getItem(TOUR_KEY)) {
-      // Small delay so the layout has rendered
       const t = setTimeout(() => setRun(true), 800);
       return () => clearTimeout(t);
     }
@@ -87,7 +84,7 @@ export default function DemoTour() {
 
   return (
     <Joyride
-      steps={STEPS}
+      steps={steps}
       run={run}
       stepIndex={stepIndex}
       continuous

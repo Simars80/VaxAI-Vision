@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   LineChart,
   Line,
@@ -27,14 +28,10 @@ import {
   type ColdChainAlert,
 } from "@/api/coldchain";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const THRESHOLD_LOW = 2.0;
 const THRESHOLD_HIGH = 8.0;
 const POLL_INTERVAL_MS = 30_000;
 const CHART_HOURS = 3;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function deriveStatus(
   facilityId: string,
@@ -66,24 +63,23 @@ function latestTemp(readings: ColdChainReading[]): number | null {
   return readings[readings.length - 1].temp_celsius;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function StatusBadge({ status }: { status: "ok" | "warning" | "breach" }) {
+  const { t } = useTranslation();
   if (status === "ok")
     return (
       <Badge variant="success" className="gap-1">
-        <CheckCircle className="h-3 w-3" /> OK
+        <CheckCircle className="h-3 w-3" /> {t("coldChain.ok")}
       </Badge>
     );
   if (status === "warning")
     return (
       <Badge variant="warning" className="gap-1">
-        <AlertTriangle className="h-3 w-3" /> Warning
+        <AlertTriangle className="h-3 w-3" /> {t("coldChain.warning")}
       </Badge>
     );
   return (
     <Badge variant="destructive" className="gap-1">
-      <AlertTriangle className="h-3 w-3" /> Breach
+      <AlertTriangle className="h-3 w-3" /> {t("coldChain.breach")}
     </Badge>
   );
 }
@@ -101,6 +97,7 @@ function FacilityCard({
   selected: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const borderColor =
     status === "breach"
       ? "border-destructive"
@@ -111,7 +108,7 @@ function FacilityCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-lg border-2 p-4 transition-all hover:shadow-md ${borderColor} ${
+      className={`w-full text-start rounded-lg border-2 p-4 transition-all hover:shadow-md ${borderColor} ${
         selected ? "bg-primary/5 shadow-md" : "bg-card"
       }`}
     >
@@ -130,17 +127,15 @@ function FacilityCard({
             {currentTemp.toFixed(1)}°C
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         )}
       </div>
       <div className="mt-3 text-xs text-muted-foreground text-center">
-        Safe: {THRESHOLD_LOW}°C – {THRESHOLD_HIGH}°C
+        {t("coldChain.safe", { low: THRESHOLD_LOW, high: THRESHOLD_HIGH })}
       </div>
     </button>
   );
 }
-
-// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ColdChainPage() {
   const [facilities, setFacilities] = useState<ColdChainFacility[]>([]);
@@ -151,8 +146,8 @@ export default function ColdChainPage() {
   const [loadingInit, setLoadingInit] = useState(true);
   const [loadingReadings, setLoadingReadings] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
-  // Initial load: facilities + all alerts
   useEffect(() => {
     Promise.all([getColdChainFacilities(), getColdChainAlerts()])
       .then(([facs, alertsResp]) => {
@@ -160,11 +155,10 @@ export default function ColdChainPage() {
         setAllAlerts(alertsResp.alerts);
         if (facs.length > 0) setSelectedFacilityId(facs[0].id);
       })
-      .catch(() => setError("Failed to load cold chain data. Please try again."))
+      .catch(() => setError(t("coldChain.loadError")))
       .finally(() => setLoadingInit(false));
-  }, []);
+  }, [t]);
 
-  // Fetch readings + alerts for selected facility, with 30s polling
   const fetchFacilityData = useCallback((facilityId: string) => {
     setLoadingReadings(true);
     Promise.all([
@@ -175,9 +169,7 @@ export default function ColdChainPage() {
         setReadings(r);
         setFacilityAlerts(alertsResp.alerts);
       })
-      .catch(() => {
-        // Don't override the main error; readings failure is non-fatal
-      })
+      .catch(() => {})
       .finally(() => setLoadingReadings(false));
   }, []);
 
@@ -192,7 +184,7 @@ export default function ColdChainPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-3 text-muted-foreground">Loading cold chain data…</span>
+        <span className="ms-3 text-muted-foreground">{t("coldChain.loadingData")}</span>
       </div>
     );
   }
@@ -207,9 +199,9 @@ export default function ColdChainPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Cold Chain Monitoring</h1>
+        <h1 className="text-3xl font-bold">{t("coldChain.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Real-time temperature readings for vaccine cold storage facilities
+          {t("coldChain.subtitle")}
         </p>
       </div>
 
@@ -220,7 +212,6 @@ export default function ColdChainPage() {
         </div>
       )}
 
-      {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4">
@@ -229,7 +220,7 @@ export default function ColdChainPage() {
                 <Thermometer className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Facilities</p>
+                <p className="text-xs text-muted-foreground">{t("coldChain.totalFacilities")}</p>
                 <p className="text-2xl font-bold">{facilities.length}</p>
               </div>
             </div>
@@ -242,7 +233,7 @@ export default function ColdChainPage() {
                 <CheckCircle className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">In Range</p>
+                <p className="text-xs text-muted-foreground">{t("coldChain.inRange")}</p>
                 <p className="text-2xl font-bold text-green-600">{okCount}</p>
               </div>
             </div>
@@ -255,7 +246,7 @@ export default function ColdChainPage() {
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Warnings</p>
+                <p className="text-xs text-muted-foreground">{t("coldChain.warnings")}</p>
                 <p className="text-2xl font-bold text-yellow-600">{warnCount}</p>
               </div>
             </div>
@@ -268,7 +259,7 @@ export default function ColdChainPage() {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Active Breaches</p>
+                <p className="text-xs text-muted-foreground">{t("coldChain.activeBreaches")}</p>
                 <p className="text-2xl font-bold text-destructive">{activeBreaches}</p>
               </div>
             </div>
@@ -277,8 +268,7 @@ export default function ColdChainPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Facility list */}
-        <div className="space-y-3 overflow-y-auto max-h-[700px] pr-1">
+        <div className="space-y-3 overflow-y-auto max-h-[700px] pe-1">
           {facilities.map((facility) => (
             <FacilityCard
               key={facility.id}
@@ -293,14 +283,12 @@ export default function ColdChainPage() {
           ))}
         </div>
 
-        {/* Detail panel */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Temperature chart */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  {selectedFacility?.name ?? "Select a facility"} — Last {CHART_HOURS} Hours
+                  {selectedFacility?.name ?? t("coldChain.selectFacility")} — {t("coldChain.lastHours", { hours: CHART_HOURS })}
                   {loadingReadings && (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   )}
@@ -310,13 +298,13 @@ export default function ColdChainPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {selectedFacility?.country} · Auto-refreshes every 30s
+                {selectedFacility?.country} · {t("coldChain.autoRefresh")}
               </p>
             </CardHeader>
             <CardContent>
               {chartData.length === 0 && !loadingReadings ? (
                 <div className="flex items-center justify-center h-60 text-sm text-muted-foreground">
-                  No readings available for this period.
+                  {t("coldChain.noReadings")}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={240}>
@@ -335,7 +323,7 @@ export default function ColdChainPage() {
                       tickFormatter={(v) => `${v}°`}
                     />
                     <Tooltip
-                      formatter={(val: number) => [`${val}°C`, "Temperature"]}
+                      formatter={(val: number) => [`${val}°C`, t("coldChain.temperature")]}
                       contentStyle={{ fontSize: 12 }}
                     />
                     <ReferenceLine
@@ -357,7 +345,7 @@ export default function ColdChainPage() {
                       strokeWidth={2}
                       dot={false}
                       activeDot={{ r: 4 }}
-                      name="Temperature"
+                      name={t("coldChain.temperature")}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -365,16 +353,15 @@ export default function ColdChainPage() {
             </CardContent>
           </Card>
 
-          {/* Breach event timeline */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Breach Event Timeline</CardTitle>
+              <CardTitle className="text-base">{t("coldChain.breachTimeline")}</CardTitle>
             </CardHeader>
             <CardContent>
               {facilityAlerts.length === 0 ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  No breach events recorded for this facility.
+                  {t("coldChain.noBreaches")}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -395,11 +382,11 @@ export default function ColdChainPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">
-                            {alert.alert_type === "high" ? "High temp breach" : "Low temp breach"}
+                            {alert.alert_type === "high" ? t("coldChain.highTempBreach") : t("coldChain.lowTempBreach")}
                           </span>
                           {!alert.resolved && (
                             <Badge variant="destructive" className="text-xs py-0">
-                              Active
+                              {t("common.active")}
                             </Badge>
                           )}
                           <Badge
@@ -416,11 +403,11 @@ export default function ColdChainPage() {
                           })}
                           {alert.end_time
                             ? ` – ${new Date(alert.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                            : " – ongoing"}
-                          {" · "}Peak: {alert.peak_temp_celsius > 0 ? "+" : ""}
+                            : ` – ${t("coldChain.ongoing")}`}
+                          {" · "}{t("coldChain.peak")}: {alert.peak_temp_celsius > 0 ? "+" : ""}
                           {alert.peak_temp_celsius}°C
-                          {" · "}Threshold: {alert.threshold_celsius}°C
-                          {" · "}Sensor: {alert.sensor_id}
+                          {" · "}{t("coldChain.threshold")}: {alert.threshold_celsius}°C
+                          {" · "}{t("coldChain.sensor")}: {alert.sensor_id}
                         </p>
                       </div>
                       <AlertTriangle

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,13 +28,12 @@ import {
   type Dhis2TestResult,
 } from "@/api/dhis2";
 
-// ─── Connection Form ──────────────────────────────────────────────────────────
-
 function ConnectionForm({
   onTestResult,
 }: {
   onTestResult: (result: Dhis2TestResult | null) => void;
 }) {
+  const { t } = useTranslation();
   const [instanceUrl, setInstanceUrl] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -49,19 +49,16 @@ function ConnectionForm({
         if (cfg) {
           setInstanceUrl(cfg.instanceUrl);
           setUsername(cfg.username);
-          // Password is not returned for security; leave blank
         }
       })
-      .catch(() => {
-        // No existing config; form starts empty
-      });
+      .catch(() => {});
   }, []);
 
   const handleSave = async () => {
     setError(null);
     setSaveSuccess(false);
     if (!instanceUrl.trim() || !username.trim()) {
-      setError("Instance URL and username are required.");
+      setError(t("dhis2.urlUsernameRequired"));
       return;
     }
     setSaving(true);
@@ -70,7 +67,7 @@ function ConnectionForm({
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch {
-      setError("Failed to save configuration.");
+      setError(t("dhis2.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -80,7 +77,7 @@ function ConnectionForm({
     setError(null);
     onTestResult(null);
     if (!instanceUrl.trim() || !username.trim()) {
-      setError("Instance URL and username are required to test.");
+      setError(t("dhis2.urlUsernameTestRequired"));
       return;
     }
     setTesting(true);
@@ -92,7 +89,7 @@ function ConnectionForm({
       });
       onTestResult(result);
     } catch {
-      onTestResult({ success: false, message: "Network error — could not reach the server." });
+      onTestResult({ success: false, message: t("dhis2.networkError") });
     } finally {
       setTesting(false);
     }
@@ -103,51 +100,51 @@ function ConnectionForm({
       <CardHeader className="pb-4">
         <CardTitle className="text-base flex items-center gap-2">
           <Settings className="h-4 w-4" />
-          DHIS2 Connection Settings
+          {t("dhis2.connectionSettings")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Instance URL</label>
+          <label className="text-sm font-medium mb-1.5 block">{t("dhis2.instanceUrl")}</label>
           <Input
-            placeholder="https://play.dhis2.org/40.4.0"
+            placeholder={t("dhis2.instanceUrlPlaceholder")}
             value={instanceUrl}
             onChange={(e) => setInstanceUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Full URL of the DHIS2 instance (e.g. https://dhis2.example.org)
+            {t("dhis2.instanceUrlHelp")}
           </p>
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Username</label>
+          <label className="text-sm font-medium mb-1.5 block">{t("dhis2.username")}</label>
           <Input
-            placeholder="admin"
+            placeholder={t("dhis2.usernamePlaceholder")}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Password</label>
+          <label className="text-sm font-medium mb-1.5 block">{t("dhis2.password")}</label>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="Enter password"
+              placeholder={t("dhis2.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pr-10"
+              className="pe-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Leave blank to keep the existing saved password
+            {t("dhis2.passwordHelp")}
           </p>
         </div>
 
@@ -161,18 +158,18 @@ function ConnectionForm({
         {saveSuccess && (
           <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
             <CheckCircle className="h-4 w-4 flex-shrink-0" />
-            Configuration saved successfully.
+            {t("dhis2.configSaved")}
           </div>
         )}
 
         <div className="flex gap-3 pt-2">
           <Button onClick={handleSave} disabled={saving || testing}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save Configuration
+            {t("dhis2.saveConfig")}
           </Button>
           <Button variant="outline" onClick={handleTest} disabled={saving || testing}>
             {testing && <Loader2 className="h-4 w-4 animate-spin" />}
-            Test Connection
+            {t("dhis2.testConnection")}
           </Button>
         </div>
       </CardContent>
@@ -180,9 +177,8 @@ function ConnectionForm({
   );
 }
 
-// ─── Test Connection Result ───────────────────────────────────────────────────
-
 function TestResultBanner({ result }: { result: Dhis2TestResult }) {
+  const { t } = useTranslation();
   return (
     <div
       className={`flex items-center gap-3 rounded-md border px-4 py-3 text-sm ${
@@ -198,12 +194,12 @@ function TestResultBanner({ result }: { result: Dhis2TestResult }) {
       )}
       <div>
         <p className="font-medium">
-          {result.success ? "Connection successful" : "Connection failed"}
+          {result.success ? t("dhis2.connectionSuccess") : t("dhis2.connectionFailed")}
         </p>
         <p className="text-xs mt-0.5 opacity-80">{result.message}</p>
         {result.serverVersion && (
           <p className="text-xs mt-0.5 opacity-80">
-            DHIS2 version: {result.serverVersion}
+            {t("dhis2.dhis2Version", { version: result.serverVersion })}
           </p>
         )}
       </div>
@@ -211,9 +207,8 @@ function TestResultBanner({ result }: { result: Dhis2TestResult }) {
   );
 }
 
-// ─── Data Mapping Preview ─────────────────────────────────────────────────────
-
 function MappingPreview() {
+  const { t } = useTranslation();
   const [mappings, setMappings] = useState<Dhis2FieldMapping[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -230,33 +225,33 @@ function MappingPreview() {
       <CardHeader className="pb-4">
         <CardTitle className="text-base flex items-center gap-2">
           <ArrowRightLeft className="h-4 w-4" />
-          Data Mapping Preview
+          {t("dhis2.mappingPreview")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex items-center gap-2 py-6 justify-center text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading mappings...
+            {t("dhis2.loadingMappings")}
           </div>
         ) : error ? (
           <div className="flex items-center gap-2 py-6 justify-center text-sm text-muted-foreground">
             <AlertTriangle className="h-4 w-4" />
-            Could not load mappings. Save and test connection first.
+            {t("dhis2.loadMappingsError")}
           </div>
         ) : mappings.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            No mappings configured. Connect to a DHIS2 instance first.
+            {t("dhis2.noMappings")}
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-2 font-medium text-muted-foreground">DHIS2 Element</th>
-                  <th className="pb-2 font-medium text-muted-foreground">VaxAI Field</th>
-                  <th className="pb-2 font-medium text-muted-foreground">Type</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-center">Status</th>
+                <tr className="border-b text-start">
+                  <th className="pb-2 font-medium text-muted-foreground">{t("dhis2.dhis2Element")}</th>
+                  <th className="pb-2 font-medium text-muted-foreground">{t("dhis2.vaxaiField")}</th>
+                  <th className="pb-2 font-medium text-muted-foreground">{t("dhis2.type")}</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-center">{t("common.status")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -275,9 +270,9 @@ function MappingPreview() {
                     </td>
                     <td className="py-2.5 text-center">
                       {m.enabled ? (
-                        <Badge variant="success" className="text-xs">Active</Badge>
+                        <Badge variant="success" className="text-xs">{t("common.active")}</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs">Disabled</Badge>
+                        <Badge variant="outline" className="text-xs">{t("common.disabled")}</Badge>
                       )}
                     </td>
                   </tr>
@@ -291,9 +286,8 @@ function MappingPreview() {
   );
 }
 
-// ─── Sync Controls ────────────────────────────────────────────────────────────
-
 function SyncControls() {
+  const { t } = useTranslation();
   const [syncStatus, setSyncStatus] = useState<Dhis2SyncStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -302,9 +296,7 @@ function SyncControls() {
   const fetchStatus = useCallback(() => {
     getDhis2SyncStatus()
       .then(setSyncStatus)
-      .catch(() => {
-        // Status endpoint not available yet
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -317,13 +309,12 @@ function SyncControls() {
     setSyncError(null);
     try {
       const result = await triggerDhis2Sync();
-      // Refresh status after sync completes
       fetchStatus();
       if (!result.success) {
-        setSyncError(`Sync completed with ${result.recordsFailed} errors.`);
+        setSyncError(t("dhis2.syncErrors", { count: result.recordsFailed }));
       }
     } catch {
-      setSyncError("Failed to trigger sync. Check connection settings.");
+      setSyncError(t("dhis2.syncFailed"));
     } finally {
       setSyncing(false);
     }
@@ -335,19 +326,15 @@ function SyncControls() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <RefreshCw className="h-4 w-4" />
-            Sync Controls
+            {t("dhis2.syncControls")}
           </CardTitle>
-          <Button
-            size="sm"
-            onClick={handleSync}
-            disabled={syncing}
-          >
+          <Button size="sm" onClick={handleSync} disabled={syncing}>
             {syncing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Sync Now
+            {t("dhis2.syncNow")}
           </Button>
         </div>
       </CardHeader>
@@ -355,34 +342,33 @@ function SyncControls() {
         {loading ? (
           <div className="flex items-center gap-2 py-4 justify-center text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading sync status...
+            {t("dhis2.loadingSyncStatus")}
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Sync status cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/20">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Last Sync</p>
+                  <p className="text-xs text-muted-foreground">{t("dhis2.lastSync")}</p>
                   <p className="text-sm font-medium">
                     {syncStatus?.lastSyncTime
                       ? new Date(syncStatus.lastSyncTime).toLocaleString()
-                      : "Never"}
+                      : t("common.never")}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/20">
                 <Database className="h-5 w-5 text-green-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Records Synced</p>
+                  <p className="text-xs text-muted-foreground">{t("dhis2.recordsSynced")}</p>
                   <p className="text-sm font-medium">{syncStatus?.recordsSynced ?? 0}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/20">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Failed</p>
+                  <p className="text-xs text-muted-foreground">{t("common.failed")}</p>
                   <p className="text-sm font-medium text-destructive">
                     {syncStatus?.recordsFailed ?? 0}
                   </p>
@@ -393,7 +379,7 @@ function SyncControls() {
             {syncStatus?.inProgress && (
               <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Sync in progress...
+                {t("dhis2.syncInProgress")}
               </div>
             )}
 
@@ -404,10 +390,9 @@ function SyncControls() {
               </div>
             )}
 
-            {/* Error log */}
             {syncStatus?.errors && syncStatus.errors.length > 0 && (
               <div>
-                <p className="text-sm font-medium mb-2">Recent Errors</p>
+                <p className="text-sm font-medium mb-2">{t("dhis2.recentErrors")}</p>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {syncStatus.errors.map((err, i) => (
                     <div
@@ -427,17 +412,16 @@ function SyncControls() {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function Dhis2ConfigPage() {
+  const { t } = useTranslation();
   const [testResult, setTestResult] = useState<Dhis2TestResult | null>(null);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">DHIS2 Integration</h1>
+        <h1 className="text-3xl font-bold">{t("dhis2.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Configure the connection to your DHIS2 instance for data synchronization
+          {t("dhis2.subtitle")}
         </p>
       </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { type SyncStatus, onSyncStatusChange, pendingCount } from "@/lib/sync";
 
@@ -7,6 +8,7 @@ export default function OfflineIndicator() {
     navigator.onLine ? "online" : "offline",
   );
   const [pending, setPending] = useState(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const unsub = onSyncStatusChange((s) => {
@@ -19,21 +21,23 @@ export default function OfflineIndicator() {
 
   if (status === "online" && pending === 0) return null;
 
+  const plural = pending !== 1 ? "s" : "";
+
   const config = {
     offline: {
       bg: "bg-red-600",
       icon: <WifiOff className="h-3.5 w-3.5" />,
-      text: "Offline — viewing cached data",
+      text: t("offline.offline"),
     },
     syncing: {
       bg: "bg-blue-600",
       icon: <RefreshCw className="h-3.5 w-3.5 animate-spin" />,
-      text: `Syncing ${pending} pending change${pending !== 1 ? "s" : ""}…`,
+      text: t("offline.syncing", { count: pending, plural }),
     },
     online: {
       bg: "bg-emerald-600",
       icon: <Wifi className="h-3.5 w-3.5" />,
-      text: `Back online — ${pending} change${pending !== 1 ? "s" : ""} queued`,
+      text: t("offline.backOnline", { count: pending, plural }),
     },
   }[status];
 

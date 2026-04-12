@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/auth";
+import { getLanguageDir } from "@/lib/i18n";
 import Layout from "@/components/Layout";
 import LoginPage from "@/pages/LoginPage";
 import OverviewPage from "@/pages/OverviewPage";
@@ -20,10 +22,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { init } = useAuthStore();
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     init();
   }, [init]);
+
+  useEffect(() => {
+    const dir = getLanguageDir(i18n.language);
+    document.documentElement.dir = dir;
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
 
   return (
     <Routes>

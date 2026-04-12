@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
+import { Globe } from "lucide-react";
 
-// Animated counter hook
 function useCountUp(target: number, duration = 1600, started = false) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -25,6 +27,7 @@ function useCountUp(target: number, duration = 1600, started = false) {
 function AnimatedKPIs() {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -49,22 +52,22 @@ function AnimatedKPIs() {
   const kpis = [
     {
       value: fmt(doses),
-      label: "Doses Tracked",
-      change: "+12% this month",
+      label: t("login.dosesTracked"),
+      change: t("login.thisMonth"),
       color: "from-emerald-400 to-teal-400",
       icon: "💉",
     },
     {
       value: `${(coldChain / 10).toFixed(1)}%`,
-      label: "Cold Chain Uptime",
-      change: "+0.3% vs last month",
+      label: t("login.coldChainUptime"),
+      change: t("login.vsLastMonth"),
       color: "from-blue-400 to-cyan-400",
       icon: "❄️",
     },
     {
       value: facilities.toLocaleString(),
-      label: "Facilities",
-      change: "+8 this week",
+      label: t("login.facilitiesLabel"),
+      change: t("login.thisWeek"),
       color: "from-violet-400 to-purple-400",
       icon: "🏥",
     },
@@ -99,6 +102,7 @@ function AnimatedKPIs() {
 export default function LoginPage() {
   const { login, demoLogin, loading, error, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showSignIn, setShowSignIn] = useState(false);
@@ -137,6 +141,22 @@ export default function LoginPage() {
         style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 60%)" }}
       />
 
+      {/* Language selector */}
+      <div className="absolute top-4 end-4 z-20 flex items-center gap-2">
+        <Globe className="h-4 w-4 text-white/50" />
+        <select
+          value={i18n.language}
+          onChange={(e) => i18n.changeLanguage(e.target.value)}
+          className="text-xs rounded-md px-2 py-1 bg-white/10 text-white/70 border border-white/20"
+        >
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code} className="text-gray-900">
+              {lang.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Main card */}
       <div
         className="relative z-10 w-full max-w-md mx-4 rounded-3xl px-8 py-10 flex flex-col items-center gap-6"
@@ -160,9 +180,9 @@ export default function LoginPage() {
             V
           </div>
           <div className="text-center">
-            <h1 className="text-white text-xl font-bold tracking-tight">VaxAI Vision</h1>
+            <h1 className="text-white text-xl font-bold tracking-tight">{t("app.name")}</h1>
             <p className="text-white/50 text-xs mt-0.5">
-              AI-powered vaccine supply chain intelligence
+              {t("app.subtitle")}
             </p>
           </div>
         </div>
@@ -170,7 +190,7 @@ export default function LoginPage() {
         {/* KPI counters */}
         <AnimatedKPIs />
 
-        {/* Demo CTA — primary action, above the fold */}
+        {/* Demo CTA */}
         <div className="w-full flex flex-col items-center gap-2">
           <button
             onClick={handleDemoAccess}
@@ -183,10 +203,10 @@ export default function LoginPage() {
               boxShadow: loading ? "none" : "0 8px 24px rgba(37,99,235,0.45)",
             }}
           >
-            {loading ? "Loading demo…" : "▶  Try Live Demo — No Sign-up Required"}
+            {loading ? t("auth.loadingDemo") : t("auth.tryDemo")}
           </button>
           <p className="text-white/40 text-[10px] text-center">
-            Pre-loaded with 13 months of real-world vaccine supply data
+            {t("auth.demoDataNote")}
           </p>
         </div>
 
@@ -197,18 +217,18 @@ export default function LoginPage() {
             className="text-white/40 text-xs hover:text-white/70 transition-colors px-2"
             onClick={() => setShowSignIn((v) => !v)}
           >
-            {showSignIn ? "Hide sign in" : "Sign in with your account"}
+            {showSignIn ? t("auth.hideSignIn") : t("auth.signInWithAccount")}
           </button>
           <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
         </div>
 
-        {/* Sign-in form — secondary, collapsible */}
+        {/* Sign-in form */}
         {showSignIn && (
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
             <Input
               id="email"
               type="email"
-              placeholder="Email address"
+              placeholder={t("auth.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -218,7 +238,7 @@ export default function LoginPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Password"
+              placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -235,20 +255,20 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
             >
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? t("auth.signingIn") : t("auth.signIn")}
             </Button>
           </form>
         )}
 
         {/* Footer */}
         <p className="text-white/25 text-[10px] text-center">
-          Healthcare-grade security · HIPAA-ready · No PHI in demo data
+          {t("auth.securityFooter")}
         </p>
       </div>
 
       {/* Trust logos row */}
       <div className="relative z-10 mt-6 flex items-center gap-4 text-white/20 text-xs">
-        <span>Designed for WHO · UNICEF · GAVI partners</span>
+        <span>{t("auth.partnersFooter")}</span>
       </div>
     </div>
   );

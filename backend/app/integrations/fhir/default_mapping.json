@@ -1,0 +1,40 @@
+{
+  "country_code": "XX",
+  "vaccine_code_system": "http://hl7.org/fhir/sid/cvx",
+  "vaccine_code_mappings": {
+    "19": {
+      "vaccine_type": "BCG",
+      "description": "BCG vaccine"
+    },
+    "10": {
+      "vaccine_type": "IPV",
+      "description": "Inactivated Polio Vaccine"
+    },
+    "02": {
+      "vaccine_type": "OPV",
+      "description": "Oral Polio Vaccine, trivalent"
+    },
+    "104": {
+      "vaccine_type": "Penta",
+      "description": "Hepatitis A-Hepatitis B vaccine (placeholder for pentavalent)"
+    },
+    "08": {
+      "vaccine_type": "HepB",
+      "description": "Hepatitis B vaccine"
+    },
+    "03": {
+      "vaccine_type": "MMR",
+      "description": "Measles, Mumps, Rubella vaccine"
+    },
+    "21": {
+      "vaccine_type": "Varicella",
+      "description": "Varicella vaccine"
+    }
+  },
+  "device_type_codes": {
+    "refrigerator": "Cold chain refrigerator",
+    "freezer": "Cold chain freezer",
+    "cold_box": "Cold box / vaccine carrier"
+  },
+  "supply_item_code_system": "http://snomed.info/sct"
+}

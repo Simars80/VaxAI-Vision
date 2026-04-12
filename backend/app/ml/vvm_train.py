@@ -1,8 +1,8 @@
 """VVM classifier training pipeline.
 
 Two-track approach:
-  1. sklearn RandomForest on color-histogram features — fast, interpretable
-  2. PyTorch small CNN → ONNX export (convertible to TFLite via CI)
+  1. sklearn RandomForest on color-histogram features â fast, interpretable
+  2. PyTorch small CNN â ONNX export (convertible to TFLite via CI)
 
 Both produce artefacts under the specified output directory.
 """
@@ -22,11 +22,11 @@ from sklearn.metrics import accuracy_score, classification_report
 logger = logging.getLogger(__name__)
 
 LABELS = ["stage_1", "stage_2", "stage_3", "stage_4"]
-LABEL_TO_IDX = {l: i for i, l in enumerate(LABELS)}
+LABEL_TO_IDX = {label: i for i, label in enumerate(LABELS)}
 IMG_SIZE = 224
 
 
-# ── Feature extraction (sklearn path) ────────────────────────────────────────
+# ââ Feature extraction (sklearn path) ââââââââââââââââââââââââââââââââââââââââ
 
 
 def _extract_features(img: Image.Image) -> np.ndarray:
@@ -68,7 +68,7 @@ def _load_split(data_dir: Path, split: str) -> tuple[np.ndarray, np.ndarray]:
     return np.array(X), np.array(y)
 
 
-# ── sklearn training ─────────────────────────────────────────────────────────
+# ââ sklearn training âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
 def train_sklearn(data_dir: str | Path, output_dir: str | Path) -> dict:
@@ -120,7 +120,7 @@ def train_sklearn(data_dir: str | Path, output_dir: str | Path) -> dict:
     return metrics
 
 
-# ── PyTorch CNN training + ONNX export ────────────────────────────────────────
+# ââ PyTorch CNN training + ONNX export ââââââââââââââââââââââââââââââââââââââââ
 
 
 def _load_images(data_dir: Path, split: str) -> tuple[np.ndarray, np.ndarray]:
@@ -218,7 +218,7 @@ def train_cnn(
             patience_counter += 1
 
         if epoch % 5 == 0 or patience_counter == 0:
-            logger.info("Epoch %d — val_acc: %.4f (best: %.4f)", epoch, val_acc, best_acc)
+            logger.info("Epoch %d â val_acc: %.4f (best: %.4f)", epoch, val_acc, best_acc)
 
         if patience_counter >= 5:
             logger.info("Early stopping at epoch %d", epoch)
@@ -292,7 +292,7 @@ def convert_onnx_to_tflite(
     return output_path
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# ââ CLI âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
 if __name__ == "__main__":
@@ -312,13 +312,13 @@ if __name__ == "__main__":
         cnn_metrics = train_cnn(data_dir, out_dir)
         print(json.dumps(cnn_metrics, indent=2))
     except ImportError as e:
-        print(f"PyTorch not available ({e}) — skipping CNN training.")
+        print(f"PyTorch not available ({e}) â skipping CNN training.")
 
     onnx_file = Path(out_dir) / "vvm_classifier.onnx"
     tflite_file = Path(out_dir) / "vvm_classifier.tflite"
     if onnx_file.exists() and not tflite_file.exists():
         try:
-            print("\n=== Converting ONNX → TFLite ===")
+            print("\n=== Converting ONNX â TFLite ===")
             convert_onnx_to_tflite(onnx_file, tflite_file)
         except ImportError:
-            print("TensorFlow/onnx-tf not available — run TFLite conversion in CI.")
+            print("TensorFlow/onnx-tf not available â run TFLite conversion in CI.")

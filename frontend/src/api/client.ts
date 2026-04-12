@@ -13,26 +13,52 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT access token to every request
+// ── Request interceptor: in demo mode, short-circuit with mock data ─────────
+// This prevents network requests entirely — no failed fetches, no loading delays.
 apiClient.interceptors.request.use((config) => {
+  // Attach JWT access token
   const token = localStorage.getItem("access_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // In demo mode, intercept ALL GET requests and return mock data immediately
+  if (isDemoMode()) {
+    const url = config.url ?? "";
+    const mockData = getMockResponse(url, config.params);
+    if (mockData !== undefined) {
+      // Create an adapter that returns mock data without hitting the network
+      config.adapter = () =>
+        Promise.resolve({
+          data: mockData,
+          status: 200,
+          statusText: "OK (demo)",
+          headers: {},
+          config,
+        });
+    }
+  }
+
   return config;
 });
 
-// Handle responses: in demo mode, intercept errors and return mock data
+// ── Response interceptor: catch any remaining failures in demo mode ──────────
 apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
-    // In demo mode, catch ALL API failures and serve mock data instead
+    // In demo mode, catch ALL API failures and serve mock data as fallback
     if (isDemoMode()) {
       const url = error.config?.url ?? "";
       const params = error.config?.params;
       const mockData = getMockResponse(url, params);
       if (mockData !== undefined) {
-        return Promise.resolve({ data: mockData, status: 200, statusText: "OK (demo)", headers: {}, config: error.config });
+        return Promise.resolve({
+          data: mockData,
+          status: 200,
+          statusText: "OK (demo fallback)",
+          headers: {},
+          config: error.config,
+        });
       }
     }
 

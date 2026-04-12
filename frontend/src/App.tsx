@@ -13,6 +13,9 @@ import ColdChainPage from "@/pages/ColdChainPage";
 import CoverageMapPage from "@/pages/CoverageMapPage";
 import Dhis2ConfigPage from "@/pages/admin/Dhis2Config";
 import ImpactReportPage from "@/pages/reports/ImpactReport";
+import VisionDashboardPage from "@/pages/vision/VisionDashboardPage";
+import VisionScanPage from "@/pages/vision/VisionScanPage";
+import VisionEquipmentPage from "@/pages/vision/VisionEquipmentPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -90,6 +93,30 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ImpactReportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vision"
+        element={
+          <ProtectedRoute>
+            <VisionDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vision/scan"
+        element={
+          <ProtectedRoute>
+            <VisionScanPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vision/equipment"
+        element={
+          <ProtectedRoute>
+            <VisionEquipmentPage />
           </ProtectedRoute>
         }
       />

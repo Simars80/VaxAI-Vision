@@ -4,7 +4,7 @@ import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import DemoTour from "@/components/DemoTour";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, TrendingUp, Upload, LogOut, Package, Thermometer, Map, Settings, FileText, Globe } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Upload, LogOut, Package, Thermometer, Map, Settings, FileText, Globe, Eye } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -18,6 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/forecast", icon: TrendingUp, label: t("nav.forecasting"), tour: "nav-forecast" },
     { href: "/cold-chain", icon: Thermometer, label: t("nav.coldChain"), tour: "nav-cold-chain" },
     { href: "/coverage-map", icon: Map, label: t("nav.coverageMap"), tour: "nav-coverage-map" },
+    { href: "/vision", icon: Eye, label: t("nav.vision"), tour: "nav-vision" },
     { href: "/ingestion", icon: Upload, label: t("nav.dataIngestion"), tour: "nav-ingestion" },
     { href: "/reports/impact", icon: FileText, label: t("nav.impactReports"), tour: "nav-reports" },
     { href: "/admin/dhis2", icon: Settings, label: t("nav.dhis2Integration"), tour: "nav-dhis2" },

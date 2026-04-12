@@ -12,6 +12,7 @@
     "coverageMap": "Carte de couverture",
     "dataIngestion": "Ingestion de données",
     "impactReports": "Rapports d'impact",
+    "vision": "Vision",
     "dhis2Integration": "Intégration DHIS2",
     "admin": "Administration"
   },

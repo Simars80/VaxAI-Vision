@@ -1,4 +1,4 @@
-"""Impact-report endpoints — aggregated vaccination metrics."""
+"""Impact-report endpoints â aggregated vaccination metrics."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -20,7 +20,7 @@ from app.models.user import User
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-# ── Schemas ──────────────────────────────────────────────────────────────────
+# ââ Schemas ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
 class CoverageByCountry(BaseModel):
@@ -73,7 +73,7 @@ class ImpactReportData(BaseModel):
     facilityPerformance: list[FacilityPerformance]
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
 def _apply_filters(stmt, date_from: str | None, date_to: str | None, country: str | None):
@@ -163,7 +163,7 @@ async def _build_report(
     )
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# ââ Endpoints âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 
 @router.get("/impact", response_model=ImpactReportData, summary="Aggregated impact report")

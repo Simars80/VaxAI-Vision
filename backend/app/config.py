@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     ENV: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = False
-        ENFORCE_HTTPS: bool = True  # Set False when no SSL termination proxy is present
+    ENFORCE_HTTPS: bool = True  # Set False when no SSL termination proxy is present
 
     # Database
     DATABASE_URL: str = Field(

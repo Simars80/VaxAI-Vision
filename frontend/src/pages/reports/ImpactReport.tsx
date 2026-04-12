@@ -18,6 +18,9 @@ import {
   getImpactReportCsvUrl,
   type ImpactReportData,
   type ReportParams,
+  type CoverageByCountry,
+  type StockSummary,
+  type FacilityPerformance,
 } from "@/api/reports";
 import {
   BarChart,
@@ -103,7 +106,7 @@ export default function ImpactReportPage() {
 
   const coverageChartData = useMemo(
     () =>
-      report?.coverageByCountry.map((c) => ({
+      report?.coverageByCountry.map((c: CoverageByCountry) => ({
         country: c.country,
         coverage: c.avgCoverageRate,
         doses: c.totalDosesAdministered,
@@ -113,7 +116,7 @@ export default function ImpactReportPage() {
 
   const stockChartData = useMemo(
     () =>
-      report?.stockSummary.map((s) => ({
+      report?.stockSummary.map((s: StockSummary) => ({
         name: s.status,
         value: s.facilityCount,
       })) ?? [],
@@ -121,19 +124,19 @@ export default function ImpactReportPage() {
   );
 
   const totalFacilities = useMemo(
-    () => report?.coverageByCountry.reduce((s, c) => s + c.facilityCount, 0) ?? 0,
+    () => report?.coverageByCountry.reduce((s: number, c: CoverageByCountry) => s + c.facilityCount, 0) ?? 0,
     [report],
   );
 
   const totalDoses = useMemo(
-    () => report?.coverageByCountry.reduce((s, c) => s + c.totalDosesAdministered, 0) ?? 0,
+    () => report?.coverageByCountry.reduce((s: number, c: CoverageByCountry) => s + c.totalDosesAdministered, 0) ?? 0,
     [report],
   );
 
   const avgCoverage = useMemo(() => {
     if (!report || report.coverageByCountry.length === 0) return 0;
     const total = report.coverageByCountry.reduce(
-      (s, c) => s + c.avgCoverageRate * c.facilityCount,
+      (s: number, c: CoverageByCountry) => s + c.avgCoverageRate * c.facilityCount,
       0,
     );
     return Math.round(total / totalFacilities);
@@ -320,9 +323,9 @@ export default function ImpactReportPage() {
                       outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
+                      label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}
                     >
-                      {stockChartData.map((entry) => (
+                      {stockChartData.map((entry: StockSummary) => (
                         <Cell
                           key={entry.name}
                           fill={STOCK_COLORS[entry.name] ?? "#94a3b8"}
@@ -408,7 +411,7 @@ export default function ImpactReportPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {report.facilityPerformance.map((f) => (
+                    {report.facilityPerformance.map((f: FacilityPerformance) => (
                       <tr key={f.id} className="border-t hover:bg-muted/30">
                         <td className="px-4 py-2 font-medium">{f.name}</td>
                         <td className="px-4 py-2">{f.country}</td>

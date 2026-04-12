@@ -198,9 +198,9 @@ class DHIS2Client:
         """
         params: dict[str, str] = {}
         for i, dim in enumerate(dimension):
-            params[f"dimension"] = dim if i == 0 else params["dimension"]
+            params["dimension"] = dim if i == 0 else params["dimension"]
         # DHIS2 analytics supports repeated dimension params via list
-        # We need to send them as separate params — use the raw approach
+        # We need to send them as separate params â use the raw approach
         query_parts = [f"dimension={d}" for d in dimension]
         if filter_params:
             query_parts.extend(f"filter={f}" for f in filter_params)

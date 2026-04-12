@@ -1,0 +1,37 @@
+{
+  "country_code": "XX",
+  "store_type_facility": "facility",
+  "store_type_warehouse": "warehouse",
+  "item_mappings": {
+    "BCG_VACCINE": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual mSupply item code per instance"
+    },
+    "PENTA_VACCINE": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "Penta",
+      "description": "Placeholder — map to actual mSupply item code per instance"
+    },
+    "OPV_VACCINE": {
+      "vaxai_field": "stock_on_hand",
+      "vaccine_type": "OPV",
+      "description": "Placeholder — map to actual mSupply item code per instance"
+    },
+    "BCG_CONSUMED": {
+      "vaxai_field": "consumed",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual consumption item code"
+    },
+    "PENTA_CONSUMED": {
+      "vaxai_field": "consumed",
+      "vaccine_type": "Penta",
+      "description": "Placeholder — map to actual consumption item code"
+    },
+    "BCG_WASTAGE": {
+      "vaxai_field": "wastage",
+      "vaccine_type": "BCG",
+      "description": "Placeholder — map to actual wastage item code"
+    }
+  }
+}

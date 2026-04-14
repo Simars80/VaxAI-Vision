@@ -14,6 +14,7 @@ from app.models.ingestion import (
     IngestionStatus,
 )
 from app.models.phi_audit import PhiAccessLog
+from app.models.scan_session import ScanDetection, ScanSession, SessionStatus
 from app.models.supply import (
     PatientCensus,
     SupplyCategory,
@@ -46,4 +47,7 @@ __all__ = [
     "ReadingStatus",
     "VisionScanResult",
     "VVMStageDB",
+    "ScanSession",
+    "ScanDetection",
+    "SessionStatus",
 ]

@@ -12,6 +12,7 @@ from app.api.v1 import (
     msupply,
     openlmis,
     reports,
+    stock,
     vision,
 )
 
@@ -28,3 +29,4 @@ router.include_router(msupply.router)
 router.include_router(openlmis.router)
 router.include_router(reports.router)
 router.include_router(vision.router)
+router.include_router(stock.router)

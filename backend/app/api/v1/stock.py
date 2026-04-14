@@ -15,7 +15,6 @@ from app.models.user import User
 from app.vision.ar.reconciliation import reconcile_session
 from app.vision.ar.schemas import (
     CreateSessionRequest,
-    DiscrepancyItem,
     FrameDetection,
     FrameSubmitResponse,
     ModelWeightsResponse,

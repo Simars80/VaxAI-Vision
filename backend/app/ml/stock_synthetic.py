@@ -13,12 +13,11 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 import random
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter
 
 logger = logging.getLogger(__name__)
 

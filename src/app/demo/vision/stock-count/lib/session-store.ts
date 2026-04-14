@@ -1,16 +1,25 @@
 import type { StockSession, Detection, ProductTally, ReconciliationRow } from "./types";
+import {
+  createApiSession,
+  getApiSession,
+  submitFrameDetections,
+  reconcileSession as apiReconcile,
+  isApiAvailable,
+  type ApiFrameDetection,
+} from "./api-client";
 
 let sessions: StockSession[] = [];
+let pendingFrames: { sessionId: string; detections: ApiFrameDetection[]; frameIndex: number }[] = [];
 
 const SYSTEM_INVENTORY: Record<string, number> = {
-  "BCG": 48,
-  "OPV": 120,
-  "Pentavalent": 85,
-  "Measles": 60,
-  "HPV": 30,
-  "TT": 45,
+  BCG: 48,
+  OPV: 120,
+  Pentavalent: 85,
+  Measles: 60,
+  HPV: 30,
+  TT: 45,
   "Yellow Fever": 25,
-  "Diluent": 100,
+  Diluent: 100,
 };
 
 export function createSession(facility: string): StockSession {
@@ -24,6 +33,19 @@ export function createSession(facility: string): StockSession {
     facility,
   };
   sessions = [session, ...sessions];
+
+  if (isApiAvailable()) {
+    createApiSession(facility)
+      .then((apiSession) => {
+        const oldId = session.id;
+        session.id = apiSession.id;
+        pendingFrames = pendingFrames.map((f) =>
+          f.sessionId === oldId ? { ...f, sessionId: apiSession.id } : f,
+        );
+      })
+      .catch(() => {});
+  }
+
   return session;
 }
 
@@ -35,14 +57,18 @@ export function getSessions(): StockSession[] {
   return [...sessions];
 }
 
+let frameIndex = 0;
+
 export function addDetections(sessionId: string, detections: Detection[]): void {
   const session = sessions.find((s) => s.id === sessionId);
   if (!session) return;
 
+  const newDets: Detection[] = [];
   for (const det of detections) {
     const exists = session.detections.some((d) => d.id === det.id);
     if (!exists) {
       session.detections.push(det);
+      newDets.push(det);
       const tally = session.tallies.find((t) => t.category === det.category);
       if (tally) {
         tally.count++;
@@ -55,6 +81,26 @@ export function addDetections(sessionId: string, detections: Detection[]): void 
         });
       }
     }
+  }
+
+  if (isApiAvailable() && newDets.length > 0) {
+    frameIndex++;
+    const apiDets: ApiFrameDetection[] = newDets.map((d) => ({
+      product_code: d.category,
+      product_name: d.label,
+      quantity: 1,
+      confidence: d.confidence,
+      bounding_box: {
+        x1: d.bbox.x,
+        y1: d.bbox.y,
+        x2: d.bbox.x + d.bbox.width,
+        y2: d.bbox.y + d.bbox.height,
+      },
+    }));
+
+    submitFrameDetections(sessionId, frameIndex, apiDets).catch(() => {
+      pendingFrames.push({ sessionId, detections: apiDets, frameIndex });
+    });
   }
 }
 
@@ -112,6 +158,67 @@ export function getReconciliation(sessionId: string): ReconciliationRow[] {
   }
 
   return rows;
+}
+
+export async function getReconciliationFromApi(
+  sessionId: string,
+): Promise<ReconciliationRow[] | null> {
+  if (!isApiAvailable()) return null;
+
+  try {
+    const resp = await apiReconcile(sessionId);
+    return resp.items.map((item) => ({
+      productName: item.product_name,
+      category: item.product_code,
+      systemCount: item.system_quantity,
+      scannedCount: item.scanned_quantity,
+      discrepancy: item.discrepancy,
+      status: item.status,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export async function syncPendingFrames(): Promise<number> {
+  if (pendingFrames.length === 0) return 0;
+
+  let synced = 0;
+  const remaining: typeof pendingFrames = [];
+
+  for (const frame of pendingFrames) {
+    try {
+      await submitFrameDetections(frame.sessionId, frame.frameIndex, frame.detections);
+      synced++;
+    } catch {
+      remaining.push(frame);
+    }
+  }
+
+  pendingFrames = remaining;
+  return synced;
+}
+
+export function getPendingFrameCount(): number {
+  return pendingFrames.length;
+}
+
+export async function refreshSessionFromApi(sessionId: string): Promise<ProductTally[] | null> {
+  if (!isApiAvailable()) return null;
+  try {
+    const apiSession = await getApiSession(sessionId);
+    if (apiSession.running_counts) {
+      return apiSession.running_counts.map((rc) => ({
+        category: rc.product_code,
+        label: rc.product_name,
+        count: rc.total_quantity,
+        color: "#3b82f6",
+      }));
+    }
+  } catch {
+    // Offline
+  }
+  return null;
 }
 
 export function seedDemoSessions(): void {

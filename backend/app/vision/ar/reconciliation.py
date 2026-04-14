@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.scan_session import ScanDetection, ScanSession
 from app.models.supply import SupplyItem, SupplyTransaction
-from app.vision.ar.schemas import DiscrepancyItem, ProductCount
+from app.vision.ar.schemas import DiscrepancyItem
 
 
 async def reconcile_session(

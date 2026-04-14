@@ -1,6 +1,7 @@
 """Aggregate product tracking across scan frames."""
 
 from __future__ import annotations
+import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +14,6 @@ async def get_running_counts(
     db: AsyncSession, session_id: "uuid.UUID"
 ) -> list[ProductCount]:
     """Return aggregated product counts for a scan session."""
-    import uuid
 
     stmt = (
         select(

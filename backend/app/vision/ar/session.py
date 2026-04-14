@@ -15,7 +15,6 @@ from app.models.scan_session import (
 )
 from app.vision.ar.schemas import (
     CreateSessionRequest,
-    FrameDetection,
     SubmitFrameRequest,
 )
 

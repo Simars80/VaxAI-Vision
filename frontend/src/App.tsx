@@ -12,6 +12,8 @@ import InventoryPage from "@/pages/InventoryPage";
 import ColdChainPage from "@/pages/ColdChainPage";
 import CoverageMapPage from "@/pages/CoverageMapPage";
 import Dhis2ConfigPage from "@/pages/admin/Dhis2Config";
+import OpenlmisConfigPage from "@/pages/admin/OpenlmisConfig";
+import MsupplyConfigPage from "@/pages/admin/MsupplyConfig";
 import ImpactReportPage from "@/pages/reports/ImpactReport";
 import VisionDashboardPage from "@/pages/vision/VisionDashboardPage";
 import VisionScanPage from "@/pages/vision/VisionScanPage";
@@ -125,6 +127,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Dhis2ConfigPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/openlmis"
+        element={
+          <ProtectedRoute>
+            <OpenlmisConfigPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/msupply"
+        element={
+          <ProtectedRoute>
+            <MsupplyConfigPage />
           </ProtectedRoute>
         }
       />

@@ -99,8 +99,8 @@ const Solutions = () => {
           Phase 2 — Operational Intelligence
         </Text>
         <Grid
-          templateColumns={{ base: "auto", md: "repeat(3,1fr)" }}
-          gap={{ base: "24px", md: "45px" }}
+          templateColumns={{ base: "auto", md: "repeat(2,1fr)", lg: "repeat(4,1fr)" }}
+          gap={{ base: "24px", md: "24px" }}
         >
           <Slide direction="up" damping={0.1} cascade triggerOnce>
             {[
@@ -124,6 +124,13 @@ const Solutions = () => {
                 sub: "Live temperature readings from cold storage units with configurable alert thresholds, breach event timeline, and min/max trend charts. Keep every vial safe from factory to clinic.",
                 href: "/demo",
                 cta: "See Cold Chain Data",
+              },
+              {
+                title: "AR Stock Counter",
+                emoji: "📷",
+                sub: "Point your camera at vaccine storage shelves and let AI count and classify every item in real time. Compare AR-scanned counts against system inventory for instant reconciliation.",
+                href: "/demo/vision/stock-count",
+                cta: "Try AR Scanner",
               },
             ].map((card, idx) => (
               <GridItem key={idx}>

@@ -30,6 +30,18 @@ const Footer = () => {
       name: "Blog",
       path: "/blog",
     },
+    {
+      name: "Contact",
+      path: "/contact",
+    },
+    {
+      name: "Impact",
+      path: "/impact",
+    },
+    {
+      name: "Live Demo",
+      path: "/demo",
+    },
   ];
 
   const social = [

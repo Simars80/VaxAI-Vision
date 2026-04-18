@@ -10,15 +10,25 @@ import {
 } from "./vision/stock-count/lib/session-store";
 import type { StockSession } from "./vision/stock-count/lib/types";
 
-const DEMO_URL = "https://app.vaxaivision.com?demo=true";
+const DEMO_BASE = "https://app.vaxaivision.com";
+const DEMO_URL = `${DEMO_BASE}?demo=true`;
 const TOPBAR_HEIGHT = 44;
 
-type TabId = "dashboard" | "ar-scanner";
+type TabId = "dashboard" | "forecasting" | "vision" | "ar-scanner";
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
-  { id: "ar-scanner", label: "AR Stock Counter", icon: "📷" },
+  { id: "forecasting", label: "Forecasting", icon: "📈" },
+  { id: "vision", label: "Vision AI", icon: "🤖" },
+  { id: "ar-scanner", label: "AR Scanner", icon: "📷" },
 ];
+
+/* Map tabs to iframe URLs — dashboard tabs load inside the iframe, AR Scanner is inline */
+const TAB_IFRAME_URLS: Partial<Record<TabId, string>> = {
+  dashboard: DEMO_URL,
+  forecasting: `${DEMO_BASE}/forecast?demo=true`,
+  vision: `${DEMO_BASE}/vision?demo=true`,
+};
 
 export default function DemoPage() {
   return (
@@ -63,7 +73,9 @@ function DemoPageInner() {
   const router = useRouter();
 
   /* Tab state — initialise from ?tab= query param */
-  const initialTab = searchParams.get("tab") === "ar-scanner" ? "ar-scanner" : "dashboard";
+  const tabParam = searchParams.get("tab") as TabId | null;
+  const validTabs: TabId[] = ["dashboard", "forecasting", "vision", "ar-scanner"];
+  const initialTab: TabId = tabParam && validTabs.includes(tabParam) ? tabParam : "dashboard";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   /* Dashboard iframe state */
@@ -89,11 +101,21 @@ function DemoPageInner() {
     }
   }, [activeTab, arReady]);
 
+  /* Track iframe URL per tab so switching back doesn't reload */
+  const [iframeSrc, setIframeSrc] = useState<string>(
+    TAB_IFRAME_URLS[initialTab] ?? DEMO_URL,
+  );
+
   const handleTabChange = useCallback(
     (tab: TabId) => {
       setActiveTab(tab);
+      /* Update iframe src if this is an iframe-based tab */
+      if (TAB_IFRAME_URLS[tab]) {
+        setIframeSrc(TAB_IFRAME_URLS[tab]!);
+        setLoaded(false); // show loader while new route loads
+      }
       /* Update URL without a full navigation so bookmarkability is preserved */
-      const url = tab === "dashboard" ? "/demo" : "/demo?tab=ar-scanner";
+      const url = tab === "dashboard" ? "/demo" : `/demo?tab=${tab}`;
       router.replace(url, { scroll: false });
     },
     [router],
@@ -281,12 +303,12 @@ function DemoPageInner() {
         style={{ flex: 1, position: "relative", overflow: "hidden" }}
         className="demo-iframe-wrapper"
       >
-        {/* === DASHBOARD TAB === */}
+        {/* === IFRAME TABS (Dashboard / Forecasting / Vision) === */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            display: activeTab === "dashboard" ? "block" : "none",
+            display: activeTab !== "ar-scanner" ? "block" : "none",
           }}
         >
           {!loaded && (
@@ -338,7 +360,7 @@ function DemoPageInner() {
           )}
           <iframe
             ref={iframeRef}
-            src={DEMO_URL}
+            src={iframeSrc}
             title="VaxAI Vision Live Demo"
             onLoad={() => setLoaded(true)}
             style={{

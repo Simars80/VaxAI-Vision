@@ -1,19 +1,28 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // onnxruntime-web's default entry (ort.bundle.min.mjs) contains constructs
-  // that Next.js 14's Terser/SWC minifier cannot parse — specifically
-  // `import.meta.url` + `createRequire` in the Node.js fallback path.
+  // onnxruntime-web v1.24's default ESM entry (ort.bundle.min.mjs) uses
+  // `import.meta` which Next.js 14's Terser cannot parse.  The CJS/UMD
+  // build (ort.min.js) works fine — zero import.meta occurrences — but
+  // webpack 5's `exports` map resolution takes priority over resolve.alias.
   //
-  // Fix: we resolve onnxruntime-web to its browser-specific entry point
-  // (dist/ort.min.js) which is plain UMD/CJS and Terser-safe.  The WASM
-  // files are loaded at runtime from the CDN path set in inference.ts.
+  // Fix: use an absolute-path alias to force webpack to bypass the exports
+  // map entirely and load the Terser-safe CJS build.
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Point onnxruntime-web to the browser UMD build instead of the
-      // ESM bundle that contains Node.js-only constructs
+      // Absolute path bypasses package.json "exports" field resolution
+      const ortCjsPath = path.resolve(
+        __dirname,
+        "node_modules/onnxruntime-web/dist/ort.min.js"
+      );
+
       config.resolve.alias = {
         ...config.resolve.alias,
-        "onnxruntime-web": "onnxruntime-web/dist/ort.min.js",
+        "onnxruntime-web": ortCjsPath,
         "onnxruntime-node": false,
       };
 
@@ -44,7 +53,11 @@ const nextConfig = {
     return config;
   },
 
-  serverExternalPackages: ["onnxruntime-node", "onnxruntime-web"],
+  // Next.js 14 uses "experimental.serverComponentsExternalPackages"
+  // (renamed to serverExternalPackages in v15)
+  experimental: {
+    serverComponentsExternalPackages: ["onnxruntime-node", "onnxruntime-web"],
+  },
 };
 
 export default nextConfig;

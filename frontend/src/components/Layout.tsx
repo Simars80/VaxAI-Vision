@@ -12,6 +12,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, i18n } = useTranslation();
 
+  /* Hide sidebar & demo banner when embedded in the landing-site iframe */
+  const isEmbed = new URLSearchParams(location.search).get("embed") === "true";
+
   const navItems = [
     { href: "/", icon: LayoutDashboard, label: t("nav.overview"), tour: "nav-overview" },
     { href: "/inventory", icon: Package, label: t("nav.inventory"), tour: "nav-inventory" },
@@ -30,6 +33,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
   };
+
+  if (isEmbed) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="h-screen overflow-auto p-8">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-background">

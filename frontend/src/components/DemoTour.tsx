@@ -60,7 +60,7 @@ export default function DemoTour() {
   const [stepIndex, setStepIndex] = useState(0);
   const steps = useTourSteps();
 
-  const isDemo = email === "demo@vaxaivision.com";
+  const isDemo = email === "partnerships@vaxaivision.com";
 
   useEffect(() => {
     if (isDemo && !localStorage.getItem(TOUR_KEY)) {

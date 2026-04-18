@@ -19,14 +19,14 @@ function detectInitialAuth(): { isAuthenticated: boolean; isDemo: boolean; email
     const url = new URL(window.location.href);
     url.searchParams.delete("demo");
     window.history.replaceState({}, "", url.pathname + url.search);
-    return { isAuthenticated: true, isDemo: true, email: "demo@vaxaivision.com" };
+    return { isAuthenticated: true, isDemo: true, email: "partnerships@vaxaivision.com" };
   }
 
   // 2. Check existing tokens in localStorage
   const token = localStorage.getItem("access_token");
   const isDemo = localStorage.getItem("is_demo") === "true";
   if (token) {
-    return { isAuthenticated: true, isDemo, email: isDemo ? "demo@vaxaivision.com" : null };
+    return { isAuthenticated: true, isDemo, email: isDemo ? "partnerships@vaxaivision.com" : null };
   }
 
   return { isAuthenticated: false, isDemo: false, email: null };
@@ -64,7 +64,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("access_token", "demo-token-url");
       localStorage.setItem("refresh_token", "demo-refresh-url");
       localStorage.setItem("is_demo", "true");
-      set({ isAuthenticated: true, isDemo: true, email: "demo@vaxaivision.com" });
+      set({ isAuthenticated: true, isDemo: true, email: "partnerships@vaxaivision.com" });
       const url = new URL(window.location.href);
       url.searchParams.delete("demo");
       window.history.replaceState({}, "", url.pathname + url.search);
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const token = localStorage.getItem("access_token");
     const isDemo = localStorage.getItem("is_demo") === "true";
     if (token) {
-      set({ isAuthenticated: true, isDemo, email: isDemo ? "demo@vaxaivision.com" : null });
+      set({ isAuthenticated: true, isDemo, email: isDemo ? "partnerships@vaxaivision.com" : null });
     }
   },
 
@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem("access_token", "demo-token-url");
     localStorage.setItem("refresh_token", "demo-refresh-url");
     localStorage.setItem("is_demo", "true");
-    set({ isAuthenticated: true, isDemo: true, email: "demo@vaxaivision.com", loading: false });
+    set({ isAuthenticated: true, isDemo: true, email: "partnerships@vaxaivision.com", loading: false });
   },
 
   login: async (email, password) => {
@@ -106,13 +106,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("access_token", tokens.access_token);
       localStorage.setItem("refresh_token", tokens.refresh_token);
       localStorage.setItem("is_demo", "true");
-      set({ isAuthenticated: true, isDemo: true, email: "demo@vaxaivision.com", loading: false });
+      set({ isAuthenticated: true, isDemo: true, email: "partnerships@vaxaivision.com", loading: false });
     } catch (err: unknown) {
       // If API fails, fall back to URL-based demo login (no backend needed)
       localStorage.setItem("access_token", "demo-token-fallback");
       localStorage.setItem("refresh_token", "demo-refresh-fallback");
       localStorage.setItem("is_demo", "true");
-      set({ isAuthenticated: true, isDemo: true, email: "demo@vaxaivision.com", loading: false });
+      set({ isAuthenticated: true, isDemo: true, email: "partnerships@vaxaivision.com", loading: false });
     }
   },
 

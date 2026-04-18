@@ -19,9 +19,10 @@ const fundingTiers = [
     title: "Seed Partner",
     color: "#718096",
     outcomes: [
-      "Fund deployment across 5 new health facilities",
+      "Deploy across 5 new facilities in sub-Saharan Africa",
+      "AI-powered inventory tracking and cold chain monitoring",
       "Co-branded impact report at year end",
-      "Quarterly data briefings",
+      "Quarterly data briefings with anonymised insights",
     ],
   },
   {
@@ -30,7 +31,8 @@ const fundingTiers = [
     color: "#3A5BCC",
     featured: true,
     outcomes: [
-      "Scale to 30 new facilities across 2 countries",
+      "Scale to 30+ facilities across 2 LMIC countries",
+      "Full platform suite: forecasting, coverage mapping, and vision AI",
       "Named recognition in all public impact materials",
       "Advisory seat on our programme steering committee",
       "Real-time access to anonymised platform dashboard",
@@ -42,6 +44,7 @@ const fundingTiers = [
     color: "#F56630",
     outcomes: [
       "Fund a full country-level rollout (50+ facilities)",
+      "Integration with national HMIS, DHIS2, and OpenLMIS systems",
       "Co-develop AI features aligned to your mandate",
       "Joint press release and media engagement",
       "Board observer seat",
@@ -51,10 +54,10 @@ const fundingTiers = [
 ];
 
 const milestones = [
-  { year: "Q3 2025", label: "Expand to 600 facilities across West Africa" },
-  { year: "Q4 2025", label: "Launch East Africa corridor (Kenya, Tanzania, Uganda)" },
-  { year: "Q2 2026", label: "Integrate national HMIS data feeds in 3 countries" },
-  { year: "Q4 2026", label: "1,500+ facilities, 10 countries, $0 stockout-related waste target" },
+  { year: "Q3 2026", label: "Pilot across 50 facilities in sub-Saharan Africa with full AI stack" },
+  { year: "Q1 2027", label: "Expand to 200+ facilities across 3 sub-Saharan countries with DHIS2 & OpenLMIS integration" },
+  { year: "Q3 2027", label: "Launch coverage mapping and predictive forecasting in 5 LMIC countries" },
+  { year: "Q4 2027", label: "1,000+ facilities across 8+ LMICs — targeting zero vaccine stockouts" },
 ];
 
 const TheAsk = () => {
@@ -95,7 +98,7 @@ const TheAsk = () => {
               <Text as="span" color="#fff" fontWeight={700}>
                 $2M in grant and philanthropic capital
               </Text>{" "}
-              to expand VaxAI across 10 African countries by end of 2026.
+              to deploy VaxAI Vision across low- and middle-income countries, starting with sub-Saharan Africa.
             </Text>
           </VStack>
         </Slide>
@@ -184,7 +187,7 @@ const TheAsk = () => {
                 </VStack>
 
                 <Box mt="32px">
-                  <a href="mailto:partnerships@vaxai.com">
+                  <a href="mailto:partnerships@vaxaivision.com">
                     <Button
                       w="full"
                       h="50px"
@@ -288,7 +291,7 @@ const TheAsk = () => {
                   Reach out directly — we respond within 48 hours.
                 </Text>
               </Box>
-              <a href="mailto:partnerships@vaxai.com">
+              <a href="mailto:partnerships@vaxaivision.com">
                 <Button
                   bg="#3A5BCC"
                   color="#fff"
@@ -300,7 +303,7 @@ const TheAsk = () => {
                   _hover={{ opacity: 0.85 }}
                   flexShrink={0}
                 >
-                  partnerships@vaxai.com
+                  partnerships@vaxaivision.com
                 </Button>
               </a>
             </Box>

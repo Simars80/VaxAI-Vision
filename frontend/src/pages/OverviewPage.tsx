@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { listIngestionJobs, type IngestionJob } from "@/api/supply";
 import { listModelRuns, type ModelRun } from "@/api/forecasting";
-import { Package, Activity, CheckCircle, Clock } from "lucide-react";
-import { format } from "date-fns";
+import {
+  Package,
+  Activity,
+  CheckCircle,
+  TrendingUp,
+  Upload,
+  FileText,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
-function StatusBadge({ status }: { status: string }) {
-  const variant =
-    status === "completed" ? "success"
-    : status === "failed" ? "destructive"
-    : status === "processing" || status === "running" ? "warning"
-    : "outline";
-  return <Badge variant={variant as never}>{status}</Badge>;
-}
+/* ─── Stat card (compact) ──────────────────────────────────────────────── */
 
 function StatCard({
   title,
@@ -34,7 +33,9 @@ function StatCard({
           <div>
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold mt-1">{value}</p>
-            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+            {subtitle && (
+              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Icon className="h-6 w-6 text-primary" />
@@ -45,10 +46,93 @@ function StatCard({
   );
 }
 
+/* ─── Feature navigation card ──────────────────────────────────────────── */
+
+interface FeatureCardProps {
+  emoji: string;
+  title: string;
+  description: string;
+  href: string;
+  cta: string;
+}
+
+function FeatureCard({ emoji, title, description, href, cta }: FeatureCardProps) {
+  return (
+    <Link to={href} className="block group">
+      <Card className="h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-md group-hover:-translate-y-0.5">
+        <CardContent className="pt-6 flex flex-col h-full">
+          <span className="text-3xl mb-1">{emoji}</span>
+          <h3 className="text-base font-bold mt-3 mb-2">{title}</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+            {description}
+          </p>
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-primary mt-4">
+            {cta} →
+          </span>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+/* ─── Feature cards data ───────────────────────────────────────────────── */
+
+const featureCards: FeatureCardProps[] = [
+  {
+    emoji: "📦",
+    title: "Inventory Dashboard",
+    description:
+      "Monitor real-time stock levels across every facility — colour-coded as adequate, low, or critical.",
+    href: "/inventory",
+    cta: "View Inventory",
+  },
+  {
+    emoji: "📊",
+    title: "AI-Powered Forecasting",
+    description:
+      "Predict demand surges, flag expiring stock, and model what-if scenarios to order smarter.",
+    href: "/forecast",
+    cta: "View Forecasts",
+  },
+  {
+    emoji: "❄️",
+    title: "Cold Chain Monitor",
+    description:
+      "Live temperature readings with configurable alert thresholds and breach event timelines.",
+    href: "/cold-chain",
+    cta: "See Cold Chain",
+  },
+  {
+    emoji: "🗺️",
+    title: "Coverage Map",
+    description:
+      "Interactive map showing immunisation coverage and stock status per facility.",
+    href: "/coverage-map",
+    cta: "View Map",
+  },
+  {
+    emoji: "🤖",
+    title: "Vision AI",
+    description:
+      "AI models trained on vaccine packaging detect, classify, and count stock automatically.",
+    href: "/vision",
+    cta: "Explore Vision",
+  },
+  {
+    emoji: "📤",
+    title: "Data Ingestion",
+    description:
+      "Import facility data from CSV, Excel, or connect to DHIS2, OpenLMIS, and mSupply.",
+    href: "/ingestion",
+    cta: "Import Data",
+  },
+];
+
+/* ─── Page ──────────────────────────────────────────────────────────────── */
+
 export default function OverviewPage() {
   const [jobs, setJobs] = useState<IngestionJob[]>([]);
   const [runs, setRuns] = useState<ModelRun[]>([]);
-  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -57,8 +141,7 @@ export default function OverviewPage() {
         setJobs(j);
         setRuns(r);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
   }, []);
 
   const completedJobs = jobs.filter((j) => j.status === "completed").length;
@@ -67,13 +150,16 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">{t("overview.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          {t("overview.subtitle")}
+          An end-to-end platform for vaccine supply chain intelligence — from
+          cold storage to last-mile delivery.
         </p>
       </div>
 
+      {/* KPI stats row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title={t("overview.ingestionJobs")}
@@ -90,84 +176,61 @@ export default function OverviewPage() {
         <StatCard
           title={t("overview.completed")}
           value={completedJobs}
-          subtitle={failedJobs > 0 ? `${failedJobs} ${t("common.failed")}` : t("common.noFailures")}
+          subtitle={
+            failedJobs > 0
+              ? `${failedJobs} ${t("common.failed")}`
+              : t("common.noFailures")
+          }
           icon={CheckCircle}
         />
         <StatCard
           title={t("overview.modelRuns")}
           value={runs.length}
           subtitle={t("overview.forecastingPipelines")}
-          icon={Clock}
+          icon={TrendingUp}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{t("overview.recentIngestionJobs")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
-            ) : jobs.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t("overview.noIngestionJobs")}</p>
-            ) : (
-              <div className="space-y-3">
-                {jobs.slice(0, 6).map((job) => (
-                  <div
-                    key={job.id}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {job.file_name ?? job.source.toUpperCase()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(job.created_at), "MMM d, HH:mm")}
-                        {job.rows_total != null && ` · ${job.rows_total} ${t("common.rows")}`}
-                      </p>
-                    </div>
-                    <StatusBadge status={job.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Feature navigation cards */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Platform Features</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {featureCards.map((card) => (
+            <FeatureCard key={card.href} {...card} />
+          ))}
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{t("overview.modelTrainingRuns")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
-            ) : runs.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t("overview.noModelRuns")}</p>
-            ) : (
-              <div className="space-y-3">
-                {runs.map((run) => (
-                  <div
-                    key={run.id}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div>
-                      <p className="text-sm font-medium font-mono">
-                        {run.supply_item_id.slice(0, 8)}…
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(run.created_at), "MMM d, HH:mm")}
-                        {run.metrics?.mae != null &&
-                          ` · MAE ${run.metrics.mae.toFixed(2)}`}
-                      </p>
-                    </div>
-                    <StatusBadge status={run.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Quick links */}
+      <div className="flex flex-wrap gap-3 pt-2">
+        <Link
+          to="/reports/impact"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors border rounded-md px-3 py-2"
+        >
+          <FileText className="h-4 w-4" />
+          Impact Reports
+        </Link>
+        <Link
+          to="/admin/dhis2"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors border rounded-md px-3 py-2"
+        >
+          <Upload className="h-4 w-4" />
+          DHIS2 Integration
+        </Link>
+        <Link
+          to="/admin/openlmis"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors border rounded-md px-3 py-2"
+        >
+          <Upload className="h-4 w-4" />
+          OpenLMIS
+        </Link>
+        <Link
+          to="/admin/msupply"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors border rounded-md px-3 py-2"
+        >
+          <Upload className="h-4 w-4" />
+          mSupply
+        </Link>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { Suspense, useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AROverlay from "../components/AROverlay";
@@ -20,6 +20,14 @@ import {
 import type { Detection, ProductTally } from "../lib/types";
 
 export default function ScanPage() {
+  return (
+    <Suspense fallback={<div style={{ height: "100vh", background: "#0a1628" }} />}>
+      <ScanPageInner />
+    </Suspense>
+  );
+}
+
+function ScanPageInner() {
   const searchParams = useSearchParams();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

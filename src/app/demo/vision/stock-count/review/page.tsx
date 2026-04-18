@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import ReconciliationView from "../components/ReconciliationView";
@@ -8,6 +8,14 @@ import { getSession, getReconciliation, seedDemoSessions } from "../lib/session-
 import type { StockSession, ReconciliationRow } from "../lib/types";
 
 export default function ReviewPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#0a1628" }} />}>
+      <ReviewPageInner />
+    </Suspense>
+  );
+}
+
+function ReviewPageInner() {
   const searchParams = useSearchParams();
   const [session, setSession] = useState<StockSession | null>(null);
   const [rows, setRows] = useState<ReconciliationRow[]>([]);

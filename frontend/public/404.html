@@ -8,6 +8,17 @@
       // Stores the intended URL in sessionStorage, then redirects to index.html,
       // which picks it up and calls history.replaceState() before React mounts.
       sessionStorage.redirect = location.href;
+
+      // Persist demo mode into localStorage immediately so it survives the
+      // redirect even if the query-string is lost during replaceState timing.
+      if (location.search.indexOf('demo=true') !== -1) {
+        try {
+          localStorage.setItem('access_token', 'demo-token-url');
+          localStorage.setItem('refresh_token', 'demo-refresh-url');
+          localStorage.setItem('is_demo', 'true');
+        } catch (e) { /* private browsing — ignore */ }
+      }
+
       location.replace('/');
     </script>
   </head>

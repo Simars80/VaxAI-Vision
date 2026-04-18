@@ -1,0 +1,113 @@
+{
+  "title": "VaxAI Vision — Platform Overview",
+  "uid": "vaxai-platform-overview",
+  "tags": ["vaxai", "platform"],
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "API Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+      "targets": [{
+        "expr": "sum(rate(http_request_duration_seconds_count{job='vaxai-backend-api'}[1m]))",
+        "legendFormat": "req/s"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "API P99 Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job='vaxai-backend-api'}[5m])) by (le)) * 1000",
+        "legendFormat": "P99 latency"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "5xx Error Rate (%)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "targets": [{
+        "expr": "sum(rate(http_request_duration_seconds_count{job='vaxai-backend-api', status=~'5..'}[5m])) / sum(rate(http_request_duration_seconds_count{job='vaxai-backend-api'}[5m]))",
+        "legendFormat": "Error rate"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Ingestion Queue Length",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "celery_queue_length{queue='ingestion'}",
+        "legendFormat": "Ingestion queue"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "ML Training Queue Length",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 6, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "celery_queue_length{queue='ml_training'}",
+        "legendFormat": "ML queue"
+      }]
+    },
+    {
+      "id": 6,
+      "title": "Active Model Runs",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 6, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "vaxai_model_run_status{status='running'}",
+        "legendFormat": "Running"
+      }]
+    },
+    {
+      "id": 7,
+      "title": "Pod CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 },
+      "targets": [{
+        "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~'vaxai-.*', container!=''}[1m])) by (pod)",
+        "legendFormat": "{{pod}}"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "Pod Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 6 },
+      "targets": [{
+        "expr": "sum(container_memory_working_set_bytes{namespace=~'vaxai-.*', container!=''}) by (pod)",
+        "legendFormat": "{{pod}}"
+      }]
+    }
+  ]
+}

@@ -17,42 +17,11 @@ import DashboardPreview from "./DashboardPreview";
 const Hero = () => {
   return (
     <Box
-      bg="linear-gradient(135deg, #0F172A 0%, #1E293B 100%)"
+      bg="#ffffff"
       position="relative"
       zIndex={5}
       overflow="hidden"
     >
-      {/* Subtle grid background */}
-      <Box
-        position="absolute"
-        inset={0}
-        opacity={0.04}
-        backgroundImage="linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)"
-        backgroundSize="40px 40px"
-        pointerEvents="none"
-      />
-
-      {/* Glow accents */}
-      <Box
-        position="absolute"
-        top="-100px"
-        left="-100px"
-        w="400px"
-        h="400px"
-        borderRadius="full"
-        bg="radial-gradient(circle, rgba(58,91,204,0.15) 0%, transparent 70%)"
-        pointerEvents="none"
-      />
-      <Box
-        position="absolute"
-        bottom="-80px"
-        right="-80px"
-        w="350px"
-        h="350px"
-        borderRadius="full"
-        bg="radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)"
-        pointerEvents="none"
-      />
 
       <Container maxW="container.xl" py={{ base: "60px", md: "100px" }}>
         <Grid
@@ -71,9 +40,9 @@ const Hero = () => {
                   py="5px"
                   borderRadius="full"
                   mb="20px"
-                  bg="rgba(58,91,204,0.15)"
-                  color="#93C5FD"
-                  border="1px solid rgba(58,91,204,0.3)"
+                  bg="rgba(58,91,204,0.08)"
+                  color="#3A5BCC"
+                  border="1px solid rgba(58,91,204,0.2)"
                   textTransform="none"
                   letterSpacing="0.02em"
                 >
@@ -82,7 +51,7 @@ const Hero = () => {
               </Fade>
 
               <Text
-                color="#F1F5F9"
+                color="#1A1A1A"
                 fontSize={{ base: "30px", md: "52px" }}
                 fontWeight={800}
                 lineHeight={1.15}
@@ -99,7 +68,7 @@ const Hero = () => {
               <Text
                 fontSize={{ base: "15px", md: "17px" }}
                 fontWeight={400}
-                color="#94A3B8"
+                color="#667085"
                 lineHeight={1.7}
                 mb="36px"
                 maxW="480px"
@@ -123,13 +92,13 @@ const Hero = () => {
                 ].map((s) => (
                   <Box key={s.label}>
                     <Text
-                      color="#F1F5F9"
+                      color="#1A1A1A"
                       fontSize={{ base: "20px", md: "24px" }}
                       fontWeight={700}
                     >
                       {s.value}
                     </Text>
-                    <Text color="#64748B" fontSize="12px">
+                    <Text color="#667085" fontSize="12px">
                       {s.label}
                     </Text>
                   </Box>
@@ -148,23 +117,23 @@ const Hero = () => {
                     fontWeight={600}
                     _hover={{ bg: "#2D4BAF", transform: "translateY(-1px)" }}
                     transition="all 0.2s"
-                    boxShadow="0 4px 15px rgba(58,91,204,0.4)"
+                    boxShadow="0 4px 15px rgba(58,91,204,0.25)"
                   >
                     Explore Solutions
                   </Button>
                 </Link>
                 <Link href="/demo">
                   <Button
-                    bg="rgba(255,255,255,0.05)"
-                    color="#F1F5F9"
+                    bg="transparent"
+                    color="#1A1A1A"
                     h={{ base: "46px", md: "54px" }}
                     px={{ base: "20px", md: "28px" }}
                     borderRadius="10px"
                     fontSize={{ base: "13px", md: "15px" }}
                     fontWeight={600}
-                    border="1px solid rgba(255,255,255,0.12)"
+                    border="1px solid #DEE5ED"
                     _hover={{
-                      bg: "rgba(255,255,255,0.1)",
+                      bg: "#F8FAFC",
                       transform: "translateY(-1px)",
                     }}
                     transition="all 0.2s"
@@ -183,14 +152,15 @@ const Hero = () => {
                 h="420px"
                 borderRadius="16px"
                 overflow="hidden"
-                boxShadow="0 30px 60px rgba(0,0,0,0.5)"
+                border="1px solid #DEE5ED"
+                boxShadow="0 20px 50px rgba(0,0,0,0.08)"
               >
                 <DashboardPreview />
               </Box>
               <Text
                 textAlign="center"
                 mt="14px"
-                color="#64748B"
+                color="#667085"
                 fontSize="13px"
                 letterSpacing="0.01em"
               >

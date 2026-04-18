@@ -9,17 +9,61 @@ import {
   GridItem,
   Text,
 } from "@chakra-ui/react";
-import React, { useEffect } from "react";
-import { solutions } from "@/utils/enums";
-import Image from "next/image";
+import React from "react";
 import Link from "next/link";
 import { Slide } from "react-awesome-reveal";
 
 const Solutions = () => {
+  /* Unified solution cards — core platform capabilities + live features */
+  const platformCards = [
+    {
+      title: "Real-Time Inventory Dashboard",
+      emoji: "📦",
+      sub: "Monitor stock levels across every facility — colour-coded as adequate, low, or critical. Filter by vaccine type, country, or facility to spot shortfalls before they become stockouts.",
+      href: "/demo",
+      cta: "Explore Inventory",
+    },
+    {
+      title: "AI-Powered Forecasting",
+      emoji: "📊",
+      sub: "Predict demand surges, flag expiring stock, and model what-if scenarios so you can order the right quantity at the right time — reducing waste and preventing shortages.",
+      href: "/demo?tab=forecasting",
+      cta: "View Forecasts",
+    },
+    {
+      title: "Cold Chain Monitor",
+      emoji: "❄️",
+      sub: "Live temperature readings from cold storage units with configurable alert thresholds, breach event timeline, and min/max trend charts. Keep every vial safe from factory to clinic.",
+      href: "/demo",
+      cta: "See Cold Chain Data",
+    },
+    {
+      title: "Geospatial Coverage Map",
+      emoji: "🗺️",
+      sub: "Interactive map showing immunisation coverage rates and stock status per facility — from Kano to Kisumu. Filter by country, vaccine type, and time period.",
+      href: "/demo",
+      cta: "View Coverage Map",
+    },
+    {
+      title: "AR Stock Counter",
+      emoji: "📷",
+      sub: "Point your camera at vaccine storage shelves and let AI count and classify every item in real time. Compare AR-scanned counts against system inventory for instant reconciliation.",
+      href: "/demo?tab=ar-scanner",
+      cta: "Try AR Scanner",
+    },
+    {
+      title: "Computer Vision Analytics",
+      emoji: "🤖",
+      sub: "AI models trained on vaccine packaging detect, classify, and count stock automatically — powering both the AR scanner and batch image analysis for large-scale audits.",
+      href: "/demo?tab=vision",
+      cta: "Explore Vision AI",
+    },
+  ];
+
   return (
     <Box mt="80px" mb={{ base: "40px", md: "100px" }} id="solutions">
       <Container maxW={"container.xl"}>
-        <Center>
+        <Center flexDir="column">
           <Text
             textAlign={"center"}
             w={{ base: "auto", md: "746px" }}
@@ -29,123 +73,45 @@ const Solutions = () => {
           >
             Our Solutions
           </Text>
+          <Text
+            textAlign="center"
+            mt="12px"
+            color="#667085"
+            fontSize={{ base: "14px", md: "16px" }}
+            maxW="600px"
+          >
+            An end-to-end platform for vaccine supply chain intelligence — from cold
+            storage to last-mile delivery.
+          </Text>
         </Center>
 
+        {/* Platform capability cards */}
         <Grid
-          templateColumns={{ base: "auto", md: "repeat(3,1fr)" }}
-          gap={{ base: "24px", md: "45px" }}
-          mt="31px"
+          templateColumns={{ base: "1fr", md: "repeat(2,1fr)", lg: "repeat(3,1fr)" }}
+          gap={{ base: "20px", md: "28px" }}
+          mt="40px"
         >
           <Slide direction="up" damping={0.1} cascade triggerOnce>
-            {solutions.slice(0, 3).map((data: any, idx: number) => (
+            {platformCards.map((card, idx) => (
               <GridItem key={idx}>
                 <Box
-                  p="24px"
-                  borderRadius={"10px"}
-                  border="1px solid #DEE5ED"
-                  bg="#fff"
-                >
-                  <Image
-                    src={data?.icon}
-                    alt={data?.title}
-                    style={{ width: "40px", height: "40px" }}
-                  />
-
-                  <Text
-                    mt="16px"
-                    mb="10px"
-                    color="#1A1A1A"
-                    fontSize={"16px"}
-                    fontWeight={700}
-                  >
-                    {data.title}
-                  </Text>
-
-                  <Text color="#667085" fontSize={"12px"} fontWeight={400}>
-                    {data?.sub}
-                  </Text>
-
-                  <Link href={`/solutions/${data.slug}`}>
-                    <Button
-                      bg="#3A5BCC"
-                      h="50px"
-                      borderRadius={"10px"}
-                      mt="32px"
-                      color="#fff"
-                      fontSize={"16px"}
-                      fontWeight={400}
-                      _hover={{
-                        opacity: 0.8,
-                      }}
-                    >
-                      Learn More
-                    </Button>
-                  </Link>
-                </Box>
-              </GridItem>
-            ))}
-          </Slide>
-        </Grid>
-
-        {/* Phase 2 Feature Cards */}
-        <Text
-          mt={{ base: "40px", md: "64px" }}
-          mb="24px"
-          textAlign="center"
-          fontSize={{ base: "16px", md: "24px" }}
-          fontWeight={700}
-          color="#1A1A1A"
-        >
-          Phase 2 — Operational Intelligence
-        </Text>
-        <Grid
-          templateColumns={{ base: "auto", md: "repeat(2,1fr)", lg: "repeat(4,1fr)" }}
-          gap={{ base: "24px", md: "24px" }}
-        >
-          <Slide direction="up" damping={0.1} cascade triggerOnce>
-            {[
-              {
-                title: "Inventory Dashboard",
-                emoji: "📦",
-                sub: "Monitor real-time stock levels across every facility — colour-coded as adequate, low, or critical. Filter by vaccine type, country, or facility to spot shortfalls before they become stockouts.",
-                href: "/demo",
-                cta: "Explore Inventory",
-              },
-              {
-                title: "Geospatial Coverage Map",
-                emoji: "🗺️",
-                sub: "Interactive Leaflet map showing immunisation coverage rates and stock status per facility — from Kano to Kisumu. Filter by country, vaccine type, and time period.",
-                href: "/demo",
-                cta: "View Coverage Map",
-              },
-              {
-                title: "Cold Chain Monitor",
-                emoji: "❄️",
-                sub: "Live temperature readings from cold storage units with configurable alert thresholds, breach event timeline, and min/max trend charts. Keep every vial safe from factory to clinic.",
-                href: "/demo",
-                cta: "See Cold Chain Data",
-              },
-              {
-                title: "AR Stock Counter",
-                emoji: "📷",
-                sub: "Point your camera at vaccine storage shelves and let AI count and classify every item in real time. Compare AR-scanned counts against system inventory for instant reconciliation.",
-                href: "/demo?tab=ar-scanner",
-                cta: "Try AR Scanner",
-              },
-            ].map((card, idx) => (
-              <GridItem key={idx}>
-                <Box
-                  p="24px"
-                  borderRadius={"10px"}
+                  p="28px"
+                  borderRadius={"12px"}
                   border="1px solid #DEE5ED"
                   bg="#fff"
                   h="full"
                   display="flex"
                   flexDir="column"
+                  transition="all 0.2s"
+                  _hover={{
+                    borderColor: "#3A5BCC",
+                    boxShadow: "0 4px 20px rgba(58,91,204,0.08)",
+                    transform: "translateY(-2px)",
+                  }}
                 >
-                  <Text fontSize="32px">{card.emoji}</Text>
+                  <Text fontSize="36px" mb="4px">{card.emoji}</Text>
                   <Text
-                    mt="16px"
+                    mt="12px"
                     mb="10px"
                     color="#1A1A1A"
                     fontSize={"16px"}
@@ -153,19 +119,19 @@ const Solutions = () => {
                   >
                     {card.title}
                   </Text>
-                  <Text color="#667085" fontSize={"12px"} fontWeight={400} flex="1">
+                  <Text color="#667085" fontSize={"13px"} fontWeight={400} lineHeight={1.6} flex="1">
                     {card.sub}
                   </Text>
                   <Link href={card.href}>
                     <Button
                       bg="#3A5BCC"
-                      h="50px"
+                      h="46px"
                       borderRadius={"10px"}
-                      mt="32px"
+                      mt="24px"
                       color="#fff"
-                      fontSize={"15px"}
+                      fontSize={"14px"}
                       fontWeight={500}
-                      _hover={{ opacity: 0.8 }}
+                      _hover={{ opacity: 0.85 }}
                     >
                       {card.cta}
                     </Button>
@@ -176,21 +142,25 @@ const Solutions = () => {
           </Slide>
         </Grid>
 
-        <Center>
+        {/* Deep-dive solutions link */}
+        <Center mt={{ base: "32px", md: "48px" }} flexDir="column" gap="12px">
+          <Text color="#667085" fontSize="14px">
+            Want to learn more about the technology behind these features?
+          </Text>
           <Link href="/solutions">
             <Button
-              bg="#3A5BCC"
+              bg="transparent"
               h="50px"
               borderRadius={"10px"}
-              mt={{ base: "32px", md: "64px" }}
-              color="#fff"
-              fontSize={"16px"}
-              fontWeight={400}
+              color="#3A5BCC"
+              fontSize={"15px"}
+              fontWeight={600}
+              border="1px solid #3A5BCC"
               _hover={{
-                opacity: 0.8,
+                bg: "rgba(58,91,204,0.04)",
               }}
             >
-              View more
+              View All Solutions →
             </Button>
           </Link>
         </Center>

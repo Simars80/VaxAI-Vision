@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useCallback, useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -9,113 +8,216 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { getForecast, triggerTraining, listModelRuns, type ModelRun } from "@/api/forecasting";
-import { TrendingUp, Play, RefreshCw } from "lucide-react";
+import { getForecast, listModelRuns, triggerTraining } from "@/api/forecasting";
+import { MOCK_STOCK_LEVELS } from "@/api/mockData";
+import { AlertTriangle, BarChart2, Calendar, RefreshCw, TrendingUp } from "lucide-react";
+
+// ── Type definitions ──────────────────────────────────────────────────────────
 
 interface ChartPoint {
   date: string;
-  actual?: number;
-  predicted: number;
-  lower: number;
-  upper: number;
+  forecast: number;
+  lowerBound: number;
+  upperBound: number;
 }
 
+interface RawPrediction {
+  yhat: number;
+  forecast_date: string;
+}
+
+// ── Static dropdown options (human-readable names → internal IDs) ─────────────
+
+const VACCINE_OPTIONS = [
+  { label: "BCG Vaccine", value: "v1" },
+  { label: "OPV (Oral Polio)", value: "v2" },
+  { label: "Pentavalent (DPT-HepB-Hib)", value: "v3" },
+  { label: "Measles-Rubella", value: "v4" },
+  { label: "Yellow Fever", value: "v5" },
+  { label: "PCV-13 (Pneumococcal)", value: "v6" },
+  { label: "Rotavirus", value: "v7" },
+];
+
+const FACILITY_OPTIONS = [
+  { label: "All Facilities", value: "" },
+  { label: "Lagos Central Vaccine Store", value: "FAC-001" },
+  { label: "Kano General Hospital", value: "FAC-002" },
+  { label: "Nairobi Central Clinic", value: "FAC-003" },
+  { label: "Accra Regional Store", value: "FAC-004" },
+  { label: "Abuja Health Centre", value: "FAC-005" },
+  { label: "Dakar District Pharmacy", value: "FAC-006" },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getCurrentStock(vaccineId: string, facilityId: string): number {
+  if (!facilityId) return 0;
+  const facility = MOCK_STOCK_LEVELS.facilities.find((f) => f.facility_id === facilityId);
+  if (!facility) return 0;
+  const item = facility.items.find((i) => i.supply_item_id === vaccineId);
+  return item?.current_stock ?? 0;
+}
+
+function computeDaysUntilStockout(predictions: RawPrediction[], currentStock: number): number {
+  if (predictions.length === 0 || currentStock <= 0) return 0;
+  const avgMonthlyDemand = predictions.reduce((sum, p) => sum + p.yhat, 0) / predictions.length;
+  if (avgMonthlyDemand <= 0) return 999;
+  return Math.floor(currentStock / (avgMonthlyDemand / 30));
+}
+
+function computePeakDemandMonth(predictions: RawPrediction[]): string {
+  if (predictions.length === 0) return "—";
+  const peak = predictions.reduce((max, p) => (p.yhat > max.yhat ? p : max), predictions[0]);
+  return format(parseISO(peak.forecast_date), "MMMM yyyy");
+}
+
+function stockoutColorClass(days: number, type: "text" | "border"): string {
+  const colorMap = {
+    text: { red: "text-red-600", amber: "text-amber-600", green: "text-green-600" },
+    border: { red: "border-red-500", amber: "border-amber-500", green: "border-green-500" },
+  };
+  const shade = days < 30 ? "red" : days < 60 ? "amber" : "green";
+  return colorMap[type][shade];
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function ForecastPage() {
-  const [itemId, setItemId] = useState("");
-  const [facilityId, setFacilityId] = useState("");
+  const [selectedVaccine, setSelectedVaccine] = useState("v1");
+  const [selectedFacility, setSelectedFacility] = useState("FAC-001");
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
-  const [modelRuns, setModelRuns] = useState<ModelRun[]>([]);
+  const [rawPredictions, setRawPredictions] = useState<RawPrediction[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [trainLoading, setTrainLoading] = useState(false);
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { t } = useTranslation();
 
-  useEffect(() => {
-    listModelRuns(5).then(setModelRuns).catch(console.error);
-  }, []);
+  const vaccineName =
+    VACCINE_OPTIONS.find((v) => v.value === selectedVaccine)?.label ?? selectedVaccine;
+  const facilityName =
+    FACILITY_OPTIONS.find((f) => f.value === selectedFacility)?.label ?? "All Facilities";
+  const currentStock = getCurrentStock(selectedVaccine, selectedFacility);
+  const daysUntilStockout = computeDaysUntilStockout(rawPredictions, currentStock);
+  const peakDemandMonth = computePeakDemandMonth(rawPredictions);
 
-  const fetchForecast = async () => {
-    if (!itemId.trim()) return;
+  const avgMonthlyDemand =
+    rawPredictions.length > 0
+      ? rawPredictions.reduce((sum, p) => sum + p.yhat, 0) / rawPredictions.length
+      : 0;
+  const orderQty = Math.max(0, Math.ceil(avgMonthlyDemand * 2) - currentStock);
+  const daysUntilOrder = Math.max(0, daysUntilStockout - 30);
+  const orderByDate = format(addDays(new Date(), daysUntilOrder), "MMMM d, yyyy");
+
+  const fetchForecast = useCallback(async (vaccineId: string, facilityId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getForecast(itemId.trim(), facilityId.trim() || undefined);
+      const [forecastResult, runs] = await Promise.all([
+        getForecast(vaccineId, facilityId || undefined),
+        listModelRuns(5),
+      ]);
+      setRawPredictions(forecastResult.predictions);
       setChartData(
-        result.predictions.map((p) => ({
-          date: format(parseISO(p.forecast_date), "MMM d"),
-          predicted: Math.round(p.yhat),
-          lower: Math.round(p.yhat_lower),
-          upper: Math.round(p.yhat_upper),
+        forecastResult.predictions.map((p) => ({
+          date: format(parseISO(p.forecast_date), "MMM yyyy"),
+          forecast: Math.round(p.yhat),
+          lowerBound: Math.round(p.yhat_lower),
+          upperBound: Math.round(p.yhat_upper),
         })),
       );
+      const latestRun = runs.find((r) => r.status === "completed");
+      if (latestRun) {
+        setLastUpdated(format(parseISO(latestRun.created_at), "MMM d, yyyy 'at' HH:mm"));
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load forecast");
+      setChartData([]);
+      setRawPredictions([]);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Auto-load on mount with BCG Vaccine + Lagos Central Vaccine Store
+  useEffect(() => {
+    fetchForecast("v1", "FAC-001");
+  }, [fetchForecast]);
+
+  const handleVaccineChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVaccine = e.target.value;
+    setSelectedVaccine(newVaccine);
+    fetchForecast(newVaccine, selectedFacility);
   };
 
-  const handleTrain = async () => {
-    if (!itemId.trim()) return;
-    setTrainLoading(true);
+  const handleFacilityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newFacility = e.target.value;
+    setSelectedFacility(newFacility);
+    fetchForecast(selectedVaccine, newFacility);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshLoading(true);
     setError(null);
     try {
-      await triggerTraining(itemId.trim(), facilityId.trim() || undefined);
-      const runs = await listModelRuns(5);
-      setModelRuns(runs);
+      await triggerTraining(selectedVaccine, selectedFacility || undefined);
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      await fetchForecast(selectedVaccine, selectedFacility);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to trigger training");
+      setError(err instanceof Error ? err.message : "Failed to refresh forecast");
     } finally {
-      setTrainLoading(false);
+      setRefreshLoading(false);
     }
   };
 
   return (
     <div className="space-y-8">
+      {/* Page header */}
       <div>
-        <h1 className="text-3xl font-bold">{t("forecast.title")}</h1>
+        <h1 className="text-3xl font-bold">Demand Forecasting</h1>
         <p className="text-muted-foreground mt-1">
-          {t("forecast.subtitle")}
+          AI-powered vaccine demand predictions to guide procurement decisions
         </p>
       </div>
 
+      {/* Dropdown selectors */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-48 space-y-1">
-              <label className="text-sm font-medium">{t("forecast.supplyItemId")}</label>
-              <Input
-                placeholder={t("forecast.supplyItemPlaceholder")}
-                value={itemId}
-                onChange={(e) => setItemId(e.target.value)}
-              />
+              <label className="text-sm font-medium">Vaccine</label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={selectedVaccine}
+                onChange={handleVaccineChange}
+                disabled={loading}
+              >
+                {VACCINE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex-1 min-w-48 space-y-1">
-              <label className="text-sm font-medium">{t("forecast.facilityId")}</label>
-              <Input
-                placeholder={t("forecast.facilityPlaceholder")}
-                value={facilityId}
-                onChange={(e) => setFacilityId(e.target.value)}
-              />
+              <label className="text-sm font-medium">Facility</label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={selectedFacility}
+                onChange={handleFacilityChange}
+                disabled={loading}
+              >
+                {FACILITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <Button onClick={fetchForecast} disabled={loading || !itemId}>
-              <TrendingUp className="h-4 w-4" />
-              {loading ? t("common.loading") : t("forecast.showForecast")}
-            </Button>
-            <Button variant="outline" onClick={handleTrain} disabled={trainLoading || !itemId}>
-              {trainLoading ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-              {trainLoading ? t("forecast.queuing") : t("forecast.trainModel")}
-            </Button>
           </div>
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md mt-3">
@@ -125,14 +227,91 @@ export default function ForecastPage() {
         </CardContent>
       </Card>
 
-      {chartData.length > 0 && (
+      {/* Insight cards */}
+      {(chartData.length > 0 || loading) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertTriangle
+                  className={`h-5 w-5 mt-0.5 ${loading ? "text-muted-foreground" : stockoutColorClass(daysUntilStockout, "text")}`}
+                />
+                <div>
+                  <p className="text-sm text-muted-foreground">Days Until Stockout</p>
+                  {loading ? (
+                    <p className="text-2xl font-bold text-muted-foreground">—</p>
+                  ) : (
+                    <p
+                      className={`text-2xl font-bold ${stockoutColorClass(daysUntilStockout, "text")}`}
+                    >
+                      {daysUntilStockout >= 999 ? "> 999" : daysUntilStockout}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedFacility
+                      ? `Current stock: ${currentStock.toLocaleString()} doses`
+                      : "Select a facility for stock data"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <TrendingUp className="h-5 w-5 mt-0.5 text-blue-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Peak Demand Month</p>
+                  {loading ? (
+                    <p className="text-lg font-bold text-muted-foreground">—</p>
+                  ) : (
+                    <p className="text-lg font-bold">{peakDemandMonth}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Highest predicted need</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Forecast Horizon</p>
+                  <p className="text-2xl font-bold">12 months</p>
+                  <p className="text-xs text-muted-foreground mt-1">Forward-looking window</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <Card>
+          <CardContent className="pt-6 flex items-center justify-center h-40">
+            <p className="text-muted-foreground">Loading forecast…</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Chart */}
+      {!loading && chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">{t("forecast.chartTitle")}</CardTitle>
+            <CardTitle className="text-lg">
+              Predicted Vaccine Demand — {vaccineName} at {facilityName}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Shaded band = 85% confidence interval
+            </p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <ResponsiveContainer width="100%" height={340}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, bottom: 20, left: 20 }}>
                 <defs>
                   <linearGradient id="predGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
@@ -144,37 +323,64 @@ export default function ForecastPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  label={{ value: "Month", position: "insideBottom", offset: -10, fontSize: 12 }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  label={{
+                    value: "Doses",
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: 10,
+                    fontSize: 12,
+                  }}
+                />
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
-                  formatter={(val: number, name: string) => [
-                    val.toLocaleString(),
-                    name === "predicted" ? t("forecast.forecastLabel") : name === "lower" ? t("forecast.lower85") : t("forecast.upper85"),
-                  ]}
+                  formatter={(val: number, name: string) => [val.toLocaleString(), name]}
                 />
                 <Legend />
+                {currentStock > 0 && (
+                  <ReferenceLine
+                    y={currentStock}
+                    stroke="#ef4444"
+                    strokeDasharray="5 5"
+                    label={{
+                      value: "Current Stock",
+                      position: "insideTopRight",
+                      fontSize: 11,
+                      fill: "#ef4444",
+                    }}
+                  />
+                )}
                 <Area
                   type="monotone"
-                  dataKey="upper"
-                  stroke="transparent"
+                  dataKey="upperBound"
+                  stroke="#93c5fd"
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
                   fill="url(#bandGradient)"
-                  name="upper"
+                  name="Upper Bound"
                 />
                 <Area
                   type="monotone"
-                  dataKey="predicted"
+                  dataKey="forecast"
                   stroke="#3b82f6"
                   fill="url(#predGradient)"
                   strokeWidth={2}
-                  name="predicted"
+                  name="Forecast"
                 />
                 <Area
                   type="monotone"
-                  dataKey="lower"
-                  stroke="transparent"
+                  dataKey="lowerBound"
+                  stroke="#93c5fd"
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
                   fill="transparent"
-                  name="lower"
+                  name="Lower Bound"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -182,43 +388,72 @@ export default function ForecastPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("forecast.recentTrainingRuns")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {modelRuns.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("forecast.noModelRuns")}</p>
-          ) : (
-            <div className="space-y-2">
-              {modelRuns.map((run) => (
-                <div
-                  key={run.id}
-                  className="flex items-center justify-between p-3 rounded-md border"
-                >
-                  <div>
-                    <p className="text-sm font-mono">{run.supply_item_id.slice(0, 16)}…</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(parseISO(run.created_at), "MMM d, HH:mm")}
-                      {run.metrics?.mae != null && ` · MAE: ${run.metrics.mae.toFixed(1)}`}
-                      {run.metrics?.rmse != null && ` · RMSE: ${run.metrics.rmse.toFixed(1)}`}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={
-                      run.status === "completed"
-                        ? "success"
-                        : run.status === "failed"
-                          ? "destructive"
-                          : "warning"
-                    }
+      {/* Empty / unavailable state */}
+      {!loading && chartData.length === 0 && (
+        <Card>
+          <CardContent className="pt-6 flex flex-col items-center justify-center h-40 gap-3">
+            <BarChart2 className="h-8 w-8 text-muted-foreground" />
+            <p className="text-muted-foreground text-center">
+              No forecast data available yet.
+              <br />
+              Click <strong>Refresh Forecast</strong> to generate a new prediction for this vaccine
+              and facility.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recommendation banner */}
+      {!loading && chartData.length > 0 && selectedFacility && (
+        <Card className={`border-l-4 ${stockoutColorClass(daysUntilStockout, "border")}`}>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl" aria-hidden="true">
+                💡
+              </span>
+              <div className="space-y-1">
+                <p className="font-semibold">Recommendation</p>
+                <p className="text-sm text-muted-foreground">
+                  At the current forecast rate, your stock of <strong>{vaccineName}</strong> at{" "}
+                  <strong>{facilityName}</strong> will last approximately{" "}
+                  <span
+                    className={`font-bold ${stockoutColorClass(daysUntilStockout, "text")}`}
                   >
-                    {run.status}
-                  </Badge>
-                </div>
-              ))}
+                    {daysUntilStockout >= 999 ? "more than 999" : daysUntilStockout} days
+                  </span>
+                  .
+                </p>
+                {orderQty > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    To maintain a 30-day safety stock, order{" "}
+                    <strong>{orderQty.toLocaleString()} doses</strong> by{" "}
+                    <strong>{orderByDate}</strong>.
+                  </p>
+                ) : (
+                  <p className="text-sm text-green-700">
+                    Current stock covers the 2-month safety buffer — no immediate order needed.
+                  </p>
+                )}
+              </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Last updated + refresh */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <p className="text-sm text-muted-foreground">
+              {lastUpdated
+                ? `Forecast last updated: ${lastUpdated}`
+                : "Forecast data not yet generated."}
+            </p>
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshLoading || loading}>
+              <RefreshCw className={`h-4 w-4 ${refreshLoading ? "animate-spin" : ""}`} />
+              {refreshLoading ? "Refreshing…" : "Refresh Forecast"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

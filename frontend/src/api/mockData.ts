@@ -41,7 +41,7 @@ const MOCK_MODEL_RUNS = [
 
 // ── Inventory / Stock Levels ────────────────────────────────────────────────
 
-const MOCK_STOCK_LEVELS = {
+export const MOCK_STOCK_LEVELS = {
   total_facilities: 6,
   total_vaccines: 8,
   critical_count: 4,

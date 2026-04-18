@@ -129,7 +129,7 @@ const Solutions = () => {
                 title: "AR Stock Counter",
                 emoji: "📷",
                 sub: "Point your camera at vaccine storage shelves and let AI count and classify every item in real time. Compare AR-scanned counts against system inventory for instant reconciliation.",
-                href: "/demo/vision/stock-count",
+                href: "/demo?tab=ar-scanner",
                 cta: "Try AR Scanner",
               },
             ].map((card, idx) => (

@@ -1,24 +1,112 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  getSessions,
+  seedDemoSessions,
+  createSession,
+} from "./vision/stock-count/lib/session-store";
+import type { StockSession } from "./vision/stock-count/lib/types";
 
 const DEMO_URL = "https://app.vaxaivision.com?demo=true";
 const TOPBAR_HEIGHT = 44;
 
+type TabId = "dashboard" | "ar-scanner";
+
+const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: "dashboard", label: "Dashboard", icon: "📊" },
+  { id: "ar-scanner", label: "AR Stock Counter", icon: "📷" },
+];
+
 export default function DemoPage() {
+  return (
+    <Suspense fallback={<div style={{ height: "100vh", background: "#0a1628" }} />}>
+      <DemoPageInner />
+    </Suspense>
+  );
+}
+
+/* ── Status badge (reused from stock-count page) ── */
+function StatusBadge({ status }: { status: StockSession["status"] }) {
+  const map: Record<
+    StockSession["status"],
+    { bg: string; border: string; color: string; label: string }
+  > = {
+    active: { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.3)", color: "#10b981", label: "Active" },
+    paused: { bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.3)", color: "#f59e0b", label: "Paused" },
+    submitted: { bg: "rgba(99,102,241,0.15)", border: "rgba(99,102,241,0.3)", color: "#6366f1", label: "Submitted" },
+    draft: { bg: "rgba(107,114,128,0.15)", border: "rgba(107,114,128,0.3)", color: "#6b7280", label: "Draft" },
+  };
+  const s = map[status];
+  return (
+    <span
+      style={{
+        background: s.bg,
+        border: `1px solid ${s.border}`,
+        color: s.color,
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "2px 8px",
+        borderRadius: 99,
+      }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+/* ── Main page ── */
+function DemoPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  /* Tab state — initialise from ?tab= query param */
+  const initialTab = searchParams.get("tab") === "ar-scanner" ? "ar-scanner" : "dashboard";
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+
+  /* Dashboard iframe state */
   const [loaded, setLoaded] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Fallback: if onLoad doesn't fire within 5s, show iframe anyway
+  /* AR Stock Counter state */
+  const [sessions, setSessions] = useState<StockSession[]>([]);
+  const [arReady, setArReady] = useState(false);
+
+  /* Fallback: if iframe onLoad doesn't fire within 5s, show it anyway */
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 5000);
     return () => clearTimeout(timer);
   }, []);
 
+  /* Seed demo sessions when AR tab is first shown */
+  useEffect(() => {
+    if (activeTab === "ar-scanner" && !arReady) {
+      seedDemoSessions();
+      setSessions(getSessions());
+      setArReady(true);
+    }
+  }, [activeTab, arReady]);
+
+  const handleTabChange = useCallback(
+    (tab: TabId) => {
+      setActiveTab(tab);
+      /* Update URL without a full navigation so bookmarkability is preserved */
+      const url = tab === "dashboard" ? "/demo" : "/demo?tab=ar-scanner";
+      router.replace(url, { scroll: false });
+    },
+    [router],
+  );
+
+  const handleNewSession = () => {
+    createSession("Demo Facility");
+    setSessions(getSessions());
+  };
+
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0a1628" }}>
-      {/* Browser chrome top bar */}
+      {/* ───────── Browser chrome top bar ───────── */}
       <div
         style={{
           height: TOPBAR_HEIGHT,
@@ -38,46 +126,59 @@ export default function DemoPage() {
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#22C55E", opacity: 0.8 }} />
         </div>
 
-        {/* URL bar */}
+        {/* Tab switcher — sits where the URL bar used to be */}
         <div
           style={{
             flex: 1,
-            maxWidth: 460,
-            margin: "0 20px",
-            height: 28,
-            borderRadius: 7,
-            background: "rgba(255,255,255,0.05)",
+            maxWidth: 520,
+            margin: "0 16px",
+            height: 30,
+            borderRadius: 8,
+            background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.06)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            padding: "0 12px",
+            padding: 2,
+            gap: 2,
           }}
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(255,255,255,0.3)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          <span
-            style={{
-              fontSize: 12,
-              color: "rgba(255,255,255,0.4)",
-              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
-              letterSpacing: "0.01em",
-            }}
-          >
-            app.vaxaivision.com
-          </span>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                style={{
+                  flex: 1,
+                  height: "100%",
+                  borderRadius: 6,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                  fontSize: 12,
+                  fontWeight: isActive ? 600 : 400,
+                  letterSpacing: "0.01em",
+                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+                  transition: "all 0.15s ease",
+                  background: isActive
+                    ? "rgba(37,99,235,0.2)"
+                    : "transparent",
+                  color: isActive
+                    ? "#60A5FA"
+                    : "rgba(255,255,255,0.35)",
+                  ...(isActive
+                    ? { boxShadow: "0 0 0 1px rgba(37,99,235,0.3)" }
+                    : {}),
+                }}
+              >
+                <span style={{ fontSize: 11 }}>{tab.icon}</span>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Right side: LIVE DEMO badge + Exit Demo link */}
@@ -132,7 +233,7 @@ export default function DemoPage() {
         </div>
       </div>
 
-      {/* Mobile fallback */}
+      {/* ───────── Mobile fallback ───────── */}
       <div
         style={{
           display: "none",
@@ -175,75 +276,375 @@ export default function DemoPage() {
         </Link>
       </div>
 
-      {/* iframe — shown on desktop */}
+      {/* ───────── Content area ───────── */}
       <div
-        style={{ flex: 1, position: "relative" }}
+        style={{ flex: 1, position: "relative", overflow: "hidden" }}
         className="demo-iframe-wrapper"
       >
-        {!loaded && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16,
-              zIndex: 10,
-              background: "#0d1f3c",
-            }}
-          >
-            {/* Animated pulse ring — matches DemoEmbed spinner */}
-            <div style={{ position: "relative", width: 48, height: 48 }}>
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  border: "2px solid rgba(37,99,235,0.15)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  border: "2px solid transparent",
-                  borderTopColor: "#2563eb",
-                  animation: "demoSpin 0.8s linear infinite",
-                }}
-              />
-            </div>
-            <p
+        {/* === DASHBOARD TAB === */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: activeTab === "dashboard" ? "block" : "none",
+          }}
+        >
+          {!loaded && (
+            <div
               style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 13,
-                fontWeight: 500,
-                margin: 0,
-                letterSpacing: "0.02em",
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 16,
+                zIndex: 10,
+                background: "#0d1f3c",
               }}
             >
-              Loading live dashboard...
-            </p>
-          </div>
-        )}
-        <iframe
-          ref={iframeRef}
-          src={DEMO_URL}
-          title="VaxAI Vision Live Demo"
-          onLoad={() => setLoaded(true)}
+              <div style={{ position: "relative", width: 48, height: 48 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    border: "2px solid rgba(37,99,235,0.15)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    border: "2px solid transparent",
+                    borderTopColor: "#2563eb",
+                    animation: "demoSpin 0.8s linear infinite",
+                  }}
+                />
+              </div>
+              <p
+                style={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  margin: 0,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                Loading live dashboard...
+              </p>
+            </div>
+          )}
+          <iframe
+            ref={iframeRef}
+            src={DEMO_URL}
+            title="VaxAI Vision Live Demo"
+            onLoad={() => setLoaded(true)}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              display: "block",
+              opacity: loaded ? 1 : 0,
+              transition: "opacity 0.6s ease",
+            }}
+            allow="fullscreen"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          />
+        </div>
+
+        {/* === AR STOCK COUNTER TAB === */}
+        <div
           style={{
-            width: "100%",
-            height: "100%",
-            border: "none",
-            display: "block",
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.6s ease",
+            position: "absolute",
+            inset: 0,
+            display: activeTab === "ar-scanner" ? "block" : "none",
+            overflowY: "auto",
+            background: "#0a1628",
           }}
-          allow="fullscreen"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        />
+        >
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 20px" }}>
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 24,
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      background: "linear-gradient(135deg, #8b5cf6, #3b82f6)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                    }}
+                  >
+                    📦
+                  </div>
+                  <h1
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 800,
+                      margin: 0,
+                      color: "#fff",
+                    }}
+                  >
+                    Stock Count Sessions
+                  </h1>
+                </div>
+                <p
+                  style={{
+                    color: "rgba(255,255,255,0.5)",
+                    fontSize: 13,
+                    margin: 0,
+                  }}
+                >
+                  AR-powered inventory counting with real-time detection and
+                  reconciliation
+                </p>
+              </div>
+              <button
+                onClick={handleNewSession}
+                style={{
+                  height: 34,
+                  padding: "0 16px",
+                  borderRadius: 8,
+                  background: "#2563eb",
+                  color: "#fff",
+                  border: "none",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  transition: "background 0.15s",
+                }}
+              >
+                + New Count
+              </button>
+            </div>
+
+            {/* Quick action cards */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 12,
+                marginBottom: 32,
+              }}
+            >
+              <Link
+                href="/demo/vision/stock-count/scan"
+                style={{ textDecoration: "none" }}
+              >
+                <div
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(139,92,246,0.15))",
+                    border: "1px solid rgba(37,99,235,0.3)",
+                    borderRadius: 12,
+                    padding: 20,
+                    cursor: "pointer",
+                    transition: "border-color 0.2s",
+                  }}
+                >
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>📷</div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
+                    Quick Scan
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.5)",
+                      fontSize: 12,
+                      marginTop: 4,
+                    }}
+                  >
+                    Start a new AR scanning session
+                  </div>
+                </div>
+              </Link>
+
+              <div
+                style={{
+                  background: "rgba(16,185,129,0.08)",
+                  border: "1px solid rgba(16,185,129,0.2)",
+                  borderRadius: 12,
+                  padding: 20,
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
+                  {sessions.filter((s) => s.status === "submitted").length}{" "}
+                  Completed
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.5)",
+                    fontSize: 12,
+                    marginTop: 4,
+                  }}
+                >
+                  Sessions submitted this period
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "rgba(245,158,11,0.08)",
+                  border: "1px solid rgba(245,158,11,0.2)",
+                  borderRadius: 12,
+                  padding: 20,
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 8 }}>⚠️</div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
+                  {sessions.filter(
+                    (s) => s.status === "active" || s.status === "paused",
+                  ).length}{" "}
+                  In Progress
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.5)",
+                    fontSize: 12,
+                    marginTop: 4,
+                  }}
+                >
+                  Active or paused sessions
+                </div>
+              </div>
+            </div>
+
+            {/* Session list */}
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              {sessions.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "48px 0",
+                    color: "rgba(255,255,255,0.4)",
+                    fontSize: 14,
+                  }}
+                >
+                  No sessions yet. Start a new count to begin.
+                </div>
+              ) : (
+                sessions.map((session) => (
+                  <Link
+                    key={session.id}
+                    href={
+                      session.status === "submitted"
+                        ? `/demo/vision/stock-count/review?session=${session.id}`
+                        : `/demo/vision/stock-count/scan?session=${session.id}`
+                    }
+                    style={{ textDecoration: "none" }}
+                  >
+                    <div
+                      style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: 10,
+                        padding: "14px 18px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        cursor: "pointer",
+                        transition: "background 0.15s, border-color 0.15s",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 4,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: "#fff",
+                              fontSize: 14,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {session.name}
+                          </span>
+                          <StatusBadge status={session.status} />
+                        </div>
+                        <div
+                          style={{
+                            color: "rgba(255,255,255,0.4)",
+                            fontSize: 12,
+                          }}
+                        >
+                          {session.facility} ·{" "}
+                          {new Date(session.startedAt).toLocaleDateString()} ·{" "}
+                          {session.tallies.reduce((s, t) => s + t.count, 0)}{" "}
+                          items counted
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          flexWrap: "wrap",
+                          maxWidth: 200,
+                        }}
+                      >
+                        {session.tallies.slice(0, 4).map((t) => (
+                          <span
+                            key={t.category}
+                            style={{
+                              background: `${t.color}20`,
+                              color: t.color,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                            }}
+                          >
+                            {t.category}: {t.count}
+                          </span>
+                        ))}
+                        {session.tallies.length > 4 && (
+                          <span
+                            style={{
+                              color: "rgba(255,255,255,0.3)",
+                              fontSize: 10,
+                            }}
+                          >
+                            +{session.tallies.length - 4}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          color: "rgba(255,255,255,0.3)",
+                          fontSize: 16,
+                        }}
+                      >
+                        →
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <style>{`

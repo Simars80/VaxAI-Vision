@@ -172,7 +172,7 @@ const MOCK_COVERAGE_FACILITIES = [
 
 // ── Forecasting ──────────────────────────────────────────────────────────────
 
-function generateForecast(supplyItemId: string): {
+function generateForecast(supplyItemId: string, periods = 12): {
   supply_item_id: string;
   facility_id: string | null;
   model_run_id: string;
@@ -180,7 +180,7 @@ function generateForecast(supplyItemId: string): {
 } {
   const predictions = [];
   const baseValue = 800 + Math.abs(hashCode(supplyItemId)) % 600;
-  for (let i = 1; i <= 12; i++) {
+  for (let i = 1; i <= periods; i++) {
     const date = new Date();
     date.setMonth(date.getMonth() + i);
     const trend = baseValue + i * 15 + (Math.random() - 0.3) * 80;
@@ -299,7 +299,8 @@ export function getMockResponse(url: string, _params?: any): any {
   if (url.includes("/forecasting/predict/")) {
     const parts = url.split("/");
     const itemId = parts[parts.length - 1] || "default-item";
-    return generateForecast(itemId);
+    const periods = Number(_params?.periods ?? 12);
+    return generateForecast(itemId, periods);
   }
 
   // Forecasting - train

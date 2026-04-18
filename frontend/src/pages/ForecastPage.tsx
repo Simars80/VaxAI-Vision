@@ -90,6 +90,7 @@ function stockoutColorClass(days: number, type: "text" | "border"): string {
 export default function ForecastPage() {
   const [selectedVaccine, setSelectedVaccine] = useState("v1");
   const [selectedFacility, setSelectedFacility] = useState("FAC-001");
+  const [horizonMonths, setHorizonMonths] = useState(12);
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [rawPredictions, setRawPredictions] = useState<RawPrediction[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -113,12 +114,12 @@ export default function ForecastPage() {
   const daysUntilOrder = Math.max(0, daysUntilStockout - 30);
   const orderByDate = format(addDays(new Date(), daysUntilOrder), "MMMM d, yyyy");
 
-  const fetchForecast = useCallback(async (vaccineId: string, facilityId: string) => {
+  const fetchForecast = useCallback(async (vaccineId: string, facilityId: string, horizon = 12) => {
     setLoading(true);
     setError(null);
     try {
       const [forecastResult, runs] = await Promise.all([
-        getForecast(vaccineId, facilityId || undefined),
+        getForecast(vaccineId, facilityId || undefined, horizon),
         listModelRuns(5),
       ]);
       setRawPredictions(forecastResult.predictions);
@@ -145,19 +146,19 @@ export default function ForecastPage() {
 
   // Auto-load on mount with BCG Vaccine + Lagos Central Vaccine Store
   useEffect(() => {
-    fetchForecast("v1", "FAC-001");
+    fetchForecast("v1", "FAC-001", 12);
   }, [fetchForecast]);
 
   const handleVaccineChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVaccine = e.target.value;
     setSelectedVaccine(newVaccine);
-    fetchForecast(newVaccine, selectedFacility);
+    fetchForecast(newVaccine, selectedFacility, horizonMonths);
   };
 
   const handleFacilityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFacility = e.target.value;
     setSelectedFacility(newFacility);
-    fetchForecast(selectedVaccine, newFacility);
+    fetchForecast(selectedVaccine, newFacility, horizonMonths);
   };
 
   const handleRefresh = async () => {
@@ -166,7 +167,7 @@ export default function ForecastPage() {
     try {
       await triggerTraining(selectedVaccine, selectedFacility || undefined);
       await new Promise<void>((resolve) => setTimeout(resolve, 2000));
-      await fetchForecast(selectedVaccine, selectedFacility);
+      await fetchForecast(selectedVaccine, selectedFacility, horizonMonths);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to refresh forecast");
     } finally {
@@ -215,6 +216,23 @@ export default function ForecastPage() {
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 min-w-48 space-y-1">
+              <label className="text-sm font-medium">Forecast Horizon</label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={horizonMonths}
+                onChange={(e) => {
+                  const newHorizon = Number(e.target.value);
+                  setHorizonMonths(newHorizon);
+                  fetchForecast(selectedVaccine, selectedFacility, newHorizon);
+                }}
+                disabled={loading}
+              >
+                {[1, 2, 3, 6, 12, 18, 24].map((m) => (
+                  <option key={m} value={m}>{m} {m === 1 ? "month" : "months"}</option>
                 ))}
               </select>
             </div>
@@ -280,7 +298,7 @@ export default function ForecastPage() {
                 <Calendar className="h-5 w-5 mt-0.5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Forecast Horizon</p>
-                  <p className="text-2xl font-bold">12 months</p>
+                  <p className="text-2xl font-bold">{horizonMonths} {horizonMonths === 1 ? "month" : "months"}</p>
                   <p className="text-xs text-muted-foreground mt-1">Forward-looking window</p>
                 </div>
               </div>

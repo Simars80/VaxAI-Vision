@@ -26,8 +26,8 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 /* Map tabs to iframe URLs — dashboard tabs load inside the iframe, AR Scanner is inline */
 const TAB_IFRAME_URLS: Partial<Record<TabId, string>> = {
   dashboard: DEMO_URL,
-  forecasting: `${DEMO_BASE}/forecast?demo=true`,
-  vision: `${DEMO_BASE}/vision?demo=true`,
+  forecasting: `${DEMO_BASE}/forecast?demo=true&embed=true`,
+  vision: `${DEMO_BASE}/vision?demo=true&embed=true`,
 };
 
 export default function DemoPage() {

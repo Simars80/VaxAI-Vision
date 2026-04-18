@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const DEMO_URL = "https://app.vaxaivision.com?demo=true";
-const TOPBAR_HEIGHT = 48;
+const TOPBAR_HEIGHT = 44;
 
 export default function DemoPage() {
   const [loaded, setLoaded] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Fallback: if onLoad doesn't fire within 5s, show iframe anyway
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0a1628" }}>
-      {/* Top bar */}
+      {/* Browser chrome top bar */}
       <div
         style={{
           height: TOPBAR_HEIGHT,
@@ -20,33 +27,63 @@ export default function DemoPage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0 16px",
-          background: "#0d1f3c",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "linear-gradient(180deg, #1a2236 0%, #151d2e 100%)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 14,
-              flexShrink: 0,
-            }}
+        {/* Traffic lights */}
+        <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#EF4444", opacity: 0.8 }} />
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#F59E0B", opacity: 0.8 }} />
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#22C55E", opacity: 0.8 }} />
+        </div>
+
+        {/* URL bar */}
+        <div
+          style={{
+            flex: 1,
+            maxWidth: 460,
+            margin: "0 20px",
+            height: 28,
+            borderRadius: 7,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            padding: "0 12px",
+          }}
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(255,255,255,0.3)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            V
-          </div>
-          <span style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>VaxAI Vision</span>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
           <span
             style={{
-              marginLeft: 8,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.4)",
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+              letterSpacing: "0.01em",
+            }}
+          >
+            app.vaxaivision.com
+          </span>
+        </div>
+
+        {/* Right side: LIVE DEMO badge + Exit Demo link */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            style={{
               padding: "2px 8px",
               borderRadius: 99,
               background: "rgba(16,185,129,0.15)",
@@ -59,27 +96,40 @@ export default function DemoPage() {
           >
             LIVE DEMO
           </span>
+          <Link
+            href="/"
+            style={{
+              height: 28,
+              padding: "0 12px",
+              borderRadius: 6,
+              background: "rgba(37,99,235,0.15)",
+              border: "1px solid rgba(37,99,235,0.25)",
+              color: "#60A5FA",
+              fontSize: 12,
+              fontWeight: 500,
+              display: "inline-flex",
+              alignItems: "center",
+              textDecoration: "none",
+              gap: 5,
+              transition: "all 0.2s",
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            Exit Demo
+          </Link>
         </div>
-
-        {/* Exit Demo */}
-        <Link
-          href="/"
-          style={{
-            height: 30,
-            padding: "0 14px",
-            borderRadius: 7,
-            border: "1px solid rgba(255,255,255,0.2)",
-            color: "rgba(255,255,255,0.75)",
-            fontSize: 13,
-            fontWeight: 500,
-            display: "flex",
-            alignItems: "center",
-            textDecoration: "none",
-            gap: 6,
-          }}
-        >
-          <span style={{ fontSize: 11 }}>✕</span> Exit Demo
-        </Link>
       </div>
 
       {/* Mobile fallback */}
@@ -139,26 +189,47 @@ export default function DemoPage() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: 12,
+              gap: 16,
               zIndex: 10,
+              background: "#0d1f3c",
             }}
           >
-            <div
+            {/* Animated pulse ring — matches DemoEmbed spinner */}
+            <div style={{ position: "relative", width: 48, height: 48 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: "2px solid rgba(37,99,235,0.15)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: "2px solid transparent",
+                  borderTopColor: "#2563eb",
+                  animation: "demoSpin 0.8s linear infinite",
+                }}
+              />
+            </div>
+            <p
               style={{
-                width: 36,
-                height: 36,
-                border: "3px solid rgba(37,99,235,0.3)",
-                borderTopColor: "#2563eb",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 13,
+                fontWeight: 500,
+                margin: 0,
+                letterSpacing: "0.02em",
               }}
-            />
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>
-              Loading live dashboard…
+            >
+              Loading live dashboard...
             </p>
           </div>
         )}
         <iframe
+          ref={iframeRef}
           src={DEMO_URL}
           title="VaxAI Vision Live Demo"
           onLoad={() => setLoaded(true)}
@@ -168,7 +239,7 @@ export default function DemoPage() {
             border: "none",
             display: "block",
             opacity: loaded ? 1 : 0,
-            transition: "opacity 0.4s ease",
+            transition: "opacity 0.6s ease",
           }}
           allow="fullscreen"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
@@ -176,7 +247,7 @@ export default function DemoPage() {
       </div>
 
       <style>{`
-        @keyframes spin {
+        @keyframes demoSpin {
           to { transform: rotate(360deg); }
         }
         @media (max-width: 767px) {

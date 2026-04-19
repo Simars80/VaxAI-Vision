@@ -34,6 +34,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
+def _build_access_token(user: User) -> str:
+    """Create an access token with all tenant claims embedded."""
+    return create_access_token(
+        user_id=str(user.id),
+        role=user.role,
+        country_id=user.country_id,
+        organization_id=user.organization_id,
+        facility_id=user.facility_id,
+    )
+
+
 @router.post(
     "/register", response_model=MeResponse, status_code=status.HTTP_201_CREATED
 )
@@ -50,6 +61,10 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
         hashed_password=hash_password(body.password),
         role=body.role,
         country_code=body.country_code,
+        # Tenant assignment from registration request (all optional)
+        country_id=body.country_id,
+        organization_id=body.organization_id,
+        facility_id=body.facility_id,
     )
     db.add(user)
     await db.flush()
@@ -74,9 +89,14 @@ async def login(
             detail="Inactive user account.",
         )
     return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role),
+        access_token=_build_access_token(user),
         refresh_token=create_refresh_token(str(user.id)),
         expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        tenant_context={
+            "country_id": str(user.country_id) if user.country_id else None,
+            "organization_id": str(user.organization_id) if user.organization_id else None,
+            "facility_id": str(user.facility_id) if user.facility_id else None,
+        },
     )
 
 
@@ -116,9 +136,14 @@ async def refresh(
     await redis.setex(is_token_revoked_key(jti), ttl, "1")
 
     return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role),
+        access_token=_build_access_token(user),
         refresh_token=create_refresh_token(str(user.id)),
         expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        tenant_context={
+            "country_id": str(user.country_id) if user.country_id else None,
+            "organization_id": str(user.organization_id) if user.organization_id else None,
+            "facility_id": str(user.facility_id) if user.facility_id else None,
+        },
     )
 
 
@@ -147,8 +172,6 @@ async def demo_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
 async def logout(
     current_user: User = Depends(get_current_active_user),
     redis: aioredis.Redis = Depends(get_redis),
-    # We need the raw token to extract the JTI for revocation.
-    # Re-depend on bearer directly here to get the raw credentials.
 ) -> None:
     # Revocation is handled client-side token discard + refresh blacklisting on /refresh.
     # For access tokens, short TTL suffices; production can extend this with JTI blacklist.

@@ -11,11 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.vision_scan import VVMStageDB, VisionScanResult
+from app.vision.equipment_inspector import get_inspector
 from app.vision.inference import MODEL_VERSION, get_classifier
 from app.vision.preprocessing import image_hash
 from app.vision.schemas import (
+    EquipmentCondition,
     EquipmentInspectionResponse,
-    EquipmentInspectionResult,
+    InspectionResult,
     ModelStatusEntry,
     ModelStatusResponse,
     VVMBatchItem,
@@ -114,11 +116,18 @@ async def equipment_inspect(
     raw = await image.read()
     img_hash = image_hash(raw)
 
+    inspector = get_inspector()
+    equipment_type, condition, issues, confidence = inspector.predict(raw)
+
     return EquipmentInspectionResponse(
-        result=EquipmentInspectionResult(
-            status="operational",
-            details="Placeholder inspection — real model not yet deployed.",
+        result=InspectionResult(
+            equipment_type=equipment_type,
+            condition=condition,
+            issues=issues,
+            confidence=round(confidence, 4),
             image_hash=img_hash,
+            requires_action=condition != EquipmentCondition.operational,
+            inference_backend=inspector.backend,
         ),
         model_version=MODEL_VERSION,
     )
@@ -160,6 +169,7 @@ async def scan_history(
 @router.get("/models/status", summary="Get loaded model status")
 async def model_status() -> ModelStatusResponse:
     classifier = get_classifier()
+    inspector = get_inspector()
     return ModelStatusResponse(
         models=[
             ModelStatusEntry(
@@ -171,8 +181,8 @@ async def model_status() -> ModelStatusResponse:
             ModelStatusEntry(
                 name="equipment-inspector",
                 version=MODEL_VERSION,
-                loaded=False,
-                backend="placeholder",
+                loaded=inspector.is_loaded,
+                backend=inspector.backend,
             ),
         ]
     )

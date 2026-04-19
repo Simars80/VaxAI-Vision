@@ -1,113 +1,411 @@
 {
   "title": "VaxAI Vision — Platform Overview",
   "uid": "vaxai-platform-overview",
-  "tags": ["vaxai", "platform"],
+  "tags": ["vaxai", "platform", "observability"],
   "schemaVersion": 38,
   "refresh": "30s",
   "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "facility_id",
+        "label": "Facility",
+        "type": "query",
+        "query": "label_values(vaxai_cold_chain_alerts_total, facility_id)",
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "interval",
+        "label": "Interval",
+        "type": "interval",
+        "options": ["1m", "5m", "10m", "30m", "1h"],
+        "current": { "text": "5m", "value": "5m" }
+      }
+    ]
+  },
   "panels": [
+
     {
       "id": 1,
-      "title": "API Request Rate (req/s)",
+      "title": "Request Rate (req/s)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
-      "targets": [{
-        "expr": "sum(rate(http_request_duration_seconds_count{job='vaxai-backend-api'}[1m]))",
-        "legendFormat": "req/s"
-      }]
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_http_requests_total{job='vaxai-backend-api'}[$interval]))",
+          "legendFormat": "Total req/s"
+        },
+        {
+          "expr": "sum(rate(vaxai_http_requests_total{job='vaxai-backend-api', status_code=~'2..'}[$interval]))",
+          "legendFormat": "2xx req/s"
+        }
+      ]
     },
+
     {
       "id": 2,
-      "title": "API P99 Latency (ms)",
+      "title": "Error Rate (%)",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
-      "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job='vaxai-backend-api'}[5m])) by (le)) * 1000",
-        "legendFormat": "P99 latency"
-      }]
-    },
-    {
-      "id": 3,
-      "title": "5xx Error Rate (%)",
-      "type": "stat",
-      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 6 },
       "fieldConfig": {
         "defaults": {
+          "unit": "percentunit",
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "green", "value": 0 },
               { "color": "yellow", "value": 0.01 },
               { "color": "red", "value": 0.05 }
             ]
-          },
-          "unit": "percentunit"
+          }
         }
       },
-      "targets": [{
-        "expr": "sum(rate(http_request_duration_seconds_count{job='vaxai-backend-api', status=~'5..'}[5m])) / sum(rate(http_request_duration_seconds_count{job='vaxai-backend-api'}[5m]))",
-        "legendFormat": "Error rate"
-      }]
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_http_requests_total{job='vaxai-backend-api', status_code=~'5..'}[$interval])) / sum(rate(vaxai_http_requests_total{job='vaxai-backend-api'}[$interval]))",
+          "legendFormat": "5xx error rate"
+        },
+        {
+          "expr": "sum(rate(vaxai_http_requests_total{job='vaxai-backend-api', status_code=~'4..'}[$interval])) / sum(rate(vaxai_http_requests_total{job='vaxai-backend-api'}[$interval]))",
+          "legendFormat": "4xx error rate"
+        }
+      ]
     },
+
+    {
+      "id": 3,
+      "title": "Latency Percentiles",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(vaxai_http_request_duration_seconds_bucket{job='vaxai-backend-api'}[$interval])) by (le))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(vaxai_http_request_duration_seconds_bucket{job='vaxai-backend-api'}[$interval])) by (le))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(vaxai_http_request_duration_seconds_bucket{job='vaxai-backend-api'}[$interval])) by (le))",
+          "legendFormat": "P99"
+        }
+      ]
+    },
+
     {
       "id": 4,
-      "title": "Ingestion Queue Length",
+      "title": "Active Connections",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 4 },
+      "gridPos": { "x": 0, "y": 6, "w": 4, "h": 4 },
       "fieldConfig": {
         "defaults": {
+          "unit": "short",
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "green", "value": 0 },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 100 }
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 200 }
             ]
           }
         }
       },
-      "targets": [{
-        "expr": "celery_queue_length{queue='ingestion'}",
-        "legendFormat": "Ingestion queue"
-      }]
+      "targets": [
+        {
+          "expr": "vaxai_http_active_connections",
+          "legendFormat": "Active connections"
+        }
+      ]
     },
+
     {
       "id": 5,
-      "title": "ML Training Queue Length",
-      "type": "stat",
-      "gridPos": { "x": 6, "y": 6, "w": 6, "h": 4 },
-      "targets": [{
-        "expr": "celery_queue_length{queue='ml_training'}",
-        "legendFormat": "ML queue"
-      }]
+      "title": "DB Connection Pool Utilisation",
+      "type": "gauge",
+      "gridPos": { "x": 4, "y": 6, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "vaxai_db_connection_pool_checked_out / vaxai_db_connection_pool_size",
+          "legendFormat": "Pool utilisation"
+        }
+      ]
     },
+
     {
       "id": 6,
-      "title": "Active Model Runs",
-      "type": "stat",
-      "gridPos": { "x": 12, "y": 6, "w": 6, "h": 4 },
-      "targets": [{
-        "expr": "vaxai_model_run_status{status='running'}",
-        "legendFormat": "Running"
-      }]
+      "title": "DB Query Latency P95 (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 6, "w": 8, "h": 4 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(vaxai_db_query_duration_seconds_bucket[$interval])) by (le, operation)) * 1000",
+          "legendFormat": "P95 {{ operation }}"
+        }
+      ]
     },
+
     {
       "id": 7,
-      "title": "Pod CPU Usage",
+      "title": "ML Inference Duration P95 (s)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 },
-      "targets": [{
-        "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~'vaxai-.*', container!=''}[1m])) by (pod)",
-        "legendFormat": "{{pod}}"
-      }]
+      "gridPos": { "x": 16, "y": 6, "w": 8, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(vaxai_ml_inference_duration_seconds_bucket[$interval])) by (le, model))",
+          "legendFormat": "P95 {{ model }}"
+        }
+      ]
     },
+
     {
       "id": 8,
-      "title": "Pod Memory Usage",
+      "title": "ML Inference Errors",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 6 },
-      "targets": [{
-        "expr": "sum(container_memory_working_set_bytes{namespace=~'vaxai-.*', container!=''}) by (pod)",
-        "legendFormat": "{{pod}}"
-      }]
+      "gridPos": { "x": 0, "y": 10, "w": 8, "h": 4 },
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_ml_inference_errors_total[$interval])) by (model, error_type)",
+          "legendFormat": "{{ model }} / {{ error_type }}"
+        }
+      ]
+    },
+
+    {
+      "id": 9,
+      "title": "Cold Chain — Alerts (rate/min)",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 10, "w": 8, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_cold_chain_alerts_total{facility_id=~'$facility_id'}[$interval])) by (facility_id, severity)",
+          "legendFormat": "{{ facility_id }} / {{ severity }}"
+        }
+      ]
+    },
+
+    {
+      "id": 10,
+      "title": "Cold Chain — Live Temperature (°C)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 10, "w": 8, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": 0 },
+              { "color": "green", "value": 2 },
+              { "color": "yellow", "value": 8 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "vaxai_cold_chain_temperature_celsius{facility_id=~'$facility_id'}",
+          "legendFormat": "{{ facility_id }} / {{ sensor_id }}"
+        }
+      ]
+    },
+
+    {
+      "id": 11,
+      "title": "Stockout Events (cumulative)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 14, "w": 6, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(vaxai_stockout_events_total{facility_id=~'$facility_id'}) by (facility_id, vaccine_type)",
+          "legendFormat": "{{ facility_id }} — {{ vaccine_type }}"
+        }
+      ]
+    },
+
+    {
+      "id": 12,
+      "title": "Stockout Rate (events/hour)",
+      "type": "timeseries",
+      "gridPos": { "x": 6, "y": 14, "w": 6, "h": 4 },
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_stockout_events_total{facility_id=~'$facility_id'}[1h])) by (vaccine_type) * 3600",
+          "legendFormat": "{{ vaccine_type }}"
+        }
+      ]
+    },
+
+    {
+      "id": 13,
+      "title": "Inventory Doses Available",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 100 },
+              { "color": "green", "value": 500 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "vaxai_inventory_doses_available{facility_id=~'$facility_id'}",
+          "legendFormat": "{{ facility_id }} — {{ vaccine_type }}"
+        }
+      ]
+    },
+
+    {
+      "id": 14,
+      "title": "Sync Operations",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 4 },
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_sync_operations_total[$interval])) by (system, direction, status)",
+          "legendFormat": "{{ system }} {{ direction }} / {{ status }}"
+        }
+      ]
+    },
+
+    {
+      "id": 15,
+      "title": "Sync Error Rate by System",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_sync_operations_total{status='error'}[$interval])) by (system) / sum(rate(vaxai_sync_operations_total[$interval])) by (system)",
+          "legendFormat": "{{ system }}"
+        }
+      ]
+    },
+
+    {
+      "id": 16,
+      "title": "API Request Rate by Endpoint",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 6 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vaxai_http_requests_total{job='vaxai-backend-api'}[$interval])) by (endpoint, method)",
+          "legendFormat": "{{ method }} {{ endpoint }}"
+        }
+      ]
+    },
+
+    {
+      "id": 17,
+      "title": "Pod CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 6 },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~'vaxai-.*', container!=''}[1m])) by (pod)",
+          "legendFormat": "{{ pod }}"
+        }
+      ]
     }
+
   ]
 }

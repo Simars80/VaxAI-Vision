@@ -21,12 +21,19 @@ from app.models.supply import (
     SupplyItem,
     SupplyTransaction,
 )
+from app.models.tenant import Country, District, Facility, FacilityType, Organization, OrgType
 from app.models.user import User, UserRole
 from app.models.vision_scan import VisionScanResult, VVMStageDB
 
 __all__ = [
     "User",
     "UserRole",
+    "Country",
+    "Organization",
+    "District",
+    "Facility",
+    "OrgType",
+    "FacilityType",
     "IngestionJob",
     "IngestionAuditLog",
     "IngestionSource",

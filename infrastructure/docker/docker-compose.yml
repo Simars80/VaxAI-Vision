@@ -67,10 +67,91 @@ services:
       postgres:
         condition: service_healthy
 
+  # ─── Prometheus ───────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: vaxai_prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"          # allow hot-reload via POST /-/reload
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/alerting-rules.yml:/etc/prometheus/alerting-rules.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Grafana ──────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: vaxai_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: vaxai_grafana_dev
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/vaxai-platform.json
+      # Auto-provision the Prometheus datasource
+      GF_DATASOURCES_DEFAULT_NAME: Prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana-dashboard.json:/var/lib/grafana/dashboards/vaxai-platform.json:ro
+      - ../monitoring/grafana-provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend API (for local full-stack dev) ────────────────────────────────
+  # Comment out if running the API directly outside Docker.
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: vaxai_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://vaxai:vaxai_dev_password@postgres:5432/vaxai_vision"
+      REDIS_URL: "redis://:vaxai_redis_dev@redis:6379/0"
+      ENV: development
+      ENFORCE_HTTPS: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   redis_data:
   localstack_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   default:

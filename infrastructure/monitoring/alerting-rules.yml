@@ -1,0 +1,224 @@
+# Prometheus alerting rules for VaxAI Vision
+# Loaded by Prometheus via the rule_files directive in prometheus.yml.
+# In production (EKS) these are deployed as a PrometheusRule CRD;
+# see infrastructure/monitoring/prometheus-rules.yaml for the Kubernetes wrapper.
+
+groups:
+
+  # ── API / Service health ──────────────────────────────────────────────────────
+  - name: vaxai.api
+    interval: 30s
+    rules:
+
+      - alert: VaxAIServiceDown
+        expr: |
+          absent(up{job="vaxai-backend-api"} == 1)
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          domain: api
+        annotations:
+          summary: "VaxAI backend API is unreachable"
+          description: >
+            No healthy VaxAI API targets have been scraped for 2 minutes.
+            The service may be crashed, OOM-killed, or failing its liveness probe.
+          runbook: "https://runbooks.vaxaivision.com/api-down"
+
+      - alert: VaxAIHighErrorRate
+        expr: |
+          (
+            sum(rate(vaxai_http_requests_total{job="vaxai-backend-api", status_code=~"5.."}[5m]))
+            /
+            sum(rate(vaxai_http_requests_total{job="vaxai-backend-api"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          domain: api
+        annotations:
+          summary: "VaxAI API 5xx error rate > 5 %"
+          description: >
+            The 5xx error rate is {{ humanizePercentage $value }} over the past 5 minutes.
+            Investigate application logs for stack traces.
+          runbook: "https://runbooks.vaxaivision.com/high-error-rate"
+
+      - alert: VaxAISlowResponsesP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(vaxai_http_request_duration_seconds_bucket{job="vaxai-backend-api"}[5m])) by (le)
+          ) > 2.0
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          domain: api
+        annotations:
+          summary: "VaxAI API P95 latency > 2 s for 10 min"
+          description: >
+            P95 response time is {{ $value | humanizeDuration }} — above the 2 s SLO.
+            Check DB query performance and ML inference times.
+          runbook: "https://runbooks.vaxaivision.com/high-latency"
+
+      - alert: VaxAIHighActiveConnections
+        expr: |
+          vaxai_http_active_connections > 200
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          domain: api
+        annotations:
+          summary: "VaxAI API active connections > 200"
+          description: >
+            {{ $value }} concurrent connections detected. Worker pool may be saturated.
+
+  # ── Database ──────────────────────────────────────────────────────────────────
+  - name: vaxai.database
+    interval: 30s
+    rules:
+
+      - alert: VaxAIDBConnectionPoolExhausted
+        expr: |
+          vaxai_db_connection_pool_checked_out
+          /
+          vaxai_db_connection_pool_size
+          > 0.9
+        for: 3m
+        labels:
+          severity: critical
+          team: platform
+          domain: database
+        annotations:
+          summary: "VaxAI DB connection pool > 90 % utilised"
+          description: >
+            {{ humanizePercentage $value }} of the SQLAlchemy pool is checked out.
+            New requests will block or time out. Scale the pool or reduce query concurrency.
+          runbook: "https://runbooks.vaxaivision.com/db-pool-exhausted"
+
+      - alert: VaxAISlowDBQueries
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(vaxai_db_query_duration_seconds_bucket[5m])) by (le, operation, table)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          domain: database
+        annotations:
+          summary: "VaxAI DB P95 query time > 1 s"
+          description: >
+            Slow queries detected on operation={{ $labels.operation }} table={{ $labels.table }}.
+            Review EXPLAIN plans and index coverage.
+
+  # ── Cold chain / supply chain ─────────────────────────────────────────────────
+  - name: vaxai.cold_chain
+    interval: 60s
+    rules:
+
+      - alert: VaxAIColdChainTemperatureBreach
+        expr: |
+          increase(vaxai_cold_chain_alerts_total{severity="critical"}[10m]) > 0
+        for: 0m           # fire immediately on first alert
+        labels:
+          severity: critical
+          team: operations
+          domain: cold_chain
+        annotations:
+          summary: "Cold-chain critical temperature breach at facility {{ $labels.facility_id }}"
+          description: >
+            A critical cold-chain alert has been raised for facility {{ $labels.facility_id }}.
+            Vaccines may be at risk. Dispatch field team immediately.
+          runbook: "https://runbooks.vaxaivision.com/cold-chain-breach"
+
+      - alert: VaxAIColdChainTemperatureWarning
+        expr: |
+          increase(vaxai_cold_chain_alerts_total{severity="warning"}[15m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: operations
+          domain: cold_chain
+        annotations:
+          summary: "Repeated cold-chain warnings at facility {{ $labels.facility_id }}"
+          description: >
+            More than 2 warning-level temperature alerts in the last 15 minutes for
+            facility {{ $labels.facility_id }}. A critical breach may follow.
+
+      - alert: VaxAIStockoutEvent
+        expr: |
+          increase(vaxai_stockout_events_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: operations
+          domain: supply_chain
+        annotations:
+          summary: "Stockout detected at facility {{ $labels.facility_id }} — {{ $labels.vaccine_type }}"
+          description: >
+            A stockout event has been recorded for {{ $labels.vaccine_type }} at
+            {{ $labels.facility_id }}. Trigger emergency replenishment workflow.
+          runbook: "https://runbooks.vaxaivision.com/stockout"
+
+  # ── ML inference ──────────────────────────────────────────────────────────────
+  - name: vaxai.ml
+    interval: 60s
+    rules:
+
+      - alert: VaxAIMLInferenceErrors
+        expr: |
+          increase(vaxai_ml_inference_errors_total[10m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          team: ml
+          domain: ml
+        annotations:
+          summary: "VaxAI ML inference errors spiking (model={{ $labels.model }})"
+          description: >
+            {{ $value }} inference errors in 10 minutes for model {{ $labels.model }}.
+            Check model file integrity and ONNX runtime compatibility.
+
+      - alert: VaxAIMLSlowInference
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(vaxai_ml_inference_duration_seconds_bucket[10m])) by (le, model)
+          ) > 10.0
+        for: 10m
+        labels:
+          severity: warning
+          team: ml
+          domain: ml
+        annotations:
+          summary: "VaxAI ML inference P95 > 10 s (model={{ $labels.model }})"
+          description: >
+            P95 inference latency for {{ $labels.model }} is {{ $value | humanizeDuration }}.
+            Consider batching requests or upgrading to a faster model variant.
+
+  # ── Sync operations ───────────────────────────────────────────────────────────
+  - name: vaxai.sync
+    interval: 120s
+    rules:
+
+      - alert: VaxAISyncFailureRate
+        expr: |
+          (
+            sum(rate(vaxai_sync_operations_total{status="error"}[30m])) by (system)
+            /
+            sum(rate(vaxai_sync_operations_total[30m])) by (system)
+          ) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: data
+          domain: sync
+        annotations:
+          summary: "VaxAI sync error rate > 10 % for system {{ $labels.system }}"
+          description: >
+            External system sync failures: {{ humanizePercentage $value }} error rate
+            for {{ $labels.system }} over the last 30 minutes.

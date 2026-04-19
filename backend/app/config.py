@@ -40,6 +40,29 @@ class Settings(BaseSettings):
         "https://app.vaxaivision.com",
     ]
 
+    # ── Rate limiting ──────────────────────────────────────────────────────────
+    RATE_LIMIT_ENABLED: bool = True
+    # Default limit string used as fallback (slowapi format: "N/period")
+    RATE_LIMIT_DEFAULT: str = "100/minute"
+
+    # ── API key authentication ─────────────────────────────────────────────────
+    API_KEY_ENABLED: bool = True
+
+    # ── File uploads ───────────────────────────────────────────────────────────
+    # Allowlist of accepted MIME types for uploaded files.
+    # An empty list means the module-level defaults in input_sanitizer.py apply.
+    ALLOWED_UPLOAD_TYPES: list[str] = []
+    # Maximum upload size in bytes (default: 50 MB)
+    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024
+
+    # ── Encryption at rest ─────────────────────────────────────────────────────
+    ENCRYPTION_AT_REST_ENABLED: bool = False
+    # AWS KMS CMK ARN for envelope encryption (optional; falls back to local Fernet)
+    KMS_KEY_ARN: str = ""
+    # Fernet key(s) — comma-separated for rotation support.
+    # Generate with: python -c "from app.core.encryption import generate_fernet_key; print(generate_fernet_key())"
+    ENCRYPTION_KEY: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

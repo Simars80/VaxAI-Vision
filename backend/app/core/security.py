@@ -1,5 +1,7 @@
 """JWT creation/verification and password hashing utilities."""
 
+from __future__ import annotations
+
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -38,9 +40,42 @@ def _create_token(data: dict[str, Any], expires_delta: timedelta) -> str:
     )
 
 
-def create_access_token(user_id: str, role: str) -> str:
+def _tenant_claims(
+    country_id: uuid.UUID | str | None = None,
+    organization_id: uuid.UUID | str | None = None,
+    facility_id: uuid.UUID | str | None = None,
+    district: str | None = None,
+) -> dict[str, Any]:
+    """Build the tenant-scoping claims for a JWT payload."""
+    claims: dict[str, Any] = {}
+    if country_id is not None:
+        claims["country_id"] = str(country_id)
+    if organization_id is not None:
+        claims["organization_id"] = str(organization_id)
+    if facility_id is not None:
+        claims["facility_id"] = str(facility_id)
+    if district is not None:
+        claims["district"] = district
+    return claims
+
+
+def create_access_token(
+    user_id: str,
+    role: str,
+    *,
+    country_id: uuid.UUID | str | None = None,
+    organization_id: uuid.UUID | str | None = None,
+    facility_id: uuid.UUID | str | None = None,
+    district: str | None = None,
+) -> str:
+    payload: dict[str, Any] = {
+        "sub": user_id,
+        "role": role,
+        "type": "access",
+    }
+    payload.update(_tenant_claims(country_id, organization_id, facility_id, district))
     return _create_token(
-        {"sub": user_id, "role": role, "type": "access"},
+        payload,
         timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
@@ -62,9 +97,19 @@ def create_demo_access_token(user_id: str) -> str:
 
 def decode_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT. Raises JWTError on failure."""
-    return jwt.decode(
+    payload = jwt.decode(
         token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
     )
+    # Validate tenant fields if present — each must be a valid UUID string or absent
+    for tenant_field in ("country_id", "organization_id", "facility_id"):
+        value = payload.get(tenant_field)
+        if value is not None:
+            try:
+                uuid.UUID(value)
+            except (ValueError, AttributeError):
+                from jose import JWTError
+                raise JWTError(f"Invalid UUID in JWT claim '{tenant_field}'")
+    return payload
 
 
 def is_token_revoked_key(jti: str) -> str:

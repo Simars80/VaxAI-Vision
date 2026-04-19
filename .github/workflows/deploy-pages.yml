@@ -32,10 +32,19 @@ jobs:
         working-directory: frontend
         run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
+      - name: Resolve API URL
+        id: api-url
+        run: |
+          if [ -n "${{ secrets.VITE_API_URL }}" ]; then
+            echo "url=${{ secrets.VITE_API_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://api.vaxaivision.com" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.vaxaivision.com' }}
+          VITE_API_URL: ${{ steps.api-url.outputs.url }}
         run: npm run build
 
       - name: Setup Pages

@@ -5,17 +5,30 @@ on:
     branches: [main]      # → staging / continuous deploy
     tags:
       - "v*"              # → production release
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 env:
   ECR_REGISTRY: 402079573320.dkr.ecr.us-east-2.amazonaws.com
   ECR_REPOSITORY: vaxai-backend
   ECR_REPOSITORY_FRONTEND: vaxai-frontend
+  AWS_REGION_DEFAULT: us-east-2
 
 jobs:
   # ── Build & push backend Docker image to ECR ──────────────────────────────────
   build-and-push:
     name: Build & push backend to ECR
     runs-on: ubuntu-latest
+    # Skip if AWS credentials are not configured
+    if: secrets.AWS_ACCESS_KEY_ID != '' && vars.AWS_REGION != ''
     outputs:
       image: ${{ steps.build.outputs.image }}
 
@@ -27,7 +40,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION_DEFAULT }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -38,8 +51,9 @@ jobs:
 
       - name: Build, tag, and push image to ECR
         id: build
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE_TAG=${{ github.sha }}
           docker buildx build \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
@@ -53,6 +67,8 @@ jobs:
   build-frontend:
     name: Build & push frontend to ECR
     runs-on: ubuntu-latest
+    # Skip if AWS credentials are not configured
+    if: secrets.AWS_ACCESS_KEY_ID != '' && vars.AWS_REGION != ''
 
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +78,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION_DEFAULT }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -72,8 +88,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build, tag, and push frontend image to ECR
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE_TAG=${{ github.sha }}
           docker buildx build \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
@@ -88,10 +105,17 @@ jobs:
     name: Deploy to ECS
     runs-on: ubuntu-latest
     needs: [build-and-push, build-frontend]
-    # Skipped until ECS_CLUSTER and ECS_SERVICE variables are set in GitHub
-    if: vars.AWS_REGION != '' && vars.ECS_CLUSTER != ''
+    # Only runs when both build jobs succeeded AND ECS variables are configured.
+    # build-and-push / build-frontend are skipped (not failed) when AWS creds
+    # are absent, so `needs.*.result` will be 'skipped' in that case — guard
+    # against proceeding if they were skipped.
+    if: |
+      vars.AWS_REGION != '' &&
+      vars.ECS_CLUSTER != '' &&
+      needs.build-and-push.result == 'success' &&
+      needs.build-frontend.result == 'success'
     environment:
-      name: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
+      name: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment) || (startsWith(github.ref, 'refs/tags/v') && 'production') || 'staging' }}
       url: https://api.vaxaivision.com/docs
 
     steps:
@@ -118,6 +142,17 @@ jobs:
             --region ${{ vars.AWS_REGION }}
 
       - name: Smoke test
+        # Non-fatal: backend may take extra time on first deploy or DNS may
+        # not yet be propagated. We report the result but never fail the job.
         run: |
-          sleep 15
-          curl -sf "https://api.vaxaivision.com/health" || echo "Smoke test skipped (DNS not ready)"
+          echo "Running smoke test against https://api.vaxaivision.com/health"
+          for i in 1 2 3; do
+            if curl -sf --max-time 10 "https://api.vaxaivision.com/health"; then
+              echo "Smoke test passed."
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Smoke test did not succeed — backend may still be starting up. Continuing."
+          exit 0

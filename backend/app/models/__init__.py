@@ -13,6 +13,12 @@ from app.models.ingestion import (
     IngestionSource,
     IngestionStatus,
 )
+from app.models.logistics import (
+    DisruptionScenarioORM,
+    LogisticsDagORM,
+    LogisticsEdgeORM,
+    LogisticsNodeORM,
+)
 from app.models.phi_audit import PhiAccessLog
 from app.models.scan_session import ScanDetection, ScanSession, SessionStatus
 from app.models.supply import (
@@ -57,4 +63,8 @@ __all__ = [
     "ScanSession",
     "ScanDetection",
     "SessionStatus",
+    "LogisticsDagORM",
+    "LogisticsNodeORM",
+    "LogisticsEdgeORM",
+    "DisruptionScenarioORM",
 ]

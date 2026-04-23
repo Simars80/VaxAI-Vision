@@ -40,13 +40,12 @@ const Mobile = ({ onClose, routes, pathname }: any) => {
           </Link>
         ))}
 
-        <a
-          href="https://forms.gle/kNV9xmjn97QmqD9o8"
-          target="_blank"
+        <Link
+          href="/waitlist"
           style={{ fontSize: "18px", fontWeight: 600, color: "white" }}
         >
           Join our waitlist
-        </a>
+        </Link>
       </Box>
 
       <Box>
@@ -63,7 +62,14 @@ const Mobile = ({ onClose, routes, pathname }: any) => {
             <FaFacebook color={"#fff"} size={20} />
             <FaTwitter color={"#fff"} size={20} />
             <FaYoutube color={"#fff"} size={20} />
-            <FaLinkedin color={"#fff"} size={20} />
+            <a
+              href="https://www.linkedin.com/company/vaxai-vision/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="VaxAI Vision on LinkedIn"
+            >
+              <FaLinkedin color={"#fff"} size={20} />
+            </a>
           </Box>
         </Center>
       </Box>

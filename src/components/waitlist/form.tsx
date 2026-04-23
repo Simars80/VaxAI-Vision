@@ -9,6 +9,7 @@ import {
   Grid,
   GridItem,
   Input,
+  Select,
   Textarea,
   Text,
   useToast,
@@ -16,52 +17,54 @@ import {
 import React, { useState } from "react";
 import { Formik, Form, FormikHelpers } from "formik";
 
-type ContactValues = {
-  first_name: string;
-  last_name: string;
+type WaitlistValues = {
+  full_name: string;
   email: string;
-  phone: string;
-  message: string;
+  organization: string;
+  role: string;
+  country: string;
+  use_case: string;
 };
 
 const ENDPOINT = process.env.NEXT_PUBLIC_FORMS_ENDPOINT ?? "";
 
-const ContactForm = () => {
+const WaitlistForm = () => {
   const toast = useToast();
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
     "idle"
   );
 
-  const initialValues: ContactValues = {
-    first_name: "",
-    last_name: "",
+  const initialValues: WaitlistValues = {
+    full_name: "",
     email: "",
-    phone: "",
-    message: "",
+    organization: "",
+    role: "",
+    country: "",
+    use_case: "",
   };
 
-  const validate = (values: ContactValues) => {
-    const errors: Partial<Record<keyof ContactValues, string>> = {};
-    if (!values.first_name.trim()) errors.first_name = "Required";
-    if (!values.last_name.trim()) errors.last_name = "Required";
+  const validate = (values: WaitlistValues) => {
+    const errors: Partial<Record<keyof WaitlistValues, string>> = {};
+    if (!values.full_name.trim()) errors.full_name = "Required";
     if (!values.email.trim()) {
       errors.email = "Required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
       errors.email = "Invalid email";
     }
-    if (!values.message.trim()) errors.message = "Required";
+    if (!values.organization.trim()) errors.organization = "Required";
+    if (!values.country.trim()) errors.country = "Required";
     return errors;
   };
 
   const handleSubmit = async (
-    values: ContactValues,
-    helpers: FormikHelpers<ContactValues>
+    values: WaitlistValues,
+    helpers: FormikHelpers<WaitlistValues>
   ) => {
     if (!ENDPOINT) {
       toast({
         title: "Form is not configured",
         description:
-          "Contact endpoint is missing. Please try again later or email partnerships@vaxaivision.com.",
+          "Waitlist endpoint is missing. Please try again later or email partnerships@vaxaivision.com.",
         status: "error",
         duration: 6000,
         isClosable: true,
@@ -73,23 +76,20 @@ const ContactForm = () => {
     try {
       await fetch(ENDPOINT, {
         method: "POST",
-        // Use text/plain so the browser doesn't send a CORS preflight to Apps Script.
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
-          type: "contact",
+          type: "waitlist",
           ...values,
           user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
           referrer: typeof document !== "undefined" ? document.referrer : "",
         }),
       });
-      // Apps Script Web Apps often return an opaque/redirected response that
-      // is not inspectable cross-origin. We treat the POST completing without
-      // throwing as success; the spreadsheet is the source of truth.
       setStatus("success");
       helpers.resetForm();
       toast({
-        title: "Thanks — your message was received.",
-        description: "We'll get back to you at the email you provided.",
+        title: "You're on the list.",
+        description:
+          "We'll reach out as we open pilot access in your region.",
         status: "success",
         duration: 6000,
         isClosable: true,
@@ -123,7 +123,7 @@ const ContactForm = () => {
               >
                 <GridItem>
                   <FormControl
-                    isInvalid={!!(errors.first_name && touched.first_name)}
+                    isInvalid={!!(errors.full_name && touched.full_name)}
                   >
                     <FormLabel
                       color="#222222"
@@ -131,40 +131,15 @@ const ContactForm = () => {
                       fontWeight={700}
                       mb="8px"
                     >
-                      First Name
+                      Full Name
                     </FormLabel>
                     <Input
                       borderRadius={"8px"}
                       bg="#F5F6FA"
                       border="none"
-                      name="first_name"
-                      value={values.first_name}
-                      placeholder="John"
-                      onChange={handleChange}
-                      focusBorderColor="#DA7000"
-                    />
-                  </FormControl>
-                </GridItem>
-
-                <GridItem>
-                  <FormControl
-                    isInvalid={!!(errors.last_name && touched.last_name)}
-                  >
-                    <FormLabel
-                      color="#222222"
-                      fontSize={"18px"}
-                      fontWeight={700}
-                      mb="8px"
-                    >
-                      Last Name
-                    </FormLabel>
-                    <Input
-                      borderRadius={"8px"}
-                      bg="#F5F6FA"
-                      border="none"
-                      name="last_name"
-                      value={values.last_name}
-                      placeholder="Samuel"
+                      name="full_name"
+                      value={values.full_name}
+                      placeholder="Jane Doe"
                       onChange={handleChange}
                       focusBorderColor="#DA7000"
                     />
@@ -179,7 +154,7 @@ const ContactForm = () => {
                       fontWeight={700}
                       mb="8px"
                     >
-                      Email Address
+                      Work Email
                     </FormLabel>
                     <Input
                       borderRadius={"8px"}
@@ -188,12 +163,38 @@ const ContactForm = () => {
                       border="none"
                       name="email"
                       value={values.email}
-                      placeholder="example@gmail.com"
+                      placeholder="jane@ministry.gov"
                       onChange={handleChange}
                       focusBorderColor="#DA7000"
                     />
                   </FormControl>
                 </GridItem>
+
+                <GridItem>
+                  <FormControl
+                    isInvalid={!!(errors.organization && touched.organization)}
+                  >
+                    <FormLabel
+                      color="#222222"
+                      fontSize={"18px"}
+                      fontWeight={700}
+                      mb="8px"
+                    >
+                      Organization
+                    </FormLabel>
+                    <Input
+                      borderRadius={"8px"}
+                      bg="#F5F6FA"
+                      border="none"
+                      name="organization"
+                      value={values.organization}
+                      placeholder="Ministry of Health / NGO / Clinic"
+                      onChange={handleChange}
+                      focusBorderColor="#DA7000"
+                    />
+                  </FormControl>
+                </GridItem>
+
                 <GridItem>
                   <FormControl>
                     <FormLabel
@@ -202,49 +203,86 @@ const ContactForm = () => {
                       fontWeight={700}
                       mb="8px"
                     >
-                      Phone Number
+                      Role
                     </FormLabel>
                     <Input
                       borderRadius={"8px"}
-                      type="tel"
                       bg="#F5F6FA"
                       border="none"
-                      name="phone"
-                      value={values.phone}
-                      placeholder="Phone Number"
+                      name="role"
+                      value={values.role}
+                      placeholder="e.g. Program Director"
                       onChange={handleChange}
                       focusBorderColor="#DA7000"
                     />
                   </FormControl>
                 </GridItem>
-              </Grid>
 
-              <FormControl isInvalid={!!(errors.message && touched.message)}>
-                <FormLabel
-                  color="#222222"
-                  fontSize={"18px"}
-                  fontWeight={700}
-                  mb="8px"
-                >
-                  Message
-                </FormLabel>
-                <Textarea
-                  borderRadius={"8px"}
-                  bg="#F5F6FA"
-                  border="none"
-                  name="message"
-                  value={values.message}
-                  placeholder="Type something here..."
-                  onChange={handleChange}
-                  focusBorderColor="#DA7000"
-                  rows={5}
-                />
-              </FormControl>
+                <GridItem>
+                  <FormControl
+                    isInvalid={!!(errors.country && touched.country)}
+                  >
+                    <FormLabel
+                      color="#222222"
+                      fontSize={"18px"}
+                      fontWeight={700}
+                      mb="8px"
+                    >
+                      Country
+                    </FormLabel>
+                    <Input
+                      borderRadius={"8px"}
+                      bg="#F5F6FA"
+                      border="none"
+                      name="country"
+                      value={values.country}
+                      placeholder="Nigeria"
+                      onChange={handleChange}
+                      focusBorderColor="#DA7000"
+                    />
+                  </FormControl>
+                </GridItem>
+
+                <GridItem>
+                  <FormControl>
+                    <FormLabel
+                      color="#222222"
+                      fontSize={"18px"}
+                      fontWeight={700}
+                      mb="8px"
+                    >
+                      I'm interested in
+                    </FormLabel>
+                    <Select
+                      borderRadius={"8px"}
+                      bg="#F5F6FA"
+                      border="none"
+                      name="use_case"
+                      value={values.use_case}
+                      onChange={handleChange}
+                      focusBorderColor="#DA7000"
+                      placeholder="Select one"
+                    >
+                      <option value="facility_pilot">
+                        Running a facility pilot
+                      </option>
+                      <option value="national_rollout">
+                        National / regional rollout
+                      </option>
+                      <option value="partnership">
+                        Partnership / integration
+                      </option>
+                      <option value="investor">Investor / funder</option>
+                      <option value="other">Other</option>
+                    </Select>
+                  </FormControl>
+                </GridItem>
+              </Grid>
             </Box>
 
             {status === "success" && (
               <Text color="#0A8A5F" mt="24px" fontWeight={600} textAlign="center">
-                Message received — we'll be in touch shortly.
+                You're on the list — we'll be in touch.
               </Text>
             )}
 
@@ -257,12 +295,12 @@ const ContactForm = () => {
                 color="#fff"
                 mt="40px"
                 isLoading={isSubmitting || status === "submitting"}
-                loadingText="Sending..."
+                loadingText="Submitting..."
                 _hover={{
                   opacity: 0.8,
                 }}
               >
-                Send
+                Join the Waitlist
               </Button>
             </Center>
           </Form>
@@ -272,4 +310,4 @@ const ContactForm = () => {
   );
 };
 
-export default ContactForm;
+export default WaitlistForm;

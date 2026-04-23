@@ -130,7 +130,7 @@ const Navbar = () => {
             </Box>
 
             <Box display={{ base: "none", md: "block" }}>
-              <a href="https://forms.gle/kNV9xmjn97QmqD9o8" target="_blank">
+              <Link href="/waitlist">
                 <Button
                   borderRadius={"10px"}
                   bg="#3A5BCC"
@@ -145,7 +145,7 @@ const Navbar = () => {
                 >
                   Join our waitlist
                 </Button>
-              </a>
+              </Link>
             </Box>
           </Box>
         </Container>

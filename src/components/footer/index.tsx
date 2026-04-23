@@ -44,23 +44,29 @@ const Footer = () => {
     },
   ];
 
-  const social = [
+  const social: { icon: React.ReactNode; link?: string; label: string }[] = [
     {
       icon: <FaFacebook color={"#fff"} />,
+      label: "Facebook",
     },
     {
       icon: <FaTwitter color={"#fff"} />,
+      label: "Twitter",
     },
     {
       icon: <FaYoutube color={"#fff"} />,
+      label: "YouTube",
     },
     {
       icon: <FaLinkedin color={"#fff"} />,
+      link: "https://www.linkedin.com/company/vaxai-vision/",
+      label: "LinkedIn",
     },
     {
       icon: <MdEmail color={"#fff"} />,
-      link: 'mailto:vaxai.vision@gmail.com'
-    }
+      link: "mailto:partnerships@vaxaivision.com",
+      label: "Email",
+    },
   ];
   return (
     <Box bg="#1A1A1A" py="17px" display={{ base: "none", md: "block" }} mt='365px'>
@@ -116,22 +122,40 @@ const Footer = () => {
               </Text>
 
               <Box display={"flex"} gap="13px" alignItems={"center"}>
-                {social.map((data, idx) => (
-                  <a href={data?.link} key={idx} target="_blank">
+                {social.map((data, idx) => {
+                  const iconBadge = (
                     <Box
-                    w="28px"
-                    h="28px"
-                    bg="#898989"
-                    borderRadius={"full"}
-                    display={"grid"}
-                    placeItems={"center"}
-               
-                  >
-                    {data.icon}
-                  </Box>
-                  </a>
-                  
-                ))}
+                      w="28px"
+                      h="28px"
+                      bg="#898989"
+                      borderRadius={"full"}
+                      display={"grid"}
+                      placeItems={"center"}
+                    >
+                      {data.icon}
+                    </Box>
+                  );
+                  if (!data.link) {
+                    return (
+                      <Box key={idx} aria-label={data.label}>
+                        {iconBadge}
+                      </Box>
+                    );
+                  }
+                  const isExternal = data.link.startsWith("http");
+                  return (
+                    <a
+                      key={idx}
+                      href={data.link}
+                      aria-label={data.label}
+                      {...(isExternal
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
+                    >
+                      {iconBadge}
+                    </a>
+                  );
+                })}
               </Box>
             </Box>
 

@@ -20,7 +20,7 @@ const ImpactCTA = () => {
             Vision to end vaccine stockouts across Africa.
           </Text>
           <Box display="flex" gap="16px" flexWrap="wrap" justifyContent="center">
-            <a href="mailto:vaxai.vision@gmail.com">
+            <a href="mailto:partnerships@vaxaivision.com">
               <Button
                 bg="#3A5BCC"
                 color="#fff"

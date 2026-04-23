@@ -55,6 +55,9 @@ onnxruntime>=1.16.0
 # Date arithmetic (also pulled in by pandas/prophet, listed explicitly for scripts)
 python-dateutil>=2.9.0
 
+# LLM / AI
+anthropic>=0.40.0
+
 # Dev / test
 pytest==8.3.3
 pytest-asyncio==0.24.0

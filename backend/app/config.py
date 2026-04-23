@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # LLM / Anthropic
+    ANTHROPIC_API_KEY: str = Field(default="")
+
     # CORS
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",

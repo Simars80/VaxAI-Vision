@@ -3,9 +3,6 @@ import React from "react";
 import close from "@/assets/close.png";
 import Image from "next/image";
 import Link from "next/link";
-import { FaFacebook } from "react-icons/fa";
-import { FaTwitter } from "react-icons/fa";
-import { FaYoutube } from "react-icons/fa";
 import { FaLinkedin } from "react-icons/fa6";
 
 const Mobile = ({ onClose, routes, pathname }: any) => {
@@ -59,9 +56,6 @@ const Mobile = ({ onClose, routes, pathname }: any) => {
         </Text>
         <Center>
           <Box display={"flex"} alignContent={"center"} gap="24px" mt="10px">
-            <FaFacebook color={"#fff"} size={20} />
-            <FaTwitter color={"#fff"} size={20} />
-            <FaYoutube color={"#fff"} size={20} />
             <a
               href="https://www.linkedin.com/company/vaxai-vision/"
               target="_blank"

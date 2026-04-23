@@ -126,7 +126,7 @@ to the right tab.
 
 ## Local development
 
-Copy `.env.local.example` to `.env.local` in `VaxAI Vision Dev/` and paste the
+Copy `.env.example` to `.env.local` in `VaxAI Vision Dev/` and paste the
 same `/exec` URL into `NEXT_PUBLIC_FORMS_ENDPOINT`. `next dev` will pick it up.
 Without the env var set, the form shows an inline "Form is not configured"
 toast instead of silently dropping submissions.

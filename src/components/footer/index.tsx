@@ -4,9 +4,6 @@ import { Box, Container, Text } from "@chakra-ui/react";
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaFacebook } from "react-icons/fa";
-import { FaTwitter } from "react-icons/fa";
-import { FaYoutube } from "react-icons/fa";
 import { FaLinkedin } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
 
@@ -44,19 +41,7 @@ const Footer = () => {
     },
   ];
 
-  const social: { icon: React.ReactNode; link?: string; label: string }[] = [
-    {
-      icon: <FaFacebook color={"#fff"} />,
-      label: "Facebook",
-    },
-    {
-      icon: <FaTwitter color={"#fff"} />,
-      label: "Twitter",
-    },
-    {
-      icon: <FaYoutube color={"#fff"} />,
-      label: "YouTube",
-    },
+  const social: { icon: React.ReactNode; link: string; label: string }[] = [
     {
       icon: <FaLinkedin color={"#fff"} />,
       link: "https://www.linkedin.com/company/vaxai-vision/",
@@ -123,25 +108,6 @@ const Footer = () => {
 
               <Box display={"flex"} gap="13px" alignItems={"center"}>
                 {social.map((data, idx) => {
-                  const iconBadge = (
-                    <Box
-                      w="28px"
-                      h="28px"
-                      bg="#898989"
-                      borderRadius={"full"}
-                      display={"grid"}
-                      placeItems={"center"}
-                    >
-                      {data.icon}
-                    </Box>
-                  );
-                  if (!data.link) {
-                    return (
-                      <Box key={idx} aria-label={data.label}>
-                        {iconBadge}
-                      </Box>
-                    );
-                  }
                   const isExternal = data.link.startsWith("http");
                   return (
                     <a
@@ -152,7 +118,16 @@ const Footer = () => {
                         ? { target: "_blank", rel: "noopener noreferrer" }
                         : {})}
                     >
-                      {iconBadge}
+                      <Box
+                        w="28px"
+                        h="28px"
+                        bg="#898989"
+                        borderRadius={"full"}
+                        display={"grid"}
+                        placeItems={"center"}
+                      >
+                        {data.icon}
+                      </Box>
                     </a>
                   );
                 })}

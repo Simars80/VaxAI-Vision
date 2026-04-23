@@ -1,8 +1,11 @@
-"""Route management API — DAG simulation and LLM narrative streaming.
+"""Route management API — DAG fetch, disruption simulation, and LLM narratives.
 
 Endpoints:
-  GET  /api/v1/routes/simulate/{scenario_id}/narrative/stream
-       Streams an LLM-generated disruption impact narrative via SSE.
+  GET  /api/v1/routes/dag/{country_code}                       — fetch active DAG
+  POST /api/v1/routes/simulate                                 — run disruption simulation
+  GET  /api/v1/routes/alternatives/{scenario_id}               — fetch ranked alternatives
+  POST /api/v1/routes/dag/{country_code}/rebuild               — trigger DAG rebuild (admin)
+  GET  /api/v1/routes/simulate/{scenario_id}/narrative/stream  — SSE LLM narrative
 """
 
 from __future__ import annotations
@@ -11,29 +14,24 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncGenerator
+from typing import Any, Generic, TypeVar
 
 import anthropic
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, text
+from pydantic import BaseModel
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
 from app.dependencies import get_current_active_user
 from app.models.logistics import (
-    DisruptionScenario,
     DisruptionScenarioORM,
-    LogisticsDAG,
-    LogisticsDagORM,
-    LogisticsEdge,
-    LogisticsEdgeORM,
-    LogisticsNode,
-    LogisticsNodeORM,
-    PropagationResult,
-    AlternativeRoute,
 )
-from app.models.user import User
+from app.models.user import User, UserRole
+from app.services import route_service
+from app.services.cascade_simulator import CascadeSimulator
 from app.services.route_llm import stream_route_narrative
 
 logger = logging.getLogger(__name__)
@@ -42,9 +40,54 @@ router = APIRouter(prefix="/routes", tags=["routes"])
 
 settings = get_settings()
 
+_simulator = CascadeSimulator()
 
 # ---------------------------------------------------------------------------
-# Internal helpers
+# Response envelope
+# ---------------------------------------------------------------------------
+
+T = TypeVar("T")
+
+
+class ApiResponse(BaseModel, Generic[T]):
+    """Standard ``{ data, error, meta }`` response envelope."""
+
+    data: T | None = None
+    error: str | None = None
+    meta: dict[str, Any] = {}
+
+
+# ---------------------------------------------------------------------------
+# Request schemas
+# ---------------------------------------------------------------------------
+
+
+class SimulateRequest(BaseModel):
+    """Request body for POST /api/v1/routes/simulate."""
+
+    dag_id: str
+    disrupted_node_ids: list[str] = []
+    disrupted_edge_ids: list[str] = []
+    label: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Authorization helper
+# ---------------------------------------------------------------------------
+
+
+def _require_admin(user: User) -> None:
+    """Raise 403 if the user does not have an admin-tier role."""
+    admin_roles = {UserRole.admin, UserRole.platform_admin, UserRole.national_admin}
+    if user.role not in admin_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required for this operation.",
+        )
+
+
+# ---------------------------------------------------------------------------
+# LLM client helper (used only by SSE narrative endpoint)
 # ---------------------------------------------------------------------------
 
 
@@ -58,127 +101,225 @@ def _build_anthropic_client() -> anthropic.AsyncAnthropic:
     return anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
 
-async def _load_scenario(
-    scenario_id: uuid.UUID, db: AsyncSession
-) -> DisruptionScenarioORM:
-    result = await db.execute(
-        select(DisruptionScenarioORM).where(DisruptionScenarioORM.id == scenario_id)
-    )
-    orm = result.scalar_one_or_none()
-    if orm is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Disruption scenario {scenario_id} not found.",
-        )
-    return orm
+# ---------------------------------------------------------------------------
+# Endpoint 1 — GET /dag/{country_code}
+# ---------------------------------------------------------------------------
 
 
-async def _load_dag(dag_id: uuid.UUID, db: AsyncSession) -> LogisticsDAG:
-    """Load a DAG and its nodes/edges from the database as a Pydantic model."""
-    dag_result = await db.execute(
-        select(LogisticsDagORM).where(LogisticsDagORM.id == dag_id)
-    )
-    dag_orm = dag_result.scalar_one_or_none()
-    if dag_orm is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Logistics DAG {dag_id} not found.",
-        )
+@router.get(
+    "/dag/{country_code}",
+    summary="Fetch active DAG for a country",
+    responses={
+        200: {"description": "Active logistics DAG"},
+        404: {"description": "No DAG found for this country"},
+    },
+)
+async def get_active_dag(
+    country_code: str,
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_active_user),
+) -> dict[str, Any]:
+    """Return the most recent active :class:`LogisticsDAG` for ``country_code``.
 
-    nodes_result = await db.execute(
-        select(LogisticsNodeORM).where(LogisticsNodeORM.dag_id == dag_id)
-    )
-    nodes_orm = nodes_result.scalars().all()
-
-    edges_result = await db.execute(
-        select(LogisticsEdgeORM).where(LogisticsEdgeORM.dag_id == dag_id)
-    )
-    edges_orm = edges_result.scalars().all()
-
-    nodes = [
-        LogisticsNode(
-            id=str(n.id),
-            dhis2_org_unit_id=n.dhis2_org_unit_id,
-            name=n.name,
-            level=n.level,  # type: ignore[arg-type]
-            lat=n.lat,
-            lng=n.lng,
-            population_served=n.population_served,
-            cold_chain_type=n.cold_chain_type,  # type: ignore[arg-type]
-            cold_chain_capacity_litres=n.cold_chain_capacity_litres,
-            is_active=n.is_active,
-            stockout_frequency=n.stockout_frequency,
-            country_code=n.country_code,
-        )
-        for n in nodes_orm
-    ]
-
-    edges = [
-        LogisticsEdge(
-            id=str(e.id),
-            source_node_id=str(e.source_node_id),
-            target_node_id=str(e.target_node_id),
-            distance_km=e.distance_km,
-            transit_time_hours=e.transit_time_hours,
-            cold_chain_capacity_litres=e.cold_chain_capacity_litres,
-            reliability_score=e.reliability_score,
-            cost_per_unit_usd=e.cost_per_unit_usd,
-            transport_mode=e.transport_mode,  # type: ignore[arg-type]
-            is_active=e.is_active,
-            country_code=e.country_code,
-        )
-        for e in edges_orm
-    ]
-
-    return LogisticsDAG(
-        id=str(dag_orm.id),
-        country_code=dag_orm.country_code,
-        nodes=nodes,
-        edges=edges,
-        generated_at=dag_orm.generated_at,
-        dhis2_data_source_id=str(dag_orm.dhis2_data_source_id),
-        version=dag_orm.version,
-    )
-
-
-def _orm_to_scenario(orm: DisruptionScenarioORM) -> DisruptionScenario:
-    return DisruptionScenario(
-        id=str(orm.id),
-        dag_id=str(orm.dag_id),
-        disrupted_node_ids=[str(n) for n in (orm.disrupted_node_ids or [])],
-        disrupted_edge_ids=[str(e) for e in (orm.disrupted_edge_ids or [])],
-        label=orm.label,
-        created_at=orm.created_at,
-    )
-
-
-def _orm_to_propagation_result(orm: DisruptionScenarioORM) -> PropagationResult:
-    """Deserialise the cached JSON propagation result from the ORM row."""
-    if not orm.propagation_result:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=(
-                "Propagation result not yet computed for this scenario. "
-                "Run simulation first."
-            ),
-        )
-    raw = orm.propagation_result
-    alternative_routes = [
-        AlternativeRoute(**alt) for alt in raw.get("alternative_routes", [])
-    ]
-    return PropagationResult(
-        scenario_id=raw["scenario_id"],
-        affected_node_ids=raw.get("affected_node_ids", []),
-        time_to_stockout_by_node=raw.get("time_to_stockout_by_node", {}),
-        population_impacted=raw.get("population_impacted", 0),
-        antigen_coverage_delta=raw.get("antigen_coverage_delta", 0.0),
-        alternative_routes=alternative_routes,
-        computed_at=raw["computed_at"],
-    )
+    The response includes the full node and edge lists.  For large DAGs
+    (> 400 nodes) consider the ``include_edges`` query param to reduce payload.
+    """
+    dag = await route_service.get_active_dag(country_code.upper(), db)
+    return {
+        "data": dag.model_dump(mode="json"),
+        "error": None,
+        "meta": {
+            "country_code": dag.country_code,
+            "version": dag.version,
+            "node_count": len(dag.nodes),
+            "edge_count": len(dag.edges),
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
-# SSE event generator
+# Endpoint 2 — POST /simulate
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/simulate",
+    summary="Run a disruption simulation",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        201: {"description": "Simulation complete — propagation result returned"},
+        404: {"description": "DAG not found"},
+    },
+)
+async def simulate_disruption(
+    body: SimulateRequest,
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_active_user),
+) -> dict[str, Any]:
+    """Run the cascade failure simulator for the given disruption scenario.
+
+    Creates a persisted :class:`DisruptionScenario` and returns the computed
+    :class:`PropagationResult`.  The result is cached on the scenario row so
+    that the SSE narrative and alternatives endpoints can read it without
+    re-running the simulation.
+    """
+    try:
+        dag_uuid = uuid.UUID(body.dag_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid dag_id: {body.dag_id!r}",
+        )
+
+    dag = await route_service.get_dag_by_id(dag_uuid, db)
+
+    # Persist the scenario (without result yet)
+    scenario_orm = await route_service.create_scenario(
+        dag_id=dag_uuid,
+        disrupted_node_ids=body.disrupted_node_ids,
+        disrupted_edge_ids=body.disrupted_edge_ids,
+        db=db,
+        label=body.label,
+    )
+    scenario = route_service.orm_to_scenario(scenario_orm)
+
+    # Run simulation (pure, in-memory — < 2 s for ~400-node graph)
+    result = _simulator.simulate(dag, scenario)
+
+    # Cache result on the scenario row, then commit both
+    await route_service.save_propagation_result(scenario_orm, result, db)
+    await db.commit()
+
+    logger.info(
+        "Simulation complete: scenario=%s affected=%d",
+        scenario.id,
+        len(result.affected_node_ids),
+    )
+
+    return {
+        "data": {
+            "scenario_id": scenario.id,
+            "propagation": result.model_dump(mode="json"),
+        },
+        "error": None,
+        "meta": {
+            "dag_id": body.dag_id,
+            "affected_count": len(result.affected_node_ids),
+            "population_impacted": result.population_impacted,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 3 — GET /alternatives/{scenario_id}
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/alternatives/{scenario_id}",
+    summary="Fetch ranked alternative routes for a scenario",
+    responses={
+        200: {"description": "Ranked list of alternative routes"},
+        404: {"description": "Scenario not found"},
+        422: {"description": "Propagation result not yet computed"},
+    },
+)
+async def get_alternatives(
+    scenario_id: uuid.UUID,
+    limit: int = Query(default=10, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_active_user),
+) -> dict[str, Any]:
+    """Return ranked alternative routing options from a computed scenario.
+
+    Alternatives are ranked by ``feasibility_score`` (descending), then by
+    ``additional_transit_hours`` (ascending).  Supports ``limit``/``offset``
+    pagination.
+    """
+    scenario_orm = await route_service.get_scenario(scenario_id, db)
+    propagation = route_service.orm_to_propagation_result(scenario_orm)
+
+    all_alternatives = propagation.alternative_routes
+    page = all_alternatives[offset : offset + limit]
+
+    return {
+        "data": [alt.model_dump(mode="json") for alt in page],
+        "error": None,
+        "meta": {
+            "scenario_id": str(scenario_id),
+            "total": len(all_alternatives),
+            "limit": limit,
+            "offset": offset,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 4 — POST /dag/{country_code}/rebuild (admin only)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/dag/{country_code}/rebuild",
+    summary="Trigger DAG rebuild from DHIS2 (admin)",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        202: {"description": "DAG rebuild initiated — new DAG record created"},
+        403: {"description": "Admin role required"},
+        404: {"description": "No DHIS2 data source configured for this country"},
+    },
+)
+async def rebuild_dag(
+    country_code: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> dict[str, Any]:
+    """Retire the current DAG and rebuild it from DHIS2 org unit hierarchy.
+
+    Requires admin role (``platform_admin``, ``admin``, or ``national_admin``).
+
+    In Phase 2A the rebuild creates a new versioned DAG record but does not
+    re-fetch from DHIS2 inline (DHIS2 sync is handled by a background Celery
+    task).  Returns the new DAG id and version immediately.
+
+    Phase 2B will trigger the full DHIS2 fetch synchronously or enqueue a
+    Celery job and return a task id.
+    """
+    _require_admin(current_user)
+
+    # Use a placeholder data_source_id for Phase 2A
+    # In Phase 2B this will be fetched from ExternalDataSource table
+    data_source_id = f"dhis2-{country_code.lower()}"
+
+    new_dag = await route_service.rebuild_dag(
+        country_code=country_code.upper(),
+        data_source_id=data_source_id,
+        db=db,
+    )
+    await db.commit()
+
+    logger.info(
+        "DAG rebuild complete: country=%s dag_id=%s version=%d",
+        country_code,
+        new_dag.id,
+        new_dag.version,
+    )
+
+    return {
+        "data": {
+            "dag_id": new_dag.id,
+            "country_code": new_dag.country_code,
+            "version": new_dag.version,
+            "generated_at": new_dag.generated_at.isoformat(),
+        },
+        "error": None,
+        "meta": {"status": "rebuilt"},
+    }
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 5 (pre-existing) — SSE narrative stream
 # ---------------------------------------------------------------------------
 
 
@@ -187,10 +328,10 @@ async def _sse_narrative_generator(
     db: AsyncSession,
 ) -> AsyncGenerator[str, None]:
     """Generate SSE events for the narrative stream, then cache the result."""
-    scenario_orm = await _load_scenario(scenario_id, db)
-    scenario = _orm_to_scenario(scenario_orm)
-    propagation = _orm_to_propagation_result(scenario_orm)
-    dag = await _load_dag(uuid.UUID(scenario.dag_id), db)
+    scenario_orm = await route_service.get_scenario(scenario_id, db)
+    scenario = route_service.orm_to_scenario(scenario_orm)
+    propagation = route_service.orm_to_propagation_result(scenario_orm)
+    dag = await route_service.get_dag_by_id(uuid.UUID(scenario.dag_id), db)
     client = _build_anthropic_client()
 
     accumulated: list[str] = []
@@ -230,11 +371,6 @@ async def _sse_narrative_generator(
         yield "data: [DONE]\n\n"
 
 
-# ---------------------------------------------------------------------------
-# Endpoint
-# ---------------------------------------------------------------------------
-
-
 @router.get(
     "/simulate/{scenario_id}/narrative/stream",
     summary="Stream disruption impact narrative (SSE)",
@@ -255,8 +391,8 @@ async def stream_scenario_narrative(
 
     The endpoint yields SSE events in the format::
 
-        data: {"token": "…"}\n\n
-        data: [DONE]\n\n
+        data: {"token": "…"}\\n\\n
+        data: [DONE]\\n\\n
 
     After the stream completes the full narrative is stored in
     ``disruption_scenarios.narrative`` for subsequent retrieval.

@@ -276,6 +276,44 @@ const MOCK_DHIS2_STATUS = {
   org_units_mapped: 48,
 };
 
+// ── Logistics DAG ───────────────────────────────────────────────────────────
+
+const MOCK_LOGISTICS_DAG = {
+  countryCode: "NG",
+  nodes: [
+    { id: "n-national", name: "Abuja National Store", level: "national", lat: 9.07, lng: 7.4, population: 200_000_000, coverageRate: 78 },
+    { id: "n-north", name: "Kano Regional Hub", level: "regional", lat: 12.0, lng: 8.52, population: 15_000_000, coverageRate: 71 },
+    { id: "n-south", name: "Lagos Regional Hub", level: "regional", lat: 6.52, lng: 3.38, population: 22_000_000, coverageRate: 84 },
+    { id: "n-east", name: "Enugu Regional Hub", level: "regional", lat: 6.44, lng: 7.49, population: 8_000_000, coverageRate: 75 },
+    { id: "n-kano-dist", name: "Kano District 1", level: "district", lat: 11.8, lng: 8.3, population: 2_400_000, coverageRate: 68 },
+    { id: "n-lagos-dist", name: "Lagos Island District", level: "district", lat: 6.45, lng: 3.42, population: 3_100_000, coverageRate: 87 },
+    { id: "n-fac1", name: "Ungogo Health Facility", level: "facility", lat: 12.05, lng: 8.41, population: 45_000, coverageRate: 62 },
+    { id: "n-fac2", name: "Ikorodu Clinic", level: "facility", lat: 6.62, lng: 3.51, population: 80_000, coverageRate: 89 },
+  ],
+  edges: [
+    { id: "e1", source: "n-national", target: "n-north", transitHours: 6, disrupted: false, alternative: false },
+    { id: "e2", source: "n-national", target: "n-south", transitHours: 4, disrupted: false, alternative: false },
+    { id: "e3", source: "n-national", target: "n-east", transitHours: 5, disrupted: false, alternative: false },
+    { id: "e4", source: "n-north", target: "n-kano-dist", transitHours: 2, disrupted: false, alternative: false },
+    { id: "e5", source: "n-south", target: "n-lagos-dist", transitHours: 1, disrupted: false, alternative: false },
+    { id: "e6", source: "n-kano-dist", target: "n-fac1", transitHours: 1, disrupted: false, alternative: false },
+    { id: "e7", source: "n-lagos-dist", target: "n-fac2", transitHours: 1, disrupted: false, alternative: false },
+  ],
+};
+
+const MOCK_SIMULATION_RESULT = {
+  simulationId: "sim-demo-001",
+  affectedNodes: [
+    { nodeId: "n-kano-dist", populationImpacted: 2_400_000, coverageDelta: -8.5 },
+    { nodeId: "n-fac1", populationImpacted: 45_000, coverageDelta: -12.3 },
+  ],
+  alternativeRoutes: [
+    { edgeId: "e-alt1", source: "n-national", target: "n-kano-dist", transitHours: 9 },
+  ],
+  totalPopulationImpacted: 2_445_000,
+  totalCoverageDelta: -9.2,
+};
+
 // ── Main Router ──────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -368,6 +406,16 @@ export function getMockResponse(url: string, _params?: any): any {
   // DHIS2 config status
   if (url.includes("/dhis2/status") || url.includes("/dhis2/config")) {
     return MOCK_DHIS2_STATUS;
+  }
+
+  // Logistics DAG
+  if (url.match(/\/routes\/dag\//)) {
+    return MOCK_LOGISTICS_DAG;
+  }
+
+  // Logistics simulation
+  if (url.includes("/routes/simulate")) {
+    return MOCK_SIMULATION_RESULT;
   }
 
   // Vision endpoints

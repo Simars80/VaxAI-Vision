@@ -1,191 +1,227 @@
 "use client";
 
-import Layout from "@/components/layout";
-import {
-  Box,
-  Center,
-  Container,
-  Grid,
-  GridItem,
-  Text,
-  Button,
-} from "@chakra-ui/react";
 import React from "react";
+import { Box, Container, Flex, Grid, GridItem, Text } from "@chakra-ui/react";
 import Link from "next/link";
+import Layout from "@/components/layout";
 import { Slide } from "react-awesome-reveal";
+import PageHero from "@/components/_shared/PageHero";
+import TrustStrip from "@/components/home/trustStrip";
+import CtaBand from "@/components/home/ctaBand";
+import { tokens } from "@/components/home/_tokens";
+import { Eyebrow } from "@/components/home/_atoms";
 
-/* Consolidated solution cards — same as homepage, with extended descriptions */
+/* Same content as before, plus two extra surfaces (ingestion, reports). */
 const allSolutions = [
   {
-    title: "Real-Time Inventory Dashboard",
-    emoji: "📦",
-    short:
-      "Monitor stock levels across every facility — colour-coded as adequate, low, or critical.",
+    n: "01",
+    title: "Real-time inventory dashboard",
+    short: "Live stock levels across every facility — adequate, low, critical.",
     description:
       "Track vaccine inventory in real time across hundreds of facilities. Filter by vaccine type, country, or facility to spot shortfalls before they become stockouts. Colour-coded status indicators (adequate, low, critical) make it easy to prioritise action at a glance.",
     href: "/demo",
+    slug: "Real-Time-Stock-Verification",
+    stat: "1,240 facilities online",
   },
   {
-    title: "AI-Powered Forecasting",
-    emoji: "📊",
-    short:
-      "Predict demand surges, flag expiring stock, and model what-if scenarios.",
+    n: "02",
+    title: "AI-powered forecasting",
+    short: "Prophet + LightGBM ensemble per facility.",
     description:
       "Machine-learning models trained on historical consumption data forecast future demand with confidence intervals. Run what-if scenarios for outbreak response, flag stock nearing expiry, and generate optimised replenishment orders — reducing waste and preventing shortages.",
     href: "/demo?tab=forecasting",
+    slug: "Data-Driven-Analytics",
+    stat: "12-week horizon · 80% CI",
   },
   {
-    title: "Cold Chain Monitor",
-    emoji: "❄️",
-    short:
-      "Live temperature readings with configurable alert thresholds and trend charts.",
+    n: "03",
+    title: "Cold chain monitor",
+    short: "Live temperature telemetry with breach timelines.",
     description:
       "IoT-connected sensors stream temperature data from cold storage units in real time. Set per-facility alert thresholds, view breach event timelines, and track min/max temperature trends over configurable periods. Keep every vial safe from factory to clinic.",
     href: "/demo",
+    slug: "Integrated-Equipment-Monitoring",
+    stat: "98.7% chain uptime",
   },
   {
-    title: "Geospatial Coverage Map",
-    emoji: "🗺️",
-    short:
-      "Interactive map showing immunisation coverage rates and stock status per facility.",
+    n: "04",
+    title: "Geospatial coverage map",
+    short: "Coverage rates and stock status per facility.",
     description:
       "An interactive Leaflet map plots every facility from Kano to Kisumu. Zoom, pan, and filter by country, vaccine type, or time period to see coverage rates, stock status, and population density overlaid on a single view — making geographic gaps immediately visible.",
-    href: "/demo",
+    href: "/impact",
+    slug: "Real-Time-Data-Access-and-Sharing",
+    stat: "11 country programmes",
   },
   {
-    title: "AR Stock Counter",
-    emoji: "📷",
-    short:
-      "Point your camera at vaccine shelves and let AI count and classify items in real time.",
+    n: "05",
+    title: "AR stock counter",
+    short: "YOLOv8 + ByteTrack counts vials in real time.",
     description:
       "Our augmented-reality scanner uses a YOLOv8 model to detect, classify, and count vaccine products directly from your device camera. Compare AR-scanned counts against system inventory for instant reconciliation — no manual tallying required.",
     href: "/demo?tab=ar-scanner",
+    slug: "Real-Time-Stock-Verification",
+    stat: "<100 ms inference",
   },
   {
-    title: "Computer Vision Analytics",
-    emoji: "🤖",
-    short:
-      "AI models detect, classify, and count stock — powering AR scans and batch image analysis.",
+    n: "06",
+    title: "Computer vision analytics",
+    short: "VVM classifier + batch image audits.",
     description:
       "Purpose-built vision models trained on vaccine packaging power both the live AR scanner and batch image analysis for large-scale audits. Track model performance metrics, manage training runs, and monitor detection accuracy across different product types.",
     href: "/demo?tab=vision",
+    slug: "Enhanced-Safety-and-Compliance",
+    stat: "4-stage VVM classification",
   },
   {
-    title: "Data Ingestion Pipeline",
-    emoji: "📤",
-    short:
-      "Import facility data from CSV, Excel, DHIS2, OpenLMIS, or mSupply.",
+    n: "07",
+    title: "Data ingestion pipeline",
+    short: "CSV, Excel, DHIS2, mSupply, OpenLMIS, FHIR.",
     description:
       "Upload inventory snapshots, cold chain readings, or coverage data via CSV/Excel, or connect directly to national health information systems like DHIS2, OpenLMIS, and mSupply. Track ingestion jobs with row-level success/failure reporting.",
     href: "/demo",
+    slug: "Operational-Efficiency-and-Waste-Reduction",
+    stat: "Bi-directional sync",
   },
   {
-    title: "Impact Reports",
-    emoji: "📈",
-    short:
-      "Generate donor-ready reports on coverage improvements and waste reduction.",
+    n: "08",
+    title: "Impact reports",
+    short: "Donor-ready KPI exports.",
     description:
       "Automatically compile key performance indicators — doses administered, coverage rate changes, waste reduction, cold chain uptime — into structured reports suitable for government reviews, donor reporting, and internal performance tracking.",
-    href: "/demo",
+    href: "/impact",
+    slug: "Scalability-and-Adaptability",
+    stat: "Quarterly + ad-hoc",
   },
 ];
 
 const SolutionsPage = () => {
   return (
     <Layout>
-      {/* Page header */}
-      <Box bg="#FBFBFB" py={{ base: "37px", md: "55px" }}>
-        <Container maxW="container.xl">
-          <Center flexDir="column">
-            <Text
-              fontSize={{ base: "20px", md: "42px" }}
-              fontWeight={700}
-              textAlign="center"
-              color="#1A1A1A"
-            >
-              Our Solutions
+      <PageHero
+        eyebrow="The platform"
+        title={
+          <>
+            Eight surfaces, one calm interface.
+          </>
+        }
+        sub="An end-to-end platform for vaccine supply chain intelligence — from cold storage to last-mile delivery. Adopt the surfaces you need; your existing LMIS keeps working underneath."
+      />
+
+      <TrustStrip />
+
+      <Box bg={tokens.bg} py={{ base: "48px", md: "80px" }}>
+        <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
+          <Box borderTop={`1px solid ${tokens.rule}`}>
+            <Slide direction="up" damping={0.06} cascade triggerOnce>
+              <Grid
+                templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                gap="0"
+              >
+                {allSolutions.map((c, i) => (
+                  <GridItem
+                    key={c.n}
+                    bg="#fff"
+                    padding="36px 32px"
+                    borderRight={{
+                      base: "none",
+                      md: i % 2 === 1 ? "none" : `1px solid ${tokens.rule}`,
+                      lg: i % 3 === 2 ? "none" : `1px solid ${tokens.rule}`,
+                    }}
+                    borderBottom={`1px solid ${tokens.rule}`}
+                    display="flex"
+                    flexDir="column"
+                    _hover={{ bg: "#fafbfd" }}
+                    transition="background 0.2s ease"
+                  >
+                    <Flex justifyContent="space-between" alignItems="baseline" mb="20px">
+                      <Text
+                        className="vax-mono"
+                        fontSize="11px"
+                        color={tokens.brand}
+                        letterSpacing="0.14em"
+                      >
+                        {c.n}
+                      </Text>
+                      <Text
+                        className="vax-mono"
+                        fontSize="10px"
+                        color={tokens.muted}
+                        letterSpacing="0.12em"
+                        textTransform="uppercase"
+                      >
+                        {c.stat}
+                      </Text>
+                    </Flex>
+                    <Text
+                      fontWeight={600}
+                      fontSize="22px"
+                      letterSpacing="-0.015em"
+                      mb="10px"
+                    >
+                      {c.title}
+                    </Text>
+                    <Text fontSize="14px" lineHeight="1.65" color={tokens.muted} mb="20px" flex="1">
+                      {c.description}
+                    </Text>
+                    <Flex gap="20px" alignItems="center">
+                      <Link href={c.href} className="vax-link" style={{ fontSize: 13, fontWeight: 500 }}>
+                        Try it live →
+                      </Link>
+                      <Link
+                        href={`/solutions/${c.slug}`}
+                        style={{ fontSize: 13, fontWeight: 500, color: tokens.muted }}
+                      >
+                        Deep-dive
+                      </Link>
+                    </Flex>
+                  </GridItem>
+                ))}
+              </Grid>
+            </Slide>
+          </Box>
+
+          <Box mt="48px" padding="28px 32px" border={`1px solid ${tokens.rule}`} borderRadius="10px"
+               bg="#fafbfd" textAlign="center">
+            <Eyebrow>Want to see them in one session?</Eyebrow>
+            <Text mt="14px" fontSize={{ base: "20px", md: "26px" }} fontWeight={600} letterSpacing="-0.015em">
+              Walk through the platform end-to-end in our 90-second live demo.
             </Text>
-            <Text
-              textAlign="center"
-              mt="12px"
-              color="#667085"
-              fontSize={{ base: "14px", md: "16px" }}
-              maxW="640px"
-            >
-              An end-to-end platform for vaccine supply chain intelligence — from
-              cold storage to last-mile delivery.
-            </Text>
-          </Center>
+            <Box mt="20px" display="inline-flex" gap="12px" flexWrap="wrap" justifyContent="center">
+              <Link
+                href="/demo"
+                style={{
+                  background: tokens.brand,
+                  color: "#fff",
+                  padding: "14px 24px",
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  boxShadow: "0 4px 14px rgba(58,91,204,0.22)",
+                }}
+              >
+                ▶ Launch live demo
+              </Link>
+              <Link
+                href="/contact"
+                style={{
+                  border: `1px solid ${tokens.rule}`,
+                  color: tokens.ink,
+                  padding: "14px 24px",
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  background: "#fff",
+                }}
+              >
+                Talk to us
+              </Link>
+            </Box>
+          </Box>
         </Container>
       </Box>
 
-      {/* Solution cards */}
-      <Box mt={{ base: "32px", md: "64px" }} mb={{ base: "40px", md: "100px" }}>
-        <Container maxW="container.xl">
-          <Grid
-            templateColumns={{ base: "1fr", md: "repeat(2,1fr)", lg: "repeat(3,1fr)" }}
-            gap={{ base: "20px", md: "28px" }}
-          >
-            <Slide direction="up" damping={0.1} cascade triggerOnce>
-              {allSolutions.map((sol, idx) => (
-                <GridItem key={idx}>
-                  <Box
-                    p="28px"
-                    borderRadius="12px"
-                    border="1px solid #DEE5ED"
-                    bg="#fff"
-                    h="full"
-                    display="flex"
-                    flexDir="column"
-                    transition="all 0.2s"
-                    _hover={{
-                      borderColor: "#3A5BCC",
-                      boxShadow: "0 4px 20px rgba(58,91,204,0.08)",
-                      transform: "translateY(-2px)",
-                    }}
-                  >
-                    <Text fontSize="40px" mb="4px">
-                      {sol.emoji}
-                    </Text>
-                    <Text
-                      mt="12px"
-                      mb="10px"
-                      color="#1A1A1A"
-                      fontSize="18px"
-                      fontWeight={700}
-                    >
-                      {sol.title}
-                    </Text>
-                    <Text
-                      color="#667085"
-                      fontSize="14px"
-                      fontWeight={400}
-                      lineHeight={1.7}
-                      flex="1"
-                    >
-                      {sol.description}
-                    </Text>
-                    <Link href={sol.href}>
-                      <Button
-                        bg="#3A5BCC"
-                        h="46px"
-                        borderRadius="10px"
-                        mt="24px"
-                        color="#fff"
-                        fontSize="14px"
-                        fontWeight={500}
-                        _hover={{ opacity: 0.85 }}
-                      >
-                        Try it Live →
-                      </Button>
-                    </Link>
-                  </Box>
-                </GridItem>
-              ))}
-            </Slide>
-          </Grid>
-        </Container>
-      </Box>
+      <CtaBand />
     </Layout>
   );
 };

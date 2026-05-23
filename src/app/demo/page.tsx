@@ -10,20 +10,41 @@ import {
 } from "./vision/stock-count/lib/session-store";
 import type { StockSession } from "./vision/stock-count/lib/types";
 
+/* --------------------------------------------------------------------------
+   Local tokens — duplicated minimally here so the demo page can render
+   without pulling in @chakra-ui/react (this route uses inline styles only,
+   matching the existing pattern in the codebase).
+-------------------------------------------------------------------------- */
+const T = {
+  bg: "#0e1116",
+  panel: "#11161b",
+  rule: "rgba(255,255,255,0.10)",
+  ruleSoft: "rgba(255,255,255,0.06)",
+  ink: "#ffffff",
+  muted: "rgba(255,255,255,0.55)",
+  brand: "#3A5BCC",
+  brandBright: "#7a8fff",
+  ok: "#3a8e54",
+  watch: "#c89b2a",
+  alert: "#c1392b",
+  mono:
+    '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+  sans: '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif',
+};
+
 const DEMO_BASE = "https://app.vaxaivision.com";
 const DEMO_URL = `${DEMO_BASE}?demo=true`;
-const TOPBAR_HEIGHT = 44;
+const TOPBAR_HEIGHT = 48;
 
 type TabId = "dashboard" | "forecasting" | "vision" | "ar-scanner";
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Dashboard", icon: "📊" },
-  { id: "forecasting", label: "Forecasting", icon: "📈" },
-  { id: "vision", label: "Vision AI", icon: "🤖" },
-  { id: "ar-scanner", label: "AR Scanner", icon: "📷" },
+const TABS: { id: TabId; label: string }[] = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "forecasting", label: "Forecasting" },
+  { id: "vision", label: "Vision AI" },
+  { id: "ar-scanner", label: "AR Scanner" },
 ];
 
-/* Map tabs to iframe URLs — dashboard tabs load inside the iframe, AR Scanner is inline */
 const TAB_IFRAME_URLS: Partial<Record<TabId, string>> = {
   dashboard: DEMO_URL,
   forecasting: `${DEMO_BASE}/forecast?demo=true&embed=true`,
@@ -32,37 +53,37 @@ const TAB_IFRAME_URLS: Partial<Record<TabId, string>> = {
 
 export default function DemoPage() {
   return (
-    <Suspense fallback={<div style={{ height: "100vh", background: "#0a1628" }} />}>
+    <Suspense fallback={<div style={{ height: "100vh", background: T.bg }} />}>
       <DemoPageInner />
     </Suspense>
   );
 }
 
-/* ── Status badge (reused from stock-count page) ── */
+/* ── Status badge for AR sessions ── */
 function StatusBadge({ status }: { status: StockSession["status"] }) {
-  const map: Record<
-    StockSession["status"],
-    { bg: string; border: string; color: string; label: string }
-  > = {
-    active: { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.3)", color: "#10b981", label: "Active" },
-    paused: { bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.3)", color: "#f59e0b", label: "Paused" },
-    submitted: { bg: "rgba(99,102,241,0.15)", border: "rgba(99,102,241,0.3)", color: "#6366f1", label: "Submitted" },
-    draft: { bg: "rgba(107,114,128,0.15)", border: "rgba(107,114,128,0.3)", color: "#6b7280", label: "Draft" },
+  const map: Record<StockSession["status"], { color: string; label: string }> = {
+    active: { color: T.ok, label: "Active" },
+    paused: { color: T.watch, label: "Paused" },
+    submitted: { color: T.brand, label: "Submitted" },
+    draft: { color: T.muted, label: "Draft" },
   };
   const s = map[status];
   return (
     <span
       style={{
-        background: s.bg,
-        border: `1px solid ${s.border}`,
+        background: `${s.color}1f`,
+        border: `1px solid ${s.color}55`,
         color: s.color,
         fontSize: 10,
-        fontWeight: 700,
+        fontWeight: 600,
         padding: "2px 8px",
         borderRadius: 99,
+        fontFamily: T.mono,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
       }}
     >
-      {s.label}
+      ● {s.label}
     </span>
   );
 }
@@ -72,27 +93,22 @@ function DemoPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  /* Tab state — initialise from ?tab= query param */
   const tabParam = searchParams.get("tab") as TabId | null;
   const validTabs: TabId[] = ["dashboard", "forecasting", "vision", "ar-scanner"];
   const initialTab: TabId = tabParam && validTabs.includes(tabParam) ? tabParam : "dashboard";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
-  /* Dashboard iframe state */
   const [loaded, setLoaded] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  /* AR Stock Counter state */
   const [sessions, setSessions] = useState<StockSession[]>([]);
   const [arReady, setArReady] = useState(false);
 
-  /* Fallback: if iframe onLoad doesn't fire within 5s, show it anyway */
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 5000);
     return () => clearTimeout(timer);
   }, []);
 
-  /* Seed demo sessions when AR tab is first shown */
   useEffect(() => {
     if (activeTab === "ar-scanner" && !arReady) {
       seedDemoSessions();
@@ -101,7 +117,6 @@ function DemoPageInner() {
     }
   }, [activeTab, arReady]);
 
-  /* Track iframe URL per tab so switching back doesn't reload */
   const [iframeSrc, setIframeSrc] = useState<string>(
     TAB_IFRAME_URLS[initialTab] ?? DEMO_URL,
   );
@@ -109,12 +124,10 @@ function DemoPageInner() {
   const handleTabChange = useCallback(
     (tab: TabId) => {
       setActiveTab(tab);
-      /* Update iframe src if this is an iframe-based tab */
       if (TAB_IFRAME_URLS[tab]) {
         setIframeSrc(TAB_IFRAME_URLS[tab]!);
-        setLoaded(false); // show loader while new route loads
+        setLoaded(false);
       }
-      /* Update URL without a full navigation so bookmarkability is preserved */
       const url = tab === "dashboard" ? "/demo" : `/demo?tab=${tab}`;
       router.replace(url, { scroll: false });
     },
@@ -127,8 +140,16 @@ function DemoPageInner() {
   };
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0a1628" }}>
-      {/* ───────── Browser chrome top bar ───────── */}
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: T.bg,
+        fontFamily: T.sans,
+      }}
+    >
+      {/* ───────── Top chrome ───────── */}
       <div
         style={{
           height: TOPBAR_HEIGHT,
@@ -137,27 +158,56 @@ function DemoPageInner() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0 16px",
-          background: "linear-gradient(180deg, #1a2236 0%, #151d2e 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: T.bg,
+          borderBottom: `1px solid ${T.rule}`,
+          gap: 16,
         }}
       >
-        {/* Traffic lights */}
-        <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#EF4444", opacity: 0.8 }} />
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#F59E0B", opacity: 0.8 }} />
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#22C55E", opacity: 0.8 }} />
+        {/* Brand mark */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <div
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 3,
+              background: T.brand,
+              position: "relative",
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: T.ink,
+              letterSpacing: "-0.01em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            VaxAI Vision
+          </span>
+          <span
+            style={{
+              fontFamily: T.mono,
+              fontSize: 10,
+              color: T.muted,
+              letterSpacing: "0.08em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            / demo
+          </span>
         </div>
 
-        {/* Tab switcher — sits where the URL bar used to be */}
+        {/* Tab switcher */}
         <div
           style={{
             flex: 1,
-            maxWidth: 520,
-            margin: "0 16px",
-            height: 30,
-            borderRadius: 8,
+            maxWidth: 540,
+            height: 32,
+            borderRadius: 6,
             background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            border: `1px solid ${T.ruleSoft}`,
             display: "flex",
             alignItems: "center",
             padding: 2,
@@ -173,84 +223,63 @@ function DemoPageInner() {
                 style={{
                   flex: 1,
                   height: "100%",
-                  borderRadius: 6,
+                  borderRadius: 4,
                   border: "none",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 5,
                   fontSize: 12,
-                  fontWeight: isActive ? 600 : 400,
+                  fontWeight: isActive ? 600 : 500,
                   letterSpacing: "0.01em",
-                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+                  fontFamily: T.mono,
                   transition: "all 0.15s ease",
-                  background: isActive
-                    ? "rgba(37,99,235,0.2)"
-                    : "transparent",
-                  color: isActive
-                    ? "#60A5FA"
-                    : "rgba(255,255,255,0.35)",
-                  ...(isActive
-                    ? { boxShadow: "0 0 0 1px rgba(37,99,235,0.3)" }
-                    : {}),
+                  background: isActive ? T.brand : "transparent",
+                  color: isActive ? "#fff" : T.muted,
+                  textTransform: "uppercase",
                 }}
               >
-                <span style={{ fontSize: 11 }}>{tab.icon}</span>
                 {tab.label}
               </button>
             );
           })}
         </div>
 
-        {/* Right side: LIVE DEMO badge + Exit Demo link */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {/* Right cluster */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
           <span
             style={{
-              padding: "2px 8px",
-              borderRadius: 99,
-              background: "rgba(16,185,129,0.15)",
-              border: "1px solid rgba(16,185,129,0.3)",
-              color: "#10b981",
+              padding: "3px 10px",
+              borderRadius: 4,
+              border: `1px solid ${T.ok}66`,
+              color: T.ok,
               fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.05em",
+              fontWeight: 600,
+              fontFamily: T.mono,
+              letterSpacing: "0.12em",
             }}
           >
-            LIVE DEMO
+            ● LIVE DEMO
           </span>
           <Link
             href="/"
             style={{
-              height: 28,
-              padding: "0 12px",
-              borderRadius: 6,
-              background: "rgba(37,99,235,0.15)",
-              border: "1px solid rgba(37,99,235,0.25)",
-              color: "#60A5FA",
+              height: 30,
+              padding: "0 14px",
+              borderRadius: 4,
+              border: `1px solid ${T.rule}`,
+              color: T.ink,
               fontSize: 12,
               fontWeight: 500,
               display: "inline-flex",
               alignItems: "center",
-              textDecoration: "none",
-              gap: 5,
-              transition: "all 0.2s",
+              gap: 6,
+              transition: "background 0.15s",
+              fontFamily: T.mono,
+              letterSpacing: "0.04em",
             }}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            Exit Demo
+            ✕ EXIT
           </Link>
         </div>
       </div>
@@ -269,12 +298,22 @@ function DemoPageInner() {
         }}
         className="demo-mobile-fallback"
       >
-        <div style={{ fontSize: 40 }}>🖥️</div>
-        <p style={{ color: "#fff", fontWeight: 700, fontSize: 20, margin: 0 }}>
-          Best experienced on desktop
+        <div
+          style={{
+            fontFamily: T.mono,
+            fontSize: 11,
+            letterSpacing: "0.2em",
+            color: T.brand,
+            textTransform: "uppercase",
+          }}
+        >
+          Desktop recommended
+        </div>
+        <p style={{ color: "#fff", fontWeight: 600, fontSize: 22, margin: 0, letterSpacing: "-0.02em" }}>
+          Best experienced on a wider screen.
         </p>
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, margin: 0, maxWidth: 320 }}>
-          The VaxAI Vision dashboard is optimised for screens wider than 768 px.
+        <p style={{ color: T.muted, fontSize: 14, margin: 0, maxWidth: 360, lineHeight: 1.6 }}>
+          The VaxAI Vision dashboard is optimised for screens wider than 768 px. Continue on mobile or open in a new tab.
         </p>
         <a
           href={DEMO_URL}
@@ -282,28 +321,26 @@ function DemoPageInner() {
           rel="noopener noreferrer"
           style={{
             marginTop: 8,
-            padding: "12px 28px",
-            borderRadius: 10,
-            background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
+            padding: "13px 24px",
+            borderRadius: 6,
+            background: T.brand,
             color: "#fff",
             fontWeight: 600,
-            fontSize: 15,
+            fontSize: 14,
             textDecoration: "none",
+            boxShadow: "0 4px 14px rgba(58,91,204,0.3)",
           }}
         >
-          Open in New Tab
+          Open in new tab →
         </a>
-        <Link href="/" style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+        <Link href="/" style={{ color: T.muted, fontSize: 13 }}>
           ← Back to vaxaivision.com
         </Link>
       </div>
 
       {/* ───────── Content area ───────── */}
-      <div
-        style={{ flex: 1, position: "relative", overflow: "hidden" }}
-        className="demo-iframe-wrapper"
-      >
-        {/* === IFRAME TABS (Dashboard / Forecasting / Vision) === */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden" }} className="demo-iframe-wrapper">
+        {/* iframe tabs */}
         <div
           style={{
             position: "absolute",
@@ -322,39 +359,24 @@ function DemoPageInner() {
                 justifyContent: "center",
                 gap: 16,
                 zIndex: 10,
-                background: "#0d1f3c",
+                background: T.bg,
               }}
             >
               <div style={{ position: "relative", width: 48, height: 48 }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    borderRadius: "50%",
-                    border: "2px solid rgba(37,99,235,0.15)",
-                  }}
-                />
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `2px solid ${T.ruleSoft}` }} />
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
                     borderRadius: "50%",
                     border: "2px solid transparent",
-                    borderTopColor: "#2563eb",
+                    borderTopColor: T.brand,
                     animation: "demoSpin 0.8s linear infinite",
                   }}
                 />
               </div>
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  margin: 0,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                Loading live dashboard...
+              <p style={{ color: T.muted, fontSize: 11, margin: 0, fontFamily: T.mono, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                Loading live dashboard…
               </p>
             </div>
           )}
@@ -376,187 +398,145 @@ function DemoPageInner() {
           />
         </div>
 
-        {/* === AR STOCK COUNTER TAB === */}
+        {/* AR scanner */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: activeTab === "ar-scanner" ? "block" : "none",
             overflowY: "auto",
-            background: "#0a1628",
+            background: T.bg,
           }}
         >
-          <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 20px" }}>
-            {/* Header */}
+          <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px" }}>
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: "flex-end",
                 justifyContent: "space-between",
-                marginBottom: 24,
+                marginBottom: 32,
+                gap: 16,
+                flexWrap: "wrap",
               }}
             >
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 7,
-                      background: "linear-gradient(135deg, #8b5cf6, #3b82f6)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 13,
-                    }}
-                  >
-                    📦
-                  </div>
-                  <h1
-                    style={{
-                      fontSize: 22,
-                      fontWeight: 800,
-                      margin: 0,
-                      color: "#fff",
-                    }}
-                  >
-                    Stock Count Sessions
-                  </h1>
-                </div>
-                <p
+                <div
                   style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 13,
-                    margin: 0,
+                    fontFamily: T.mono,
+                    fontSize: 11,
+                    letterSpacing: "0.2em",
+                    color: T.brand,
+                    textTransform: "uppercase",
+                    marginBottom: 10,
                   }}
                 >
-                  AR-powered inventory counting with real-time detection and
-                  reconciliation
+                  AR scanner · stock count
+                </div>
+                <h1
+                  style={{
+                    fontSize: 32,
+                    fontWeight: 600,
+                    margin: 0,
+                    color: "#fff",
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Stock count sessions.
+                </h1>
+                <p style={{ color: T.muted, fontSize: 14, marginTop: 12, maxWidth: 520, lineHeight: 1.6 }}>
+                  AR-powered inventory counting with real-time detection and reconciliation against the system ledger.
                 </p>
               </div>
               <button
                 onClick={handleNewSession}
                 style={{
-                  height: 34,
-                  padding: "0 16px",
-                  borderRadius: 8,
-                  background: "#2563eb",
+                  height: 44,
+                  padding: "0 22px",
+                  borderRadius: 6,
+                  background: T.brand,
                   color: "#fff",
                   border: "none",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  transition: "background 0.15s",
+                  fontFamily: "inherit",
+                  boxShadow: "0 4px 14px rgba(58,91,204,0.3)",
                 }}
               >
-                + New Count
+                + New count
               </button>
             </div>
 
-            {/* Quick action cards */}
+            {/* Stat row */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: 12,
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 0,
                 marginBottom: 32,
+                borderTop: `1px solid ${T.rule}`,
+                borderBottom: `1px solid ${T.rule}`,
               }}
             >
               <Link
                 href="/demo/vision/stock-count/scan"
-                style={{ textDecoration: "none" }}
+                style={{
+                  textDecoration: "none",
+                  padding: "24px 24px",
+                  borderRight: `1px solid ${T.rule}`,
+                  display: "block",
+                  color: T.ink,
+                }}
               >
-                <div
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(139,92,246,0.15))",
-                    border: "1px solid rgba(37,99,235,0.3)",
-                    borderRadius: 12,
-                    padding: 20,
-                    cursor: "pointer",
-                    transition: "border-color 0.2s",
-                  }}
-                >
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📷</div>
-                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                    Quick Scan
-                  </div>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.5)",
-                      fontSize: 12,
-                      marginTop: 4,
-                    }}
-                  >
-                    Start a new AR scanning session
-                  </div>
+                <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.16em", color: T.muted, textTransform: "uppercase", marginBottom: 8 }}>
+                  Action
+                </div>
+                <div style={{ color: T.brandBright, fontWeight: 600, fontSize: 18, letterSpacing: "-0.015em" }}>
+                  Quick scan →
+                </div>
+                <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>
+                  Start a new AR session
                 </div>
               </Link>
 
-              <div
-                style={{
-                  background: "rgba(16,185,129,0.08)",
-                  border: "1px solid rgba(16,185,129,0.2)",
-                  borderRadius: 12,
-                  padding: 20,
-                }}
-              >
-                <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
-                <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                  {sessions.filter((s) => s.status === "submitted").length}{" "}
+              <div style={{ padding: "24px 24px", borderRight: `1px solid ${T.rule}` }}>
+                <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.16em", color: T.muted, textTransform: "uppercase", marginBottom: 8 }}>
                   Completed
                 </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 12,
-                    marginTop: 4,
-                  }}
-                >
-                  Sessions submitted this period
+                <div style={{ color: "#fff", fontWeight: 600, fontSize: 28, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                  {sessions.filter((s) => s.status === "submitted").length}
+                </div>
+                <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>
+                  Sessions submitted
                 </div>
               </div>
 
-              <div
-                style={{
-                  background: "rgba(245,158,11,0.08)",
-                  border: "1px solid rgba(245,158,11,0.2)",
-                  borderRadius: 12,
-                  padding: 20,
-                }}
-              >
-                <div style={{ fontSize: 28, marginBottom: 8 }}>⚠️</div>
-                <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                  {sessions.filter(
-                    (s) => s.status === "active" || s.status === "paused",
-                  ).length}{" "}
-                  In Progress
+              <div style={{ padding: "24px 24px" }}>
+                <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.16em", color: T.muted, textTransform: "uppercase", marginBottom: 8 }}>
+                  In progress
                 </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 12,
-                    marginTop: 4,
-                  }}
-                >
-                  Active or paused sessions
+                <div style={{ color: T.watch, fontWeight: 600, fontSize: 28, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                  {sessions.filter((s) => s.status === "active" || s.status === "paused").length}
+                </div>
+                <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>
+                  Active or paused
                 </div>
               </div>
             </div>
 
-            {/* Session list */}
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: 8 }}
-            >
+            {/* Sessions */}
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.2em", color: T.muted, textTransform: "uppercase", marginBottom: 12 }}>
+              Recent sessions
+            </div>
+
+            <div style={{ borderTop: `1px solid ${T.rule}` }}>
               {sessions.length === 0 ? (
                 <div
                   style={{
                     textAlign: "center",
                     padding: "48px 0",
-                    color: "rgba(255,255,255,0.4)",
+                    color: T.muted,
                     fontSize: 14,
                   }}
                 >
@@ -575,57 +555,29 @@ function DemoPageInner() {
                   >
                     <div
                       style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 10,
-                        padding: "14px 18px",
+                        borderBottom: `1px solid ${T.rule}`,
+                        padding: "18px 4px",
                         display: "flex",
                         alignItems: "center",
-                        gap: 14,
+                        gap: 16,
                         cursor: "pointer",
-                        transition: "background 0.15s, border-color 0.15s",
+                        transition: "background 0.15s",
+                        color: T.ink,
                       }}
                     >
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            marginBottom: 4,
-                          }}
-                        >
-                          <span
-                            style={{
-                              color: "#fff",
-                              fontSize: 14,
-                              fontWeight: 600,
-                            }}
-                          >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
+                          <span style={{ color: "#fff", fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>
                             {session.name}
                           </span>
                           <StatusBadge status={session.status} />
                         </div>
-                        <div
-                          style={{
-                            color: "rgba(255,255,255,0.4)",
-                            fontSize: 12,
-                          }}
-                        >
-                          {session.facility} ·{" "}
-                          {new Date(session.startedAt).toLocaleDateString()} ·{" "}
-                          {session.tallies.reduce((s, t) => s + t.count, 0)}{" "}
-                          items counted
+                        <div style={{ color: T.muted, fontSize: 12, fontFamily: T.mono, letterSpacing: "0.04em" }}>
+                          {session.facility} · {new Date(session.startedAt).toLocaleDateString()} ·{" "}
+                          {session.tallies.reduce((s, t) => s + t.count, 0)} items counted
                         </div>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 6,
-                          flexWrap: "wrap",
-                          maxWidth: 200,
-                        }}
-                      >
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 240 }}>
                         {session.tallies.slice(0, 4).map((t) => (
                           <span
                             key={t.category}
@@ -634,32 +586,22 @@ function DemoPageInner() {
                               color: t.color,
                               fontSize: 10,
                               fontWeight: 600,
-                              padding: "2px 6px",
-                              borderRadius: 4,
+                              padding: "3px 7px",
+                              borderRadius: 3,
+                              fontFamily: T.mono,
+                              letterSpacing: "0.04em",
                             }}
                           >
                             {t.category}: {t.count}
                           </span>
                         ))}
                         {session.tallies.length > 4 && (
-                          <span
-                            style={{
-                              color: "rgba(255,255,255,0.3)",
-                              fontSize: 10,
-                            }}
-                          >
+                          <span style={{ color: T.muted, fontSize: 10, fontFamily: T.mono }}>
                             +{session.tallies.length - 4}
                           </span>
                         )}
                       </div>
-                      <span
-                        style={{
-                          color: "rgba(255,255,255,0.3)",
-                          fontSize: 16,
-                        }}
-                      >
-                        →
-                      </span>
+                      <span style={{ color: T.muted, fontSize: 18 }}>→</span>
                     </div>
                   </Link>
                 ))
@@ -670,9 +612,7 @@ function DemoPageInner() {
       </div>
 
       <style>{`
-        @keyframes demoSpin {
-          to { transform: rotate(360deg); }
-        }
+        @keyframes demoSpin { to { transform: rotate(360deg); } }
         @media (max-width: 767px) {
           .demo-mobile-fallback { display: flex !important; }
           .demo-iframe-wrapper { display: none !important; }

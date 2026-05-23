@@ -1,24 +1,25 @@
+import React from "react";
+import { Metadata } from "next";
 import Layout from "@/components/layout";
 import ImpactHero from "@/components/impact/ImpactHero";
+import ProblemStatement from "@/components/impact/ProblemStatement";
 import ImpactMetrics from "@/components/impact/ImpactMetrics";
 import CoverageMap from "@/components/impact/CoverageMap";
-import ProblemStatement from "@/components/impact/ProblemStatement";
 import TheAsk from "@/components/impact/TheAsk";
-import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "VaxAI | Impact — Donor & Grant Brief",
+  title: "VaxAI Vision | Impact — Donor & Grant Brief",
   description:
     "VaxAI is ending vaccine stockouts across Africa. See our coverage map, impact metrics, and funding opportunities.",
   openGraph: {
-    title: "VaxAI Impact — Ending Vaccine Stockouts Across Africa",
+    title: "VaxAI Vision — Ending Vaccine Stockouts Across Africa",
     description:
       "340+ health facilities covered. 63% stockout reduction. $2M raise to scale across 10 African countries by 2026.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "VaxAI Impact — Ending Vaccine Stockouts Across Africa",
+    title: "VaxAI Vision — Ending Vaccine Stockouts Across Africa",
     description:
       "340+ health facilities covered. 63% stockout reduction. $2M raise to scale across 10 African countries by 2026.",
   },

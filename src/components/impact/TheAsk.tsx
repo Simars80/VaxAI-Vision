@@ -1,23 +1,18 @@
 "use client";
 
-import {
-  Box,
-  Button,
-  Container,
-  Divider,
-  Grid,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Container, Flex, Grid, GridItem, Text } from "@chakra-ui/react";
 import React from "react";
-import { Fade, Slide } from "react-awesome-reveal";
+import { tokens } from "@/components/home/_tokens";
+import { Eyebrow } from "@/components/home/_atoms";
 import { FiCheck } from "react-icons/fi";
 
 const fundingTiers = [
   {
     amount: "$50,000",
     title: "Seed Partner",
-    color: "#718096",
+    accent: tokens.muted,
+    bg: "#fff",
+    inkColor: tokens.ink,
     outcomes: [
       "Deploy across 5 new facilities in sub-Saharan Africa",
       "AI-powered inventory tracking and cold chain monitoring",
@@ -28,11 +23,13 @@ const fundingTiers = [
   {
     amount: "$250,000",
     title: "Growth Partner",
-    color: "#3A5BCC",
+    accent: tokens.brand,
+    bg: tokens.brand,
+    inkColor: "#fff",
     featured: true,
     outcomes: [
       "Scale to 30+ facilities across 2 LMIC countries",
-      "Full platform suite: forecasting, coverage mapping, and vision AI",
+      "Full platform suite: forecasting, coverage mapping, vision AI",
       "Named recognition in all public impact materials",
       "Advisory seat on our programme steering committee",
       "Real-time access to anonymised platform dashboard",
@@ -41,10 +38,12 @@ const fundingTiers = [
   {
     amount: "$1,000,000",
     title: "Strategic Partner",
-    color: "#F56630",
+    accent: tokens.ink,
+    bg: "#fff",
+    inkColor: tokens.ink,
     outcomes: [
       "Fund a full country-level rollout (50+ facilities)",
-      "Integration with national HMIS, DHIS2, and OpenLMIS systems",
+      "Integration with national HMIS, DHIS2, OpenLMIS systems",
       "Co-develop AI features aligned to your mandate",
       "Joint press release and media engagement",
       "Board observer seat",
@@ -55,260 +54,168 @@ const fundingTiers = [
 
 const milestones = [
   { year: "Q3 2026", label: "Pilot across 50 facilities in sub-Saharan Africa with full AI stack" },
-  { year: "Q1 2027", label: "Expand to 200+ facilities across 3 sub-Saharan countries with DHIS2 & OpenLMIS integration" },
+  { year: "Q1 2027", label: "Expand to 200+ facilities across 3 countries with DHIS2 & OpenLMIS integration" },
   { year: "Q3 2027", label: "Launch coverage mapping and predictive forecasting in 5 LMIC countries" },
   { year: "Q4 2027", label: "1,000+ facilities across 8+ LMICs — targeting zero vaccine stockouts" },
 ];
 
 const TheAsk = () => {
   return (
-    <Box id="ask" bg="#1A1A1A" py={{ base: "64px", md: "112px" }}>
-      <Container maxW="container.xl">
+    <Box id="ask" bg={tokens.bg} py={{ base: "64px", md: "112px" }}>
+      <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
         {/* Heading */}
-        <Slide direction="up" triggerOnce>
-          <VStack
-            spacing={4}
-            mb={{ base: "48px", md: "72px" }}
-            align="center"
-            textAlign="center"
-          >
-            <Text
-              color="#3A5BCC"
-              fontSize="14px"
-              fontWeight={600}
-              textTransform="uppercase"
-              letterSpacing="2px"
-            >
-              The Ask
-            </Text>
-            <Text
-              color="#fff"
-              fontSize={{ base: "28px", md: "44px" }}
-              fontWeight={800}
-              maxW="750px"
-              lineHeight="1.2"
-            >
-              Partner with us to save{" "}
-              <Text as="span" color="#F56630">
-                lives at scale
-              </Text>
-            </Text>
-            <Text color="#718096" fontSize={{ base: "15px", md: "18px" }} maxW="620px">
-              We are raising{" "}
-              <Text as="span" color="#fff" fontWeight={700}>
-                $2M in grant and philanthropic capital
-              </Text>{" "}
-              to deploy VaxAI Vision across low- and middle-income countries, starting with sub-Saharan Africa.
-            </Text>
-          </VStack>
-        </Slide>
+        <Box mb={{ base: "48px", md: "72px" }} maxW="820px">
+          <Eyebrow>The ask</Eyebrow>
+          <Text as="h2" mt="14px" fontWeight={600}
+                fontSize={{ base: "32px", md: "52px" }}
+                lineHeight="1.02" letterSpacing="-0.03em" sx={{ textWrap: "balance" }}>
+            Partner with us to save lives at scale.
+          </Text>
+          <Text mt="20px" fontSize={{ base: "16px", md: "18px" }} lineHeight="1.6"
+                color={tokens.muted} maxW="640px" sx={{ textWrap: "pretty" }}>
+            We are raising <Box as="span" color={tokens.ink} fontWeight={600}>$2M in grant and
+            philanthropic capital</Box> to deploy VaxAI Vision across low- and middle-income
+            countries, starting with sub-Saharan Africa.
+          </Text>
+        </Box>
 
         {/* Funding tiers */}
-        <Grid
-          templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
-          gap={{ base: "20px", md: "24px" }}
-          mb={{ base: "64px", md: "96px" }}
-        >
-          {fundingTiers.map((tier, idx) => (
-            <Fade key={idx} triggerOnce delay={idx * 150}>
-              <Box
-                bg={tier.featured ? "#fff" : "#141414"}
-                borderRadius="20px"
-                p={{ base: "28px", md: "40px" }}
-                border={tier.featured ? "none" : "1px solid #2D2D2D"}
-                position="relative"
-                h="full"
-              >
-                {tier.featured && (
-                  <Box
-                    position="absolute"
-                    top="-14px"
-                    left="50%"
-                    transform="translateX(-50%)"
-                    bg="#3A5BCC"
-                    color="#fff"
-                    fontSize="12px"
-                    fontWeight={700}
-                    px="16px"
-                    py="5px"
-                    borderRadius="full"
-                    whiteSpace="nowrap"
-                  >
-                    MOST POPULAR
-                  </Box>
-                )}
+        <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+              gap={{ base: "16px", md: "20px" }}
+              mb={{ base: "64px", md: "96px" }}>
+          {fundingTiers.map((tier) => (
+            <GridItem key={tier.title} position="relative">
+              {tier.featured && (
+                <Box position="absolute"
+                     sx={{ top: -14, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}
+                     bg={tokens.ink} color="#fff"
+                     px="14px" py="5px" borderRadius="999px"
+                     className="vax-mono"
+                     fontSize="10px" letterSpacing="0.18em"
+                     fontWeight={600}>
+                  RECOMMENDED
+                </Box>
+              )}
 
-                <Box w="32px" h="4px" bg={tier.color} borderRadius="full" mb="20px" />
-                <Text
-                  fontSize={{ base: "32px", md: "40px" }}
-                  fontWeight={800}
-                  color={tier.featured ? "#1A1A1A" : "#fff"}
-                  lineHeight="1"
-                  mb="4px"
-                >
+              <Box bg={tier.bg} color={tier.inkColor}
+                   border={tier.featured ? "none" : `1px solid ${tokens.rule}`}
+                   borderRadius="12px"
+                   padding={{ base: "28px 24px", md: "36px 32px" }}
+                   h="100%" display="flex" flexDir="column"
+                   boxShadow={tier.featured ? "0 18px 40px rgba(58,91,204,0.25)" : "none"}>
+                <Box w="32px" h="3px" bg={tier.featured ? "#fff" : tier.accent} mb="20px" />
+                <Text fontWeight={600} fontSize={{ base: "32px", md: "42px" }}
+                      letterSpacing="-0.025em" lineHeight="1.0" mb="6px" className="vax-tabular">
                   {tier.amount}
                 </Text>
-                <Text
-                  fontSize="16px"
-                  fontWeight={700}
-                  color={tier.color}
-                  mb="24px"
-                >
+                <Text className="vax-mono" fontSize="11px" letterSpacing="0.18em"
+                      textTransform="uppercase"
+                      color={tier.featured ? "rgba(255,255,255,0.85)" : tier.accent}
+                      mb="24px">
                   {tier.title}
                 </Text>
 
-                <Divider borderColor={tier.featured ? "#E8E8E8" : "#2D2D2D"} mb="24px" />
+                <Box flex="1" pt="20px"
+                     borderTop={tier.featured ? "1px solid rgba(255,255,255,0.2)" : `1px solid ${tokens.rule}`}>
+                  <Flex flexDir="column" gap="14px">
+                    {tier.outcomes.map((o, i) => (
+                      <Flex key={i} alignItems="flex-start" gap="10px">
+                        <Box w="18px" h="18px" mt="2px"
+                             borderRadius="999px"
+                             bg={tier.featured ? "rgba(255,255,255,0.18)" : `${tier.accent}1f`}
+                             color={tier.featured ? "#fff" : tier.accent}
+                             display="grid" sx={{ placeItems: "center" }}
+                             flexShrink={0}>
+                          <FiCheck size={11} />
+                        </Box>
+                        <Text fontSize="14px" lineHeight="1.55"
+                              color={tier.featured ? "rgba(255,255,255,0.88)" : tokens.muted}>
+                          {o}
+                        </Text>
+                      </Flex>
+                    ))}
+                  </Flex>
+                </Box>
 
-                <VStack align="flex-start" spacing={3}>
-                  {tier.outcomes.map((o, i) => (
-                    <Box key={i} display="flex" alignItems="flex-start" gap="10px">
-                      <Box
-                        w="20px"
-                        h="20px"
-                        bg={`${tier.color}20`}
-                        borderRadius="full"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        flexShrink={0}
-                        mt="1px"
-                      >
-                        <FiCheck size={11} color={tier.color} />
-                      </Box>
-                      <Text
-                        fontSize="14px"
-                        color={tier.featured ? "#4A5568" : "#A0AEC0"}
-                        lineHeight="1.6"
-                      >
-                        {o}
-                      </Text>
-                    </Box>
-                  ))}
-                </VStack>
-
-                <Box mt="32px">
-                  <a href="mailto:partnerships@vaxaivision.com">
-                    <Button
-                      w="full"
-                      h="50px"
-                      bg={tier.featured ? "#3A5BCC" : "transparent"}
-                      color={tier.featured ? "#fff" : tier.color}
-                      border={tier.featured ? "none" : `1px solid ${tier.color}44`}
-                      borderRadius="10px"
-                      fontSize="15px"
-                      fontWeight={600}
-                      _hover={{
-                        opacity: 0.85,
-                        bg: tier.featured ? "#3A5BCC" : `${tier.color}11`,
-                      }}
-                    >
-                      Get in Touch
-                    </Button>
+                <Box mt="28px">
+                  <a href="mailto:partnerships@vaxaivision.com"
+                     style={{
+                       display: "inline-flex", alignItems: "center", justifyContent: "center",
+                       width: "100%",
+                       padding: "14px 22px", borderRadius: 6,
+                       fontSize: 14, fontWeight: 600,
+                       background: tier.featured ? "#fff" : tokens.ink,
+                       color: tier.featured ? tokens.brand : "#fff",
+                     }}>
+                    Get in touch →
                   </a>
                 </Box>
               </Box>
-            </Fade>
+            </GridItem>
           ))}
         </Grid>
 
         {/* Roadmap */}
-        <Slide direction="up" triggerOnce>
-          <Box
-            bg="#141414"
-            borderRadius="20px"
-            border="1px solid #2D2D2D"
-            p={{ base: "32px", md: "56px" }}
-          >
-            <Text
-              color="#fff"
-              fontSize={{ base: "22px", md: "30px" }}
-              fontWeight={800}
-              mb="8px"
-            >
-              Where your funding goes
-            </Text>
-            <Text color="#718096" fontSize="15px" mb="40px">
-              A clear roadmap with measurable milestones — tracked and reported quarterly.
-            </Text>
+        <Box bg={tokens.paper} color={tokens.paperInk}
+             padding={{ base: "32px 28px", md: "56px 64px" }}>
+          <Eyebrow color={tokens.paperBrick}>Where your funding goes</Eyebrow>
+          <Text as="h3" mt="14px"
+                className="vax-serif"
+                fontWeight={500}
+                fontSize={{ base: "28px", md: "40px" }}
+                lineHeight="1.0" letterSpacing="-0.025em"
+                sx={{ textWrap: "balance" }}>
+            A clear roadmap with measurable milestones — tracked and reported quarterly.
+          </Text>
 
-            <Box position="relative">
-              {/* Vertical line */}
-              <Box
-                position="absolute"
-                left={{ base: "12px", md: "16px" }}
-                top="8px"
-                bottom="8px"
-                w="2px"
-                bg="#2D2D2D"
-              />
-
-              <VStack align="flex-start" spacing={8}>
-                {milestones.map((m, idx) => (
-                  <Box key={idx} display="flex" gap={{ base: "20px", md: "32px" }} position="relative">
-                    <Box
-                      w={{ base: "26px", md: "34px" }}
-                      h={{ base: "26px", md: "34px" }}
-                      borderRadius="full"
-                      bg="#3A5BCC"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      flexShrink={0}
-                      zIndex={1}
-                    >
-                      <Text color="#fff" fontSize="11px" fontWeight={800}>
-                        {idx + 1}
-                      </Text>
-                    </Box>
-                    <Box pt="4px">
-                      <Text color="#3A5BCC" fontSize="13px" fontWeight={700} mb="4px">
-                        {m.year}
-                      </Text>
-                      <Text color="#E2E8F0" fontSize={{ base: "15px", md: "17px" }} fontWeight={500}>
-                        {m.label}
-                      </Text>
-                    </Box>
+          <Box mt="40px" position="relative">
+            <Box position="absolute" left={{ base: "11px", md: "15px" }} top="6px" bottom="6px"
+                 w="1px" bg="rgba(26,20,16,0.22)" />
+            <Flex flexDir="column" gap={{ base: "28px", md: "32px" }}>
+              {milestones.map((m, i) => (
+                <Flex key={m.year} gap={{ base: "20px", md: "28px" }} position="relative">
+                  <Box w={{ base: "24px", md: "32px" }} h={{ base: "24px", md: "32px" }}
+                       borderRadius="999px" bg={tokens.paperBrick} color={tokens.paper}
+                       display="grid" sx={{ placeItems: "center" }}
+                       flexShrink={0} zIndex={1}
+                       fontWeight={700} fontSize="11px" className="vax-mono">
+                    {String(i + 1).padStart(2, "0")}
                   </Box>
-                ))}
-              </VStack>
-            </Box>
-
-            <Box
-              mt="48px"
-              pt="40px"
-              borderTop="1px solid #2D2D2D"
-              display="flex"
-              flexDir={{ base: "column", md: "row" }}
-              alignItems={{ base: "flex-start", md: "center" }}
-              justifyContent="space-between"
-              gap="20px"
-            >
-              <Box>
-                <Text color="#fff" fontSize={{ base: "18px", md: "22px" }} fontWeight={700} mb="4px">
-                  Ready to make an impact?
-                </Text>
-                <Text color="#718096" fontSize="14px">
-                  Reach out directly — we respond within 48 hours.
-                </Text>
-              </Box>
-              <a href="mailto:partnerships@vaxaivision.com">
-                <Button
-                  bg="#3A5BCC"
-                  color="#fff"
-                  h="52px"
-                  px="32px"
-                  borderRadius="10px"
-                  fontSize="15px"
-                  fontWeight={600}
-                  _hover={{ opacity: 0.85 }}
-                  flexShrink={0}
-                >
-                  partnerships@vaxaivision.com
-                </Button>
-              </a>
-            </Box>
+                  <Box pt="4px">
+                    <Text className="vax-mono" fontSize="11px" letterSpacing="0.16em"
+                          textTransform="uppercase" color={tokens.paperBrick} mb="6px">
+                      {m.year}
+                    </Text>
+                    <Text fontSize={{ base: "15px", md: "17px" }} lineHeight="1.55" color={tokens.paperInk}>
+                      {m.label}
+                    </Text>
+                  </Box>
+                </Flex>
+              ))}
+            </Flex>
           </Box>
-        </Slide>
+
+          <Flex mt="48px" pt="32px" borderTop="1px solid rgba(26,20,16,0.18)"
+                justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="16px">
+            <Box>
+              <Text className="vax-serif" fontSize={{ base: "20px", md: "24px" }}
+                    fontWeight={600} letterSpacing="-0.015em" mb="4px">
+                Ready to make an impact?
+              </Text>
+              <Text fontSize="14px" color="rgba(26,20,16,0.65)">
+                Reach out directly — we respond within 48 hours.
+              </Text>
+            </Box>
+            <a href="mailto:partnerships@vaxaivision.com"
+               style={{
+                 background: tokens.paperInk, color: tokens.paper,
+                 padding: "15px 26px", borderRadius: 6,
+                 fontSize: 15, fontWeight: 600,
+               }}>
+              partnerships@vaxaivision.com →
+            </a>
+          </Flex>
+        </Box>
       </Container>
     </Box>
   );

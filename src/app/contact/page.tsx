@@ -1,32 +1,23 @@
 "use client";
 
-import ContactForm from "@/components/contact/form";
-import Layout from "@/components/layout";
-import { Box, Center, Container, Text } from "@chakra-ui/react";
 import React from "react";
+import { Box, Container } from "@chakra-ui/react";
+import Layout from "@/components/layout";
+import ContactForm from "@/components/contact/form";
+import PageHero from "@/components/_shared/PageHero";
+import { tokens } from "@/components/home/_tokens";
 
 const Contact = () => {
   return (
     <Layout>
-      <Box bg="#FBFBFB" py={{ base: "32px", md: "68px" }}>
-        <Container maxW="container.xl">
-          <Center>
-            <Text
-              textAlign={"center"}
-              color="#1A1A1A"
-              fontSize={{ base: "16px", md: "40px" }}
-              fontWeight={700}
-              w={{ base: "auto", md: "1102px" }}
-            >
-              Do you have questions about our solutions or want to discuss a
-              potential collaboration? Our team is here to help.
-            </Text>
-          </Center>
-        </Container>
-      </Box>
+      <PageHero
+        eyebrow="Get in touch"
+        title={<>Tell us what you&apos;re trying to fix.</>}
+        sub="Questions about pilots, integrations, or partnerships. The team reads every message and replies within 48 hours."
+      />
 
-      <Box my={{ base: "32px", md: "120px" }}>
-        <Container maxW="container.xl">
+      <Box bg="#fafbfd" py={{ base: "48px", md: "96px" }} borderTop={`1px solid ${tokens.rule}`}>
+        <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
           <ContactForm />
         </Container>
       </Box>

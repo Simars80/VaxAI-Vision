@@ -104,6 +104,7 @@ export default function IngestionPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>("inventory");
+  const [expandedJob, setExpandedJob] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadJobs = () => {
@@ -280,47 +281,97 @@ export default function IngestionPage() {
                     <th className="pb-2 pe-4 font-medium">File</th>
                     <th className="pb-2 pe-4 font-medium">Status</th>
                     <th className="pb-2 pe-4 font-medium">Rows</th>
-                    <th className="pb-2 font-medium">Date</th>
+                    <th className="pb-2 pe-4 font-medium">Date</th>
+                    <th className="pb-2 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {jobs.map((job) => (
-                    <tr
-                      key={job.id}
-                      className="border-b last:border-0 hover:bg-muted/30"
-                    >
-                      <td className="py-2 pe-4">
-                        <Badge variant="outline">{job.source}</Badge>
-                      </td>
-                      <td className="py-2 pe-4 max-w-48 truncate text-muted-foreground">
-                        {job.file_name ?? "—"}
-                      </td>
-                      <td className="py-2 pe-4">
-                        <StatusBadge status={job.status} />
-                      </td>
-                      <td className="py-2 pe-4 tabular-nums">
-                        {job.rows_total != null ? (
-                          <span>
-                            <span className="text-green-600">
-                              {job.rows_succeeded ?? 0}
-                            </span>
-                            {" / "}
-                            {job.rows_total}
-                            {(job.rows_failed ?? 0) > 0 && (
-                              <span className="text-destructive ms-1">
-                                ({job.rows_failed} failed)
+                  {jobs.map((job) => {
+                    const isExpanded = expandedJob === job.id;
+                    const canExpand = job.status === "completed" || job.status === "partial";
+                    return (
+                      <>
+                        <tr
+                          key={job.id}
+                          className="border-b last:border-0 hover:bg-muted/30"
+                        >
+                          <td className="py-2 pe-4">
+                            <Badge variant="outline">{job.source}</Badge>
+                          </td>
+                          <td className="py-2 pe-4 max-w-48 truncate text-muted-foreground">
+                            {job.file_name ?? "—"}
+                          </td>
+                          <td className="py-2 pe-4">
+                            <StatusBadge status={job.status} />
+                          </td>
+                          <td className="py-2 pe-4 tabular-nums">
+                            {job.rows_total != null ? (
+                              <span>
+                                <span className="text-green-600">
+                                  {job.rows_succeeded ?? 0}
+                                </span>
+                                {" / "}
+                                {job.rows_total}
+                                {(job.rows_failed ?? 0) > 0 && (
+                                  <span className="text-destructive ms-1">
+                                    ({job.rows_failed} failed)
+                                  </span>
+                                )}
                               </span>
+                            ) : (
+                              "—"
                             )}
-                          </span>
-                        ) : (
-                          "—"
+                          </td>
+                          <td className="py-2 pe-4 text-muted-foreground">
+                            {format(new Date(job.created_at), "MMM d, HH:mm")}
+                          </td>
+                          <td className="py-2">
+                            {canExpand && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() =>
+                                  setExpandedJob(isExpanded ? null : job.id)
+                                }
+                              >
+                                {isExpanded ? "Hide" : "View Results"}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr key={`${job.id}-detail`} className="bg-muted/20 border-b last:border-0">
+                            <td colSpan={6} className="px-4 py-3">
+                              <div className="text-sm space-y-1">
+                                <p className="font-medium mb-2">Import Summary</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <div className="bg-background rounded p-2 border">
+                                    <p className="text-xs text-muted-foreground">Total rows</p>
+                                    <p className="font-semibold tabular-nums">{job.rows_total?.toLocaleString() ?? "—"}</p>
+                                  </div>
+                                  <div className="bg-background rounded p-2 border">
+                                    <p className="text-xs text-muted-foreground">Imported</p>
+                                    <p className="font-semibold tabular-nums text-green-600">{job.rows_succeeded?.toLocaleString() ?? "—"}</p>
+                                  </div>
+                                  <div className="bg-background rounded p-2 border">
+                                    <p className="text-xs text-muted-foreground">Failed rows</p>
+                                    <p className={`font-semibold tabular-nums ${(job.rows_failed ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                      {job.rows_failed?.toLocaleString() ?? "0"}
+                                    </p>
+                                  </div>
+                                  <div className="bg-background rounded p-2 border">
+                                    <p className="text-xs text-muted-foreground">Completed</p>
+                                    <p className="font-semibold">{job.completed_at ? format(new Date(job.completed_at), "MMM d, HH:mm") : "—"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td className="py-2 text-muted-foreground">
-                        {format(new Date(job.created_at), "MMM d, HH:mm")}
-                      </td>
-                    </tr>
-                  ))}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

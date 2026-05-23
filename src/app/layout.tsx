@@ -1,36 +1,36 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ChakraProvider } from "@chakra-ui/react";
-import { fonts } from "@/app/fonts";
+import { fontVars } from "@/app/fonts";
 
 export const metadata: Metadata = {
-  title: "VaxAI",
+  title: "VaxAI Vision — Precision for the last cold mile",
   description:
-    "The leader in advanced solutions for efficient vaccine distribution and inventory management.",
+    "AI-driven vaccine supply chain intelligence — computer vision, demand forecasting, and cold-chain telemetry for last-mile immunisation programmes.",
   icons: {
     icon: ["/favicon.ico?v=4"],
     apple: ["/apple-touch-icon.png?v=4"],
     shortcut: ["/apple-touch-icon.png"],
   },
   openGraph: {
-    title: "VaxAI",
+    title: "VaxAI Vision",
     description:
-      "The leader in advanced solutions for efficient vaccine distribution and inventory management.",
-
+      "AI-driven vaccine supply chain intelligence for last-mile immunisation programmes.",
     images: [
       {
         url: "https://res.cloudinary.com/alonexx/image/upload/v1718996685/Screenshot_2024-06-21_at_20.03.46_jm7wvt.png",
         width: 800,
         height: 600,
-        alt: "VaxAI-Vision",
+        alt: "VaxAI Vision",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "VaxAI",
-    description: `The leader in advanced solutions for efficient vaccine distribution and inventory management.`,
+    title: "VaxAI Vision",
+    description:
+      "AI-driven vaccine supply chain intelligence for last-mile immunisation programmes.",
   },
 };
 
@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={fonts.montserrat.className}>
+      <body className={fontVars}>
         <ChakraProvider>{children}</ChakraProvider>
       </body>
     </html>

@@ -1,107 +1,118 @@
 "use client";
 
-import { Box, Container, Grid, GridItem, Text } from "@chakra-ui/react";
-import React from "react";
 import {
+  Box,
+  Container,
+  Flex,
+  Grid,
+  GridItem,
+  Text,
   Accordion,
   AccordionItem,
   AccordionButton,
   AccordionPanel,
 } from "@chakra-ui/react";
+import React from "react";
 import { faqs } from "@/utils/enums";
-import { FaCaretRight, FaCaretDown } from "react-icons/fa";
+import { tokens } from "./_tokens";
+import { Eyebrow } from "./_atoms";
 
-const Faqs = () => {
+/* Reads from the existing src/utils/enums.jsx — no content duplication */
+
+const FAQ = () => {
   return (
-    <Box
-      py={{ base: "40px", md: "70px" }}
-      mt={{ base: "40px", md: "120px" }}
-      mb="80px"
-    >
-      <Container maxW="container.xl">
-        <Text
-          color="#1A1A1A"
-          fontSize={{ base: "16px", md: "42px" }}
-          fontWeight={700}
-          textAlign={"center"}
+    <Box id="faq" bg={tokens.bg} py={{ base: "64px", md: "110px" }}>
+      <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
+        <Grid
+          templateColumns={{ base: "1fr", md: "1fr 1.5fr" }}
+          gap={{ base: "32px", md: "80px" }}
+          alignItems="start"
         >
-          Find answers to commonly asked questions
-        </Text>
-
-        <Box mt="29px">
-          <Grid
-            templateColumns={{ base: "auto", md: "repeat(2,1fr)" }}
-            gap={{ base: "16px", md: "64px" }}
-          >
-            <GridItem>
-              <Accordion allowToggle={true} border="none" bg="none">
-                {faqs.slice(0, 4).map((data, idx) => (
-                  <AccordionItem key={idx} border="none" bg="#F3F4F6" mb="16px">
+          <GridItem>
+            <Eyebrow>FAQ</Eyebrow>
+            <Text
+              as="h2"
+              mt="14px"
+              fontWeight={600}
+              fontSize={{ base: "32px", md: "44px" }}
+              lineHeight="1.05"
+              letterSpacing="-0.03em"
+            >
+              Common questions.
+            </Text>
+            <Text mt="20px" fontSize="15px" lineHeight="1.65" color={tokens.muted}>
+              Can&apos;t find what you need? Reach out at{" "}
+              <a href="mailto:partnerships@vaxaivision.com" className="vax-link">
+                partnerships@vaxaivision.com
+              </a>
+              .
+            </Text>
+          </GridItem>
+          <GridItem>
+            <Box borderTop={`1px solid ${tokens.rule}`}>
+              <Accordion allowToggle border="none" bg="none">
+                {faqs.map((data: { title: string; sub: string }, idx: number) => (
+                  <AccordionItem
+                    key={idx}
+                    border="none"
+                    borderBottom={`1px solid ${tokens.rule}`}
+                    bg="transparent"
+                  >
                     {({ isExpanded }) => (
                       <>
-                        <h2>
-                          <AccordionButton border="none">
+                        <h3>
+                          <AccordionButton
+                            border="none"
+                            bg="transparent"
+                            _hover={{ bg: "transparent" }}
+                            padding="22px 4px"
+                          >
                             <Box
                               as="span"
                               flex="1"
                               textAlign="left"
-                              fontSize={"16px"}
-                              fontWeight={700}
-                              color="#1A1A1A"
+                              fontSize={{ base: "16px", md: "18px" }}
+                              fontWeight={600}
+                              color={tokens.ink}
                             >
                               {data.title}
                             </Box>
-                            {isExpanded ? (
-                              <FaCaretDown color="#898989" />
-                            ) : (
-                              <FaCaretRight color="#898989" />
-                            )}
+                            <Flex
+                              w="24px"
+                              h="24px"
+                              borderRadius="999px"
+                              border={`1px solid ${tokens.rule}`}
+                              alignItems="center"
+                              justifyContent="center"
+                              color={tokens.muted}
+                              fontSize="14px"
+                              flexShrink={0}
+                            >
+                              {isExpanded ? "−" : "+"}
+                            </Flex>
                           </AccordionButton>
-                        </h2>
-                        <AccordionPanel>{data.sub}</AccordionPanel>
+                        </h3>
+                        <AccordionPanel
+                          paddingBottom="22px"
+                          paddingRight={{ base: "16px", md: "44px" }}
+                          paddingLeft="4px"
+                          fontSize="14px"
+                          lineHeight="1.65"
+                          color={tokens.muted}
+                        >
+                          {data.sub}
+                        </AccordionPanel>
                       </>
                     )}
                   </AccordionItem>
                 ))}
               </Accordion>
-            </GridItem>
-            <GridItem>
-              <Accordion allowToggle={true} border="none" bg="none">
-                {faqs.slice(4).map((data, idx) => (
-                  <AccordionItem key={idx} border="none" bg="#F3F4F6" mb="16px">
-                    {({ isExpanded }) => (
-                      <>
-                        <h2>
-                          <AccordionButton border="none">
-                            <Box
-                              as="span"
-                              flex="1"
-                              textAlign="left"
-                              fontSize={"16px"}
-                              fontWeight={700}
-                              color="#1A1A1A"
-                            >
-                              {data.title}
-                            </Box>
-                            {isExpanded ? (
-                              <FaCaretDown color="#898989" />
-                            ) : (
-                              <FaCaretRight color="#898989" />
-                            )}
-                          </AccordionButton>
-                        </h2>
-                        <AccordionPanel>{data.sub}</AccordionPanel>
-                      </>
-                    )}
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </GridItem>
-          </Grid>
-        </Box>
+            </Box>
+          </GridItem>
+        </Grid>
       </Container>
     </Box>
   );
 };
 
-export default Faqs;
+export default FAQ;

@@ -1,21 +1,29 @@
 import React from "react";
-import Hero from "@/components/home/hero";
-import Solutions from "@/components/home/solutions";
-import Faqs from "@/components/home/faq";
-import Testimonnials from "@/components/home/testimonnials";
 import Layout from "@/components/layout";
-import AboutComponent from "@/components/home/about";
-import DemoEmbed from "@/components/home/DemoEmbed";
+import Hero from "@/components/home/hero";
+import TrustStrip from "@/components/home/trustStrip";
+import Solutions from "@/components/home/solutions";
+import Coverage from "@/components/home/coverage";
+import Mission from "@/components/home/mission";
+import DemoEmbed from "@/components/home/demoEmbed";
+import ImpactStrip from "@/components/home/impactStrip";
+import FAQ from "@/components/home/faq";
+import Testimonials from "@/components/home/testimonials";
+import CtaBand from "@/components/home/ctaBand";
 
 const Home = () => {
   return (
     <Layout>
       <Hero />
-      <DemoEmbed />
+      <TrustStrip />
       <Solutions />
-      <AboutComponent />
-      <Faqs />
-      <Testimonnials />
+      <Coverage />
+      <Mission />
+      <DemoEmbed />
+      <ImpactStrip />
+      <FAQ />
+      <Testimonials />
+      <CtaBand />
     </Layout>
   );
 };

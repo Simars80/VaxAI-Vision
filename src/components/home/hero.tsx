@@ -1,170 +1,232 @@
 "use client";
 
-import {
-  Box,
-  Button,
-  Container,
-  Grid,
-  GridItem,
-  Text,
-  Badge,
-} from "@chakra-ui/react";
+import { Box, Container, Flex, Grid, GridItem, Text } from "@chakra-ui/react";
 import React from "react";
-import Link from "next/link";
 import { Slide, Fade } from "react-awesome-reveal";
-import DashboardPreview from "./DashboardPreview";
+import { tokens } from "./_tokens";
+import { Eyebrow, CTA } from "./_atoms";
 
 const Hero = () => {
   return (
-    <Box
-      bg="#ffffff"
-      position="relative"
-      zIndex={5}
-      overflow="hidden"
-    >
-
-      <Container maxW="container.xl" py={{ base: "60px", md: "100px" }}>
+    <Box bg={tokens.bg} pt={{ base: "32px", md: "64px" }} pb={{ base: "64px", md: "88px" }}>
+      <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
         <Grid
-          templateColumns={{ base: "1fr", md: "1fr 1fr" }}
-          gap={{ base: "48px", md: "64px" }}
-          alignItems="center"
+          templateColumns={{ base: "1fr", md: "1.05fr 1fr" }}
+          gap={{ base: "48px", md: "72px" }}
+          alignItems="start"
         >
-          {/* Left — copy */}
+          {/* LEFT — copy */}
           <GridItem>
             <Slide direction="left" triggerOnce>
               <Fade triggerOnce>
-                <Badge
-                  colorScheme="blue"
-                  fontSize="12px"
-                  px="12px"
-                  py="5px"
-                  borderRadius="full"
-                  mb="20px"
-                  bg="rgba(58,91,204,0.08)"
-                  color="#3A5BCC"
-                  border="1px solid rgba(58,91,204,0.2)"
-                  textTransform="none"
-                  letterSpacing="0.02em"
-                >
-                  🌍 AI-Powered Vaccine Supply Chain Intelligence
-                </Badge>
+                <Eyebrow>Platform v3 · Now in field trial</Eyebrow>
               </Fade>
 
               <Text
-                color="#1A1A1A"
-                fontSize={{ base: "30px", md: "52px" }}
-                fontWeight={800}
-                lineHeight={1.15}
-                mb="20px"
-                letterSpacing="-0.02em"
+                as="h1"
+                mt="22px"
+                fontWeight={600}
+                fontSize={{ base: "40px", md: "68px" }}
+                lineHeight="1.02"
+                letterSpacing="-0.035em"
+                color={tokens.ink}
               >
-                Redefining{" "}
-                <Box as="span" color="#3A5BCC">
-                  Vaccine
-                </Box>{" "}
-                Management
+                Precision for the
+                <br />
+                last{" "}
+                <Box as="span" color={tokens.brand}>
+                  cold mile
+                </Box>
+                .
               </Text>
 
               <Text
+                mt="22px"
                 fontSize={{ base: "15px", md: "17px" }}
-                fontWeight={400}
-                color="#667085"
-                lineHeight={1.7}
-                mb="36px"
-                maxW="480px"
+                lineHeight="1.6"
+                color={tokens.muted}
+                maxW="500px"
               >
-                Real-time inventory tracking, AI-driven forecasting, and cold
-                chain monitoring — built for healthcare systems across Africa
-                and beyond.
+                Computer vision, demand forecasting, and cold-chain telemetry — engineered for
+                health supply chain teams operating without margin for error. Built for the
+                field, integrated with the systems you already run.
               </Text>
 
-              {/* Stats row */}
-              <Box
-                display="flex"
-                gap={{ base: "20px", md: "32px" }}
-                mb="40px"
-                flexWrap="wrap"
-              >
-                {[
-                  { value: "2.4M+", label: "Doses tracked" },
-                  { value: "1,240", label: "Facilities" },
-                  { value: "98.7%", label: "Cold chain uptime" },
-                ].map((s) => (
-                  <Box key={s.label}>
-                    <Text
-                      color="#1A1A1A"
-                      fontSize={{ base: "20px", md: "24px" }}
-                      fontWeight={700}
-                    >
-                      {s.value}
-                    </Text>
-                    <Text color="#667085" fontSize="12px">
-                      {s.label}
-                    </Text>
-                  </Box>
-                ))}
-              </Box>
+              <Flex gap="12px" mt="32px" flexWrap="wrap">
+                <CTA variant="brand" size="lg" href="#request">
+                  Request access →
+                </CTA>
+                <CTA variant="ghost" size="lg" href="#demo">
+                  ▶ See the platform
+                </CTA>
+              </Flex>
 
-              <Box display="flex" gap="14px" flexWrap="wrap">
-                <Link href="#solutions">
-                  <Button
-                    bg="#3A5BCC"
-                    color="#fff"
-                    h={{ base: "46px", md: "54px" }}
-                    px={{ base: "20px", md: "28px" }}
-                    borderRadius="10px"
-                    fontSize={{ base: "13px", md: "15px" }}
-                    fontWeight={600}
-                    _hover={{ bg: "#2D4BAF", transform: "translateY(-1px)" }}
-                    transition="all 0.2s"
-                    boxShadow="0 4px 15px rgba(58,91,204,0.25)"
-                  >
-                    Explore Solutions
-                  </Button>
-                </Link>
-                <Link href="/demo">
-                  <Button
-                    bg="transparent"
-                    color="#1A1A1A"
-                    h={{ base: "46px", md: "54px" }}
-                    px={{ base: "20px", md: "28px" }}
-                    borderRadius="10px"
-                    fontSize={{ base: "13px", md: "15px" }}
-                    fontWeight={600}
-                    border="1px solid #DEE5ED"
-                    _hover={{
-                      bg: "#F8FAFC",
-                      transform: "translateY(-1px)",
-                    }}
-                    transition="all 0.2s"
-                  >
-                    ▶ Try Live Demo
-                  </Button>
-                </Link>
+              {/* hairline stat strip */}
+              <Box mt="56px" pt="22px" borderTop={`1px solid ${tokens.rule}`}>
+                <Grid templateColumns="repeat(4, 1fr)" gap="0">
+                  {([
+                    ["2.41M", "Doses tracked"],
+                    ["1,240", "Facilities"],
+                    ["98.7%", "Chain uptime"],
+                    ["11", "Countries live"],
+                  ] as const).map(([v, l], i) => (
+                    <GridItem
+                      key={l}
+                      pl={i ? "18px" : "0"}
+                      borderLeft={i ? `1px solid ${tokens.rule}` : "none"}
+                    >
+                      <Text
+                        fontWeight={600}
+                        fontSize={{ base: "20px", md: "26px" }}
+                        letterSpacing="-0.02em"
+                        className="vax-tabular"
+                      >
+                        {v}
+                      </Text>
+                      <Text
+                        mt="4px"
+                        fontSize="11px"
+                        color={tokens.muted}
+                        letterSpacing="0.04em"
+                        textTransform="uppercase"
+                      >
+                        {l}
+                      </Text>
+                    </GridItem>
+                  ))}
+                </Grid>
               </Box>
             </Slide>
           </GridItem>
 
-          {/* Right — animated dashboard preview */}
+          {/* RIGHT — instrument card */}
           <GridItem display={{ base: "none", md: "block" }}>
             <Slide direction="right" triggerOnce>
               <Box
-                h="420px"
-                borderRadius="16px"
-                overflow="hidden"
-                border="1px solid #DEE5ED"
-                boxShadow="0 20px 50px rgba(0,0,0,0.08)"
+                border={`1px solid ${tokens.rule}`}
+                borderRadius="8px"
+                padding="22px 24px"
+                bg="#fff"
               >
-                <DashboardPreview />
+                <Flex alignItems="flex-start" justifyContent="space-between" mb="20px">
+                  <Box>
+                    <Text
+                      fontSize="10px"
+                      letterSpacing="0.2em"
+                      textTransform="uppercase"
+                      color={tokens.muted}
+                    >
+                      VVM Scanner · live
+                    </Text>
+                    <Text fontWeight={600} fontSize="17px" mt="6px">
+                      Kano State warehouse W-03
+                    </Text>
+                  </Box>
+                  <Box
+                    className="vax-mono"
+                    fontSize="10px"
+                    padding="3px 8px"
+                    border={`1px solid ${tokens.brand}`}
+                    color={tokens.brand}
+                    borderRadius="3px"
+                    letterSpacing="0.08em"
+                  >
+                    ● ONLINE
+                  </Box>
+                </Flex>
+
+                {/* vial grid */}
+                <Grid templateColumns="repeat(10, 1fr)" gap="5px" mb="16px">
+                  {Array.from({ length: 40 }).map((_, i) => {
+                    const stage = i === 17 ? 3 : i % 13 === 4 || i % 11 === 7 ? 2 : 1;
+                    const c = stage === 1 ? tokens.brand : stage === 2 ? tokens.watch : tokens.alert;
+                    const bgC =
+                      stage === 1 ? `${tokens.brand}14` : stage === 2 ? `${tokens.watch}1d` : `${tokens.alert}1d`;
+                    return (
+                      <Box
+                        key={i}
+                        sx={{ aspectRatio: "1" }}
+                        borderRadius="2px"
+                        bg={bgC}
+                        border={`1px solid ${c}55`}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <Box w="6px" h="6px" borderRadius="999px" bg={c} />
+                      </Box>
+                    );
+                  })}
+                </Grid>
+
+                <Grid
+                  templateColumns="repeat(3, 1fr)"
+                  gap="0"
+                  pt="14px"
+                  borderTop={`1px solid ${tokens.rule}`}
+                >
+                  <GridItem>
+                    <Text fontSize="11px" color={tokens.muted} mb="4px">
+                      Safe · Stage 1
+                    </Text>
+                    <Text fontWeight={600} fontSize="14px" color={tokens.brand}>
+                      34 vials
+                    </Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize="11px" color={tokens.muted} mb="4px">
+                      Watch · Stage 2
+                    </Text>
+                    <Text fontWeight={600} fontSize="14px" color="#9c7a1f">
+                      05 vials
+                    </Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize="11px" color={tokens.muted} mb="4px">
+                      Discard · Stage 3+
+                    </Text>
+                    <Text fontWeight={600} fontSize="14px" color={tokens.alert}>
+                      01 vial
+                    </Text>
+                  </GridItem>
+                </Grid>
+
+                <Box mt="18px" pt="14px" borderTop={`1px solid ${tokens.rule}`}>
+                  <Text
+                    fontSize="11px"
+                    color={tokens.muted}
+                    mb="6px"
+                    className="vax-mono"
+                  >
+                    SCAN HISTORY · LAST 4 H
+                  </Text>
+                  <svg viewBox="0 0 320 56" style={{ width: "100%", height: 56 }}>
+                    {Array.from({ length: 24 }).map((_, i) => {
+                      const v = 18 + Math.sin(i * 0.7) * 12 + (i === 17 ? -10 : 0);
+                      return (
+                        <rect
+                          key={i}
+                          x={i * 13 + 2}
+                          y={56 - v}
+                          width="10"
+                          height={v}
+                          fill={i === 17 ? tokens.alert : tokens.brand}
+                          opacity="0.85"
+                          rx="1"
+                        />
+                      );
+                    })}
+                  </svg>
+                </Box>
               </Box>
+
               <Text
-                textAlign="center"
                 mt="14px"
-                color="#667085"
-                fontSize="13px"
-                letterSpacing="0.01em"
+                textAlign="center"
+                fontSize="12px"
+                color={tokens.muted}
               >
-                ↓ Live demo below
+                Live VVM scanner readout from a partner facility. ↓ Scroll for more.
               </Text>
             </Slide>
           </GridItem>

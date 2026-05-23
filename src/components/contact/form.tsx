@@ -3,9 +3,9 @@
 import {
   Box,
   Button,
-  Center,
   FormControl,
   FormLabel,
+  FormErrorMessage,
   Grid,
   GridItem,
   Input,
@@ -15,28 +15,45 @@ import {
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { Formik, Form, FormikHelpers } from "formik";
+import { tokens } from "@/components/home/_tokens";
 
 type ContactValues = {
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
+  organization: string;
   message: string;
 };
 
 const ENDPOINT = process.env.NEXT_PUBLIC_FORMS_ENDPOINT ?? "";
 
+const fieldStyle = {
+  bg: "#fff",
+  border: `1px solid ${tokens.rule}`,
+  borderRadius: "6px",
+  height: "48px",
+  fontSize: "15px",
+  fontFamily: "inherit",
+  _hover: { borderColor: "rgba(14,17,22,0.2)" },
+  _focusVisible: {
+    borderColor: tokens.brand,
+    boxShadow: `0 0 0 3px rgba(58,91,204,0.12)`,
+  },
+};
+
 const ContactForm = () => {
   const toast = useToast();
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "success" | "error"
+  >("idle");
 
   const initialValues: ContactValues = {
     first_name: "",
     last_name: "",
     email: "",
     phone: "",
+    organization: "",
     message: "",
   };
 
@@ -44,11 +61,9 @@ const ContactForm = () => {
     const errors: Partial<Record<keyof ContactValues, string>> = {};
     if (!values.first_name.trim()) errors.first_name = "Required";
     if (!values.last_name.trim()) errors.last_name = "Required";
-    if (!values.email.trim()) {
-      errors.email = "Required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-      errors.email = "Invalid email";
-    }
+    if (!values.email.trim()) errors.email = "Required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
+      errors.email = "Enter a valid email";
     if (!values.message.trim()) errors.message = "Required";
     return errors;
   };
@@ -68,12 +83,10 @@ const ContactForm = () => {
       });
       return;
     }
-
     setStatus("submitting");
     try {
       await fetch(ENDPOINT, {
         method: "POST",
-        // Use text/plain so the browser doesn't send a CORS preflight to Apps Script.
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           type: "contact",
@@ -82,9 +95,6 @@ const ContactForm = () => {
           referrer: typeof document !== "undefined" ? document.referrer : "",
         }),
       });
-      // Apps Script Web Apps often return an opaque/redirected response that
-      // is not inspectable cross-origin. We treat the POST completing without
-      // throwing as success; the spreadsheet is the source of truth.
       setStatus("success");
       helpers.resetForm();
       toast({
@@ -94,7 +104,7 @@ const ContactForm = () => {
         duration: 6000,
         isClosable: true,
       });
-    } catch (err) {
+    } catch {
       setStatus("error");
       toast({
         title: "Something went wrong",
@@ -108,7 +118,14 @@ const ContactForm = () => {
   };
 
   return (
-    <Box>
+    <Box
+      bg="#fff"
+      border={`1px solid ${tokens.rule}`}
+      borderRadius="12px"
+      padding={{ base: "32px 24px", md: "48px 56px" }}
+      maxW="780px"
+      mx="auto"
+    >
       <Formik
         onSubmit={handleSubmit}
         initialValues={initialValues}
@@ -116,155 +133,190 @@ const ContactForm = () => {
       >
         {({ values, handleChange, errors, touched, isSubmitting }) => (
           <Form>
-            <Box display={"flex"} flexDir={"column"} gap="42px">
-              <Grid
-                templateColumns={{ base: "auto", md: "repeat(2,1fr)" }}
-                gap={{ base: "42px", md: "63px" }}
-              >
-                <GridItem>
-                  <FormControl
-                    isInvalid={!!(errors.first_name && touched.first_name)}
+            <Grid
+              templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+              gap={{ base: "20px", md: "24px" }}
+            >
+              <GridItem>
+                <FormControl isInvalid={!!(errors.first_name && touched.first_name)}>
+                  <FormLabel
+                    color={tokens.ink}
+                    fontSize="13px"
+                    fontWeight={600}
+                    mb="6px"
                   >
-                    <FormLabel
-                      color="#222222"
-                      fontSize={"18px"}
-                      fontWeight={700}
-                      mb="8px"
-                    >
-                      First Name
-                    </FormLabel>
-                    <Input
-                      borderRadius={"8px"}
-                      bg="#F5F6FA"
-                      border="none"
-                      name="first_name"
-                      value={values.first_name}
-                      placeholder="John"
-                      onChange={handleChange}
-                      focusBorderColor="#DA7000"
-                    />
-                  </FormControl>
-                </GridItem>
+                    First name
+                  </FormLabel>
+                  <Input
+                    {...fieldStyle}
+                    name="first_name"
+                    value={values.first_name}
+                    placeholder="Jane"
+                    onChange={handleChange}
+                  />
+                  <FormErrorMessage fontSize="12px">
+                    {errors.first_name}
+                  </FormErrorMessage>
+                </FormControl>
+              </GridItem>
 
-                <GridItem>
-                  <FormControl
-                    isInvalid={!!(errors.last_name && touched.last_name)}
+              <GridItem>
+                <FormControl isInvalid={!!(errors.last_name && touched.last_name)}>
+                  <FormLabel
+                    color={tokens.ink}
+                    fontSize="13px"
+                    fontWeight={600}
+                    mb="6px"
                   >
-                    <FormLabel
-                      color="#222222"
-                      fontSize={"18px"}
-                      fontWeight={700}
-                      mb="8px"
-                    >
-                      Last Name
-                    </FormLabel>
-                    <Input
-                      borderRadius={"8px"}
-                      bg="#F5F6FA"
-                      border="none"
-                      name="last_name"
-                      value={values.last_name}
-                      placeholder="Samuel"
-                      onChange={handleChange}
-                      focusBorderColor="#DA7000"
-                    />
-                  </FormControl>
-                </GridItem>
+                    Last name
+                  </FormLabel>
+                  <Input
+                    {...fieldStyle}
+                    name="last_name"
+                    value={values.last_name}
+                    placeholder="Okafor"
+                    onChange={handleChange}
+                  />
+                  <FormErrorMessage fontSize="12px">
+                    {errors.last_name}
+                  </FormErrorMessage>
+                </FormControl>
+              </GridItem>
 
-                <GridItem>
-                  <FormControl isInvalid={!!(errors.email && touched.email)}>
-                    <FormLabel
-                      color="#222222"
-                      fontSize={"18px"}
-                      fontWeight={700}
-                      mb="8px"
-                    >
-                      Email Address
-                    </FormLabel>
-                    <Input
-                      borderRadius={"8px"}
-                      type="email"
-                      bg="#F5F6FA"
-                      border="none"
-                      name="email"
-                      value={values.email}
-                      placeholder="example@gmail.com"
-                      onChange={handleChange}
-                      focusBorderColor="#DA7000"
-                    />
-                  </FormControl>
-                </GridItem>
-                <GridItem>
-                  <FormControl>
-                    <FormLabel
-                      color="#222222"
-                      fontSize={"18px"}
-                      fontWeight={700}
-                      mb="8px"
-                    >
-                      Phone Number
-                    </FormLabel>
-                    <Input
-                      borderRadius={"8px"}
-                      type="tel"
-                      bg="#F5F6FA"
-                      border="none"
-                      name="phone"
-                      value={values.phone}
-                      placeholder="Phone Number"
-                      onChange={handleChange}
-                      focusBorderColor="#DA7000"
-                    />
-                  </FormControl>
-                </GridItem>
-              </Grid>
+              <GridItem>
+                <FormControl isInvalid={!!(errors.email && touched.email)}>
+                  <FormLabel
+                    color={tokens.ink}
+                    fontSize="13px"
+                    fontWeight={600}
+                    mb="6px"
+                  >
+                    Work email
+                  </FormLabel>
+                  <Input
+                    {...fieldStyle}
+                    type="email"
+                    name="email"
+                    value={values.email}
+                    placeholder="jane@ministry.gov"
+                    onChange={handleChange}
+                  />
+                  <FormErrorMessage fontSize="12px">
+                    {errors.email}
+                  </FormErrorMessage>
+                </FormControl>
+              </GridItem>
 
-              <FormControl isInvalid={!!(errors.message && touched.message)}>
-                <FormLabel
-                  color="#222222"
-                  fontSize={"18px"}
-                  fontWeight={700}
-                  mb="8px"
-                >
-                  Message
-                </FormLabel>
-                <Textarea
-                  borderRadius={"8px"}
-                  bg="#F5F6FA"
-                  border="none"
-                  name="message"
-                  value={values.message}
-                  placeholder="Type something here..."
-                  onChange={handleChange}
-                  focusBorderColor="#DA7000"
-                  rows={5}
-                />
-              </FormControl>
-            </Box>
+              <GridItem>
+                <FormControl>
+                  <FormLabel
+                    color={tokens.ink}
+                    fontSize="13px"
+                    fontWeight={600}
+                    mb="6px"
+                  >
+                    Phone <Box as="span" color={tokens.muted} fontWeight={400}>(optional)</Box>
+                  </FormLabel>
+                  <Input
+                    {...fieldStyle}
+                    type="tel"
+                    name="phone"
+                    value={values.phone}
+                    placeholder="+234 …"
+                    onChange={handleChange}
+                  />
+                </FormControl>
+              </GridItem>
+
+              <GridItem colSpan={{ base: 1, md: 2 }}>
+                <FormControl>
+                  <FormLabel
+                    color={tokens.ink}
+                    fontSize="13px"
+                    fontWeight={600}
+                    mb="6px"
+                  >
+                    Organisation <Box as="span" color={tokens.muted} fontWeight={400}>(optional)</Box>
+                  </FormLabel>
+                  <Input
+                    {...fieldStyle}
+                    name="organization"
+                    value={values.organization}
+                    placeholder="Ministry of Health · NGO · Clinic"
+                    onChange={handleChange}
+                  />
+                </FormControl>
+              </GridItem>
+
+              <GridItem colSpan={{ base: 1, md: 2 }}>
+                <FormControl isInvalid={!!(errors.message && touched.message)}>
+                  <FormLabel
+                    color={tokens.ink}
+                    fontSize="13px"
+                    fontWeight={600}
+                    mb="6px"
+                  >
+                    Message
+                  </FormLabel>
+                  <Textarea
+                    bg="#fff"
+                    border={`1px solid ${tokens.rule}`}
+                    borderRadius="6px"
+                    fontSize="15px"
+                    fontFamily="inherit"
+                    padding="12px 14px"
+                    name="message"
+                    value={values.message}
+                    placeholder="What are you working on? What outcome are you trying to land?"
+                    onChange={handleChange}
+                    rows={5}
+                    _hover={{ borderColor: "rgba(14,17,22,0.2)" }}
+                    _focusVisible={{
+                      borderColor: tokens.brand,
+                      boxShadow: `0 0 0 3px rgba(58,91,204,0.12)`,
+                    }}
+                  />
+                  <FormErrorMessage fontSize="12px">
+                    {errors.message}
+                  </FormErrorMessage>
+                </FormControl>
+              </GridItem>
+            </Grid>
 
             {status === "success" && (
-              <Text color="#0A8A5F" mt="24px" fontWeight={600} textAlign="center">
-                Message received — we'll be in touch shortly.
+              <Text color={tokens.ok} mt="24px" fontWeight={600} fontSize="14px">
+                Message received — we&apos;ll be in touch shortly.
               </Text>
             )}
 
-            <Center>
+            <Box mt="32px" pt="24px" borderTop={`1px solid ${tokens.rule}`}
+                 display="flex" justifyContent="space-between" alignItems="center"
+                 flexWrap="wrap" gap="14px">
+              <Text fontSize="12px" color={tokens.muted}>
+                We respond within 48 hours. Urgent? Email{" "}
+                <a href="mailto:partnerships@vaxaivision.com" className="vax-link">
+                  partnerships@vaxaivision.com
+                </a>
+                .
+              </Text>
               <Button
                 type="submit"
-                w={{ base: "auto", md: "712px" }}
-                borderRadius={"8px"}
-                bg="#3A5BCC"
+                bg={tokens.brand}
                 color="#fff"
-                mt="40px"
+                h="48px"
+                px="28px"
+                borderRadius="6px"
+                fontSize="14px"
+                fontWeight={600}
+                fontFamily="inherit"
                 isLoading={isSubmitting || status === "submitting"}
-                loadingText="Sending..."
-                _hover={{
-                  opacity: 0.8,
-                }}
+                loadingText="Sending…"
+                _hover={{ bg: tokens.brandHover }}
+                boxShadow="0 4px 14px rgba(58,91,204,0.22)"
               >
-                Send
+                Send message →
               </Button>
-            </Center>
+            </Box>
           </Form>
         )}
       </Formik>

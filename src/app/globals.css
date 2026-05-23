@@ -55,3 +55,90 @@ sup {
 .vax-link:hover {
   color: #2d4baf;
 }
+
+/* ---- long-form prose (solution & blog detail pages) ---- */
+/* The rich HTML strings in src/utils/enums.jsx and src/app/blog/posts.ts use
+   inline styles for headings (color:#1A1A1A, font-weight:700). Those inline
+   styles win against ours, which is fine — we shape the surrounding rhythm
+   (line-height, paragraph spacing, list bullets, link styling, max-width)
+   and let the inline styles handle weight + color. */
+
+.vax-prose {
+  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+  color: rgba(14, 17, 22, 0.78);
+  max-width: 720px;
+}
+
+.vax-prose > * + * {
+  margin-top: 1.1em;
+}
+
+.vax-prose h1,
+.vax-prose h2,
+.vax-prose h3,
+.vax-prose h4 {
+  margin-top: 2.2em;
+  margin-bottom: 0.4em;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: #0e1116;
+}
+
+.vax-prose h3 {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+}
+
+.vax-prose p,
+.vax-prose li {
+  text-wrap: pretty;
+}
+
+.vax-prose ul,
+.vax-prose ol {
+  padding-left: 22px;
+  margin-top: 0.6em;
+}
+.vax-prose li {
+  margin-top: 0.5em;
+}
+.vax-prose li::marker {
+  color: #3a5bcc;
+}
+
+.vax-prose a {
+  color: #3a5bcc;
+  border-bottom: 1px solid rgba(58, 91, 204, 0.35);
+  text-decoration: none;
+}
+.vax-prose a:hover {
+  color: #2d4baf;
+  border-bottom-color: currentColor;
+}
+
+.vax-prose strong,
+.vax-prose b {
+  color: #0e1116;
+  font-weight: 600;
+}
+
+.vax-prose blockquote {
+  border-left: 3px solid #3a5bcc;
+  padding-left: 18px;
+  font-style: italic;
+  color: rgba(14, 17, 22, 0.65);
+  margin: 1.6em 0;
+}
+
+.vax-prose sup {
+  color: #3a5bcc;
+  font-size: 0.7em;
+}
+
+.vax-prose hr {
+  border: 0;
+  border-top: 1px solid rgba(14, 17, 22, 0.1);
+  margin: 2.4em 0;
+}

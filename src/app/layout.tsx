@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ChakraProvider } from "@chakra-ui/react";
 import { fontVars } from "@/app/fonts";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "VaxAI Vision — Precision for the last cold mile",
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={fontVars}>
         <ChakraProvider>{children}</ChakraProvider>
+        <Analytics />
       </body>
     </html>
   );

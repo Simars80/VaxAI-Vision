@@ -1,26 +1,26 @@
 "use client";
 
-import { Box, Container, Grid, GridItem, Text, VStack } from "@chakra-ui/react";
+import { Box, Container, Grid, GridItem, Text } from "@chakra-ui/react";
 import React from "react";
-import { Fade, Slide } from "react-awesome-reveal";
-import { FiAlertTriangle, FiTrendingDown, FiThermometer } from "react-icons/fi";
+import { tokens } from "@/components/home/_tokens";
+import { Eyebrow } from "@/components/home/_atoms";
 
 const problems = [
   {
-    icon: FiAlertTriangle,
-    color: "#F56630",
+    n: "01",
+    label: "Unseen",
     title: "Stockouts kill immunisation campaigns",
     body: "Up to 50% of vaccine stockouts in sub-Saharan Africa go undetected for weeks. By the time a facility runs out, thousands of children have missed scheduled doses.",
   },
   {
-    icon: FiTrendingDown,
-    color: "#E53E3E",
+    n: "02",
+    label: "Wasted",
     title: "$1.4B in vaccines wasted annually",
     body: "Without real-time visibility, facilities over-order to avoid stockouts — leading to expiry-driven waste that costs health systems billions each year.",
   },
   {
-    icon: FiThermometer,
-    color: "#3A5BCC",
+    n: "03",
+    label: "Invisible",
     title: "Cold-chain blind spots",
     body: "Most facilities track inventory on paper or in siloed Excel sheets. Temperature excursions and phantom stock remain invisible until it's too late.",
   },
@@ -28,77 +28,41 @@ const problems = [
 
 const ProblemStatement = () => {
   return (
-    <Box bg="#FBFBFB" py={{ base: "64px", md: "112px" }}>
-      <Container maxW="container.xl">
-        <Slide direction="up" triggerOnce>
-          <VStack spacing={4} mb={{ base: "48px", md: "72px" }} align="center" textAlign="center">
-            <Text
-              color="#E53E3E"
-              fontSize="14px"
-              fontWeight={600}
-              textTransform="uppercase"
-              letterSpacing="2px"
-            >
-              The Problem We Solve
-            </Text>
-            <Text
-              color="#1A1A1A"
-              fontSize={{ base: "28px", md: "44px" }}
-              fontWeight={800}
-              maxW="750px"
-              lineHeight="1.2"
-            >
-              Africa's cold chain crisis costs lives — and it's preventable
-            </Text>
-          </VStack>
-        </Slide>
+    <Box bg={tokens.bg} py={{ base: "64px", md: "112px" }}>
+      <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
+        <Box mb={{ base: "40px", md: "56px" }} maxW="780px">
+          <Eyebrow color={tokens.alert}>The problem we solve</Eyebrow>
+          <Text as="h2" mt="14px" fontWeight={600}
+                fontSize={{ base: "30px", md: "44px" }}
+                lineHeight="1.05" letterSpacing="-0.03em" sx={{ textWrap: "balance" }}>
+            Africa&apos;s cold chain crisis costs lives — and it&apos;s preventable.
+          </Text>
+        </Box>
 
-        <Grid
-          templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
-          gap={{ base: "24px", md: "32px" }}
-        >
-          {problems.map((p, idx) => (
-            <Fade key={idx} triggerOnce delay={idx * 150}>
-              <Box
+        <Box borderTop={`1px solid ${tokens.rule}`}>
+          <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap="0">
+            {problems.map((p, i, arr) => (
+              <GridItem key={p.n}
                 bg="#fff"
-                borderRadius="16px"
-                p={{ base: "28px", md: "36px" }}
-                border="1px solid #E8E8E8"
-                h="full"
-                _hover={{
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                  transform: "translateY(-4px)",
-                  transition: "all 0.3s",
-                }}
-                transition="all 0.3s"
-              >
-                <Box
-                  w="52px"
-                  h="52px"
-                  bg={`${p.color}15`}
-                  borderRadius="12px"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  mb="20px"
-                >
-                  <p.icon size={24} color={p.color} />
+                padding={{ base: "32px 24px", md: "40px 32px" }}
+                borderRight={{ base: "none", md: i === arr.length - 1 ? "none" : `1px solid ${tokens.rule}` }}
+                borderBottom={`1px solid ${tokens.rule}`}>
+                <Box mb="20px" display="flex" gap="14px" alignItems="baseline">
+                  <Text className="vax-mono" fontSize="11px" color={tokens.alert} letterSpacing="0.14em">{p.n}</Text>
+                  <Text className="vax-mono" fontSize="10px" color={tokens.muted} letterSpacing="0.18em" textTransform="uppercase">
+                    {p.label}
+                  </Text>
                 </Box>
-                <Text
-                  color="#1A1A1A"
-                  fontSize={{ base: "18px", md: "20px" }}
-                  fontWeight={700}
-                  mb="12px"
-                >
+                <Text fontWeight={600} fontSize={{ base: "20px", md: "22px" }} letterSpacing="-0.015em" mb="12px">
                   {p.title}
                 </Text>
-                <Text color="#667085" fontSize="15px" lineHeight="1.7">
+                <Text fontSize="14.5px" lineHeight="1.65" color={tokens.muted}>
                   {p.body}
                 </Text>
-              </Box>
-            </Fade>
-          ))}
-        </Grid>
+              </GridItem>
+            ))}
+          </Grid>
+        </Box>
       </Container>
     </Box>
   );

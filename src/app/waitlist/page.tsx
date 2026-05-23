@@ -1,32 +1,23 @@
 "use client";
 
-import WaitlistForm from "@/components/waitlist/form";
-import Layout from "@/components/layout";
-import { Box, Center, Container, Text } from "@chakra-ui/react";
 import React from "react";
+import { Box, Container } from "@chakra-ui/react";
+import Layout from "@/components/layout";
+import WaitlistForm from "@/components/waitlist/form";
+import PageHero from "@/components/_shared/PageHero";
+import { tokens } from "@/components/home/_tokens";
 
 const Waitlist = () => {
   return (
     <Layout>
-      <Box bg="#FBFBFB" py={{ base: "32px", md: "68px" }}>
-        <Container maxW="container.xl">
-          <Center>
-            <Text
-              textAlign={"center"}
-              color="#1A1A1A"
-              fontSize={{ base: "16px", md: "40px" }}
-              fontWeight={700}
-              w={{ base: "auto", md: "1102px" }}
-            >
-              Join the VaxAI Vision waitlist — we'll reach out as pilot access
-              opens in your region.
-            </Text>
-          </Center>
-        </Container>
-      </Box>
+      <PageHero
+        eyebrow="Pilot access"
+        title={<>Join the VaxAI Vision waitlist.</>}
+        sub="Tell us where you work and what you're trying to fix. We open pilots in waves of 5–10 facilities and reach out as access opens in your region."
+      />
 
-      <Box my={{ base: "32px", md: "120px" }}>
-        <Container maxW="container.xl">
+      <Box bg="#fafbfd" py={{ base: "48px", md: "96px" }} borderTop={`1px solid ${tokens.rule}`}>
+        <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
           <WaitlistForm />
         </Container>
       </Box>

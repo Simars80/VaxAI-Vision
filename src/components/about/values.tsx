@@ -1,91 +1,78 @@
 "use client";
-import { values } from "@/utils/enums";
-import { Box, Container, Grid, GridItem, Image, Text } from "@chakra-ui/react";
+
+import { Box, Container, Grid, GridItem, Text } from "@chakra-ui/react";
 import React from "react";
-import { Slide } from "react-awesome-reveal";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-} from "@chakra-ui/react";
-import { FaCaretRight, FaCaretDown } from "react-icons/fa";
+import { values } from "@/utils/enums";
+import { tokens } from "@/components/home/_tokens";
+import { Eyebrow } from "@/components/home/_atoms";
 
 const ValuesComponent = () => {
   return (
-    <Box mt={{ base: "68px", md: "80px" }} py={{ base: 0, md: "113px" }}>
-      <Container maxW="container.xl">
+    <Box bg={tokens.bg} py={{ base: "64px", md: "110px" }}>
+      <Container maxW="container.xl" px={{ base: "20px", md: "32px" }}>
         <Grid
-          templateColumns={{ base: "auto", md: "repeat(2,1fr)" }}
-          gap="63px"
-          alignItems={{ base: "none", md: "none" }}
+          templateColumns={{ base: "1fr", md: "1fr 1.5fr" }}
+          gap={{ base: "32px", md: "80px" }}
+          alignItems="start"
+          mb="48px"
         >
           <GridItem>
-            <Slide direction="left" triggerOnce>
-              <Text
-                color="#1A1A1A"
-                fontSize={{ base: "24px", md: "42px" }}
-                fontWeight={700}
-                textAlign={{ base: "center", md: "left" }}
-              >
-                Our core values
-              </Text>
-            </Slide>
-
-            <Box mt="40px" display={"flex"} flexDir={"column"} gap="32px">
-              <Slide direction="left" cascade triggerOnce>
-                <Accordion allowToggle={true} border="none" bg="none">
-                  {values.map((data, idx) => (
-                    <AccordionItem key={idx} border="none" bg='#000' mb='16px'>
-                      {({ isExpanded }) => (
-                        <>
-                          <h2>
-                            <AccordionButton border="none">
-                              <Box
-                                as="span"
-                                flex="1"
-                                textAlign="left"
-                                fontSize={"16px"}
-                                fontWeight={700}
-                                color="#fff"
-                              >
-                                {data.title}
-                              </Box>
-                              {isExpanded ? (
-                                <FaCaretDown color="#898989" />
-                              ) : (
-                                <FaCaretRight color="#898989" />
-                              )}
-                            </AccordionButton>
-                          </h2>
-                          <AccordionPanel
-                            color="#667085"
-                            fontSize={"18px"}
-                            fontWeight={400}
-                            bg="#fff"
-                          >
-                            {data.sub}
-                          </AccordionPanel>
-                        </>
-                      )}
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-                
-              </Slide>
-            </Box>
+            <Eyebrow>What we hold</Eyebrow>
+            <Text
+              as="h2"
+              mt="14px"
+              fontWeight={600}
+              fontSize={{ base: "32px", md: "44px" }}
+              lineHeight="1.05"
+              letterSpacing="-0.03em"
+            >
+              Core values.
+            </Text>
           </GridItem>
-
-          <GridItem display={{base:'none', md:'block'}}>
-            <Slide direction="right" triggerOnce>
-              <Image
-                src="https://res.cloudinary.com/alonexx/image/upload/v1718901735/image_10_1_mymbd1.png"
-                alt="about"
-                
-              />
-            </Slide>
+          <GridItem alignSelf="end">
+            <Text fontSize="15px" lineHeight="1.65" color={tokens.muted}>
+              Four ideas we keep returning to when we build, hire, and decide what not to do.
+            </Text>
           </GridItem>
         </Grid>
+
+        <Box borderTop={`1px solid ${tokens.rule}`}>
+          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="0">
+            {values.map((v: { title: string; sub: string }, i: number) => (
+              <GridItem
+                key={i}
+                bg="#fff"
+                padding={{ base: "28px 24px", md: "40px 36px" }}
+                borderRight={{
+                  base: "none",
+                  md: i % 2 === 0 ? `1px solid ${tokens.rule}` : "none",
+                }}
+                borderBottom={`1px solid ${tokens.rule}`}
+              >
+                <Text
+                  className="vax-mono"
+                  fontSize="11px"
+                  color={tokens.brand}
+                  letterSpacing="0.14em"
+                  mb="20px"
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </Text>
+                <Text
+                  fontWeight={600}
+                  fontSize={{ base: "22px", md: "26px" }}
+                  letterSpacing="-0.02em"
+                  mb="14px"
+                >
+                  {v.title}
+                </Text>
+                <Text fontSize="15px" lineHeight="1.65" color={tokens.muted}>
+                  {v.sub}
+                </Text>
+              </GridItem>
+            ))}
+          </Grid>
+        </Box>
       </Container>
     </Box>
   );

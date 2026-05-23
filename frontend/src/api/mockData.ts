@@ -318,6 +318,11 @@ const MOCK_SIMULATION_RESULT = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMockResponse(url: string, _params?: any): any {
+  // Ingestion upload (POST — demo mode returns a queued job)
+  if (url.includes("/ingestion/upload")) {
+    return { id: `job-demo-${Date.now()}`, source: "csv", status: "completed", file_name: "demo_upload.csv", rows_total: 120, rows_succeeded: 120, rows_failed: 0, created_at: new Date().toISOString(), completed_at: new Date().toISOString() };
+  }
+
   // Ingestion jobs
   if (url.includes("/ingestion/jobs")) {
     return MOCK_INGESTION_JOBS;
